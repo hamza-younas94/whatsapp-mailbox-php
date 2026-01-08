@@ -74,8 +74,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             logger("[WEBHOOK] Processing messages field...");
                             $result = $whatsappService->processWebhookMessage($change['value']);
                             logger("[WEBHOOK] Message processing result: " . ($result ? 'SUCCESS' : 'FAILED'));
+                        } elseif ($field === 'message_status' || $field === 'messages_status') {
+                            logger("[WEBHOOK] Processing message status update...");
+                            // Status updates are handled within processWebhookMessage
+                            $result = $whatsappService->processWebhookMessage($change['value']);
+                            logger("[WEBHOOK] Status update result: " . ($result ? 'SUCCESS' : 'FAILED'));
                         } else {
-                            logger("[WEBHOOK] Skipping field: {$field}");
+                            logger("[WEBHOOK] Skipping field: {$field} - not configured for processing");
                         }
                     }
                 } else {
