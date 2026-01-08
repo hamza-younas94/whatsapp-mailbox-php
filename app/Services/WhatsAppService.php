@@ -253,11 +253,15 @@ class WhatsAppService
     public function verifyWebhook($mode, $token, $challenge)
     {
         $verifyToken = env('WEBHOOK_VERIFY_TOKEN');
+        
+        logger("[VERIFY] Comparing tokens - Mode: {$mode}, Received: {$token}, Expected: {$verifyToken}");
 
         if ($mode === 'subscribe' && $token === $verifyToken) {
+            logger("[VERIFY] ✓ Token match successful");
             return $challenge;
         }
 
+        logger("[VERIFY] ✗ Token mismatch or invalid mode", 'error');
         return false;
     }
 }

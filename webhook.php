@@ -21,14 +21,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $token = $_GET['hub_verify_token'] ?? '';
     $challenge = $_GET['hub_challenge'] ?? '';
     
+    logger("[WEBHOOK VERIFY] Mode: {$mode}");
+    logger("[WEBHOOK VERIFY] Received token: {$token}");
+    logger("[WEBHOOK VERIFY] Expected token: " . env('WEBHOOK_VERIFY_TOKEN'));
+    logger("[WEBHOOK VERIFY] Challenge: {$challenge}");
+    
     $result = $whatsappService->verifyWebhook($mode, $token, $challenge);
     
     if ($result !== false) {
-        logger("Webhook verified successfully");
+        logger("[WEBHOOK VERIFY] ✓ Verification successful");
         echo $result;
         exit;
     } else {
-        logger("Webhook verification failed");
+        logger("[WEBHOOK VERIFY] ✗ Verification failed", 'error');
         http_response_code(403);
         exit;
     }
