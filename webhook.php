@@ -37,28 +37,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // Handle incoming webhook messages (POST request)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = file_get_contents('php://input');
-    logger("Webhook received: " . $input);
+    logger("[WEBHOOK] Received POST request");
+    logger("[WEBHOOK] Raw payload: " . substr($input, 0, 500) . (strlen($input) > 500 ? '...' : ''));
     
     $data = json_decode($input, true);
     
     if (!$data) {
-        logger("Invalid JSON received");
+        logger("[WEBHOOK ERROR] Invalid JSON received", 'error');
         http_response_code(400);
         exit;
     }
     
+    logger("[WEBHOOK] JSON decoded successfully. Object type: " . ($data['object'] ?? 'unknown'));
+    
     try {
         // Process webhook data
         if (isset($data['entry'])) {
-            foreach ($data['entry'] as $entry) {
+            logger("[WEBHOOK] Found " . count($data['entry']) . " entry/entries");
+            
+            foreach ($data['entry'] as $entryIndex => $entry) {
+                logger("[WEBHOOK] Processing entry #{$entryIndex}, ID: " . ($entry['id'] ?? 'unknown'));
+                
                 if (isset($entry['changes'])) {
-                    foreach ($entry['changes'] as $change) {
-                        if ($change['field'] === 'messages') {
-                            $whatsappService->processWebhookMessage($change['value']);
+                    logger("[WEBHOOK] Found " . count($entry['changes']) . " change(s) in entry #{$entryIndex}");
+                    
+                    foreach ($entry['changes'] as $changeIndex => $change) {
+                        $field = $change['field'] ?? 'unknown';
+                        logger("[WEBHOOK] Change #{$changeIndex}: field = {$field}");
+                        
+                        if ($field === 'messages') {
+                            logger("[WEBHOOK] Processing messages field...");
+                            $result = $whatsappService->processWebhookMessage($change['value']);
+                            logger("[WEBHOOK] Message processing result: " . ($result ? 'SUCCESS' : 'FAILED'));
+                        } else {
+                            logger("[WEBHOOK] Skipping field: {$field}");
                         }
                     }
+                } else {
+                    logger("[WEBHOOK] No changes found in entry #{$entryIndex}", 'warning');
                 }
             }
+        } else {
+            logger("[WEBHOOK] No 'entry' field in payload", 'warning');
         }
         
         // Always return 200 OK to Meta

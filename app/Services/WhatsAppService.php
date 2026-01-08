@@ -84,23 +84,39 @@ class WhatsAppService
     public function processWebhookMessage($value)
     {
         try {
+            logger('[SERVICE] processWebhookMessage called');
+            logger('[SERVICE] Value keys: ' . implode(', ', array_keys($value)));
+            
             // Process incoming messages
             if (isset($value['messages'])) {
-                foreach ($value['messages'] as $messageData) {
+                $messageCount = count($value['messages']);
+                logger("[SERVICE] Found {$messageCount} message(s) to process");
+                
+                foreach ($value['messages'] as $index => $messageData) {
+                    logger("[SERVICE] Processing message #{$index}: ID=" . ($messageData['id'] ?? 'unknown') . ", Type=" . ($messageData['type'] ?? 'unknown'));
                     $this->saveIncomingMessage($messageData, $value);
+                    logger("[SERVICE] Message #{$index} saved successfully");
                 }
+            } else {
+                logger('[SERVICE] No messages in webhook value', 'info');
             }
 
             // Process message status updates
             if (isset($value['statuses'])) {
+                $statusCount = count($value['statuses']);
+                logger("[SERVICE] Found {$statusCount} status update(s)");
+                
                 foreach ($value['statuses'] as $status) {
+                    logger('[SERVICE] Updating status for message: ' . ($status['id'] ?? 'unknown'));
                     $this->updateMessageStatus($status);
                 }
             }
 
+            logger('[SERVICE] processWebhookMessage completed successfully');
             return true;
         } catch (\Exception $e) {
-            logger('Error processing webhook: ' . $e->getMessage(), 'error');
+            logger('[SERVICE ERROR] Error processing webhook: ' . $e->getMessage(), 'error');
+            logger('[SERVICE ERROR] Stack trace: ' . $e->getTraceAsString(), 'error');
             return false;
         }
     }
@@ -113,9 +129,13 @@ class WhatsAppService
         $messageId = $messageData['id'];
         $from = $messageData['from'];
         $timestamp = date('Y-m-d H:i:s', $messageData['timestamp']);
+        
+        logger("[SAVE] Starting saveIncomingMessage: MessageID={$messageId}, From={$from}, Timestamp={$timestamp}");
 
         // Get or create contact
+        logger("[SAVE] Getting or creating contact for: {$from}");
         $contact = $this->getOrCreateContact($from, $webhookValue);
+        logger("[SAVE] Contact resolved: ID=" . $contact->id . ", Name=" . $contact->name);
 
         // Extract message content based on type
         $messageType = $messageData['type'];
@@ -123,6 +143,8 @@ class WhatsAppService
         $mediaUrl = null;
         $mediaMimeType = null;
         $mediaCaption = null;
+        
+        logger("[SAVE] Message type: {$messageType}");
 
         switch ($messageType) {
             case 'text':
@@ -160,7 +182,9 @@ class WhatsAppService
         }
 
         // Save message
-        Message::updateOrCreate(
+        logger("[SAVE] Saving message to database: Body=" . substr($messageBody, 0, 50));
+        
+        $message = Message::updateOrCreate(
             ['message_id' => $messageId],
             [
                 'contact_id' => $contact->id,
@@ -175,10 +199,14 @@ class WhatsAppService
                 'is_read' => false
             ]
         );
+        
+        logger("[SAVE] Message saved with ID: " . $message->id);
 
         // Update contact
+        logger("[SAVE] Updating contact unread count and last message time");
         $contact->incrementUnread();
         $contact->update(['last_message_time' => $timestamp]);
+        logger("[SAVE] Contact updated successfully");
     }
 
     /**
@@ -198,16 +226,22 @@ class WhatsAppService
      */
     private function getOrCreateContact($phoneNumber, $webhookValue)
     {
+        logger("[CONTACT] Looking up contact: {$phoneNumber}");
         $contact = Contact::where('phone_number', $phoneNumber)->first();
 
         if (!$contact) {
             $name = $webhookValue['contacts'][0]['profile']['name'] ?? $phoneNumber;
+            logger("[CONTACT] Contact not found. Creating new contact: {$name}");
 
             $contact = Contact::create([
                 'phone_number' => $phoneNumber,
                 'name' => $name,
                 'last_message_time' => now()
             ]);
+            
+            logger("[CONTACT] New contact created with ID: " . $contact->id);
+        } else {
+            logger("[CONTACT] Existing contact found: ID=" . $contact->id . ", Name=" . $contact->name);
         }
 
         return $contact;
