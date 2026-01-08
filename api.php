@@ -63,12 +63,12 @@ try {
             }
             break;
             
-        defaresponse_error('Endpoint not found', 404);
+        default:
+            response_error('Endpoint not found', 404);
     }
 } catch (\Exception $e) {
     logger("API Error: " . $e->getMessage(), 'error');
-    response_error('Internal server error', 500
-    echo json_encode(['error' => 'Internal server error']);
+    response_error('Internal server error', 500);
 }
 
 /**
