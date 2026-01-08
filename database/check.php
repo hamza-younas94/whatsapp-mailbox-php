@@ -58,8 +58,7 @@ try {
 // Test database connection
 echo "5. Testing database connection...\n";
 try {
-    use Illuminate\Database\Capsule\Manager as Capsule;
-    Capsule::connection()->getPdo();
+    \Illuminate\Database\Capsule\Manager::connection()->getPdo();
     echo "   ✓ Database connection successful\n";
     echo "   Database: " . env('DB_DATABASE') . "\n";
     echo "   Host: " . env('DB_HOST') . "\n\n";
@@ -96,7 +95,7 @@ echo "\n";
 // Check if tables already exist
 echo "7. Checking existing tables...\n";
 try {
-    $tables = Capsule::connection()->select('SHOW TABLES');
+    $tables = \Illuminate\Database\Capsule\Manager::connection()->select('SHOW TABLES');
     if (empty($tables)) {
         echo "   No tables exist yet (this is normal for first run)\n\n";
     } else {

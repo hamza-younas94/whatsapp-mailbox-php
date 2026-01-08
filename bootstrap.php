@@ -29,6 +29,11 @@ try {
 }
 
 // Configure timezone
+date_default_timezone_set(env('TIMEZONE', 'UTC'));
+
+// Initialize Eloquent ORM
+$capsule = new Capsule;
+
 try {
     $capsule->addConnection([
         'driver' => env('DB_CONNECTION', 'mysql'),
@@ -50,23 +55,18 @@ try {
         echo "Details: " . $e->getMessage() . "\n";
     }
     throw $e;
-} 'port' => env('DB_PORT', '3306'),
-    'database' => env('DB_DATABASE'),
-    'username' => env('DB_USERNAME'),
-    'password' => env('DB_PASSWORD'),
-    'charset' => 'utf8mb4',
-    'collation' => 'utf8mb4_unicode_ci',
-    'prefix' => '',
-    'strict' => true,
-    'engine' => null,
-]);
+}
 
 // Set the event dispatcher
 $capsule->setEventDispatcher(new Dispatcher(new Container));
 
 // Make Eloquent available globally
 $capsule->setAsGlobal();
-$caInitialize Twig templating engine
+
+// Boot Eloquent
+$capsule->bootEloquent();
+
+// Initialize Twig templating engine
 $loader = new FilesystemLoader(__DIR__ . '/templates');
 $twig = new Environment($loader, [
     'cache' => env('APP_ENV') === 'production' ? __DIR__ . '/storage/cache/twig' : false,
@@ -80,8 +80,6 @@ $twig->addGlobal('app_url', env('APP_URL', ''));
 
 // Make Twig available globally
 $GLOBALS['twig'] = $twig;
-
-// psule->bootEloquent();
 
 // Start session
 if (session_status() === PHP_SESSION_NONE) {
