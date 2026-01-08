@@ -3,6 +3,9 @@
  * WhatsApp Webhook Handler with Eloquent ORM
  */
 
+// Prevent session from starting for webhooks
+define('NO_SESSION', true);
+
 require_once __DIR__ . '/bootstrap.php';
 
 use App\Services\WhatsAppService;

@@ -34,14 +34,6 @@ date_default_timezone_set(env('TIMEZONE', 'UTC'));
 // Initialize Eloquent ORM
 $capsule = new Capsule;
 
-// Start session BEFORE any database operations to avoid header issues
-if (session_status() === PHP_SESSION_NONE) {
-    ini_set('session.cookie_httponly', 1);
-    ini_set('session.use_only_cookies', 1);
-    ini_set('session.cookie_secure', env('SESSION_SECURE', 1));
-    session_start();
-}
-
 try {
     $capsule->addConnection([
         'driver' => env('DB_CONNECTION', 'mysql'),
@@ -88,6 +80,14 @@ $twig->addGlobal('app_url', env('APP_URL', ''));
 
 // Make Twig available globally
 $GLOBALS['twig'] = $twig;
+
+// Start session (skip for webhooks)
+if (!defined('NO_SESSION') && session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.use_only_cookies', 1);
+    ini_set('session.cookie_secure', env('SESSION_SECURE', 1));
+    session_start();
+}
 
 // Error handling
 if (env('APP_DEBUG', false)) {
