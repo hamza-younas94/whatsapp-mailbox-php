@@ -1,0 +1,10 @@
+/vendor/
+.env
+.env.backup
+composer.lock
+*.log
+error.log
+.DS_Store
+Thumbs.db
+/storage/cache/
+/storage/logs/*.log

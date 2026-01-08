@@ -1,0 +1,61 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Mailbox - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="mailbox-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>{{ app_name }}</h2>
+            <div class="user-info">
+                <span>{{ user.username }}</span>
+                <a href="{{ app_url }}/logout.php" class="logout-btn" title="Logout">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="searchContacts" placeholder="Search contacts...">
+        </div>
+        
+        <div class="contacts-list" id="contactsList">
+            <div class="loading">Loading contacts...</div>
+        </div>
+    </div>
+    
+    <!-- Chat Area -->
+    <div class="chat-area">
+        <div class="chat-header" id="chatHeader">
+            <div class="empty-state">Select a contact to start messaging</div>
+        </div>
+        
+        <div class="messages-container" id="messagesContainer">
+            <div class="empty-state">
+                <svg width="100" height="100" viewBox="0 0 24 24" fill="#ccc">
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                </svg>
+                <p>No conversation selected</p>
+            </div>
+        </div>
+        
+        <div class="message-input-container" id="messageInputContainer" style="display: none;">
+            <form id="messageForm">
+                <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
+                <button type="submit" class="send-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ app_url }}/assets/js/app.js"></script>
+{% endblock %}
