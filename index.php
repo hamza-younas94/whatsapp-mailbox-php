@@ -2,7 +2,7 @@
 /**
  * Main Mailbox Interface with Twig Template
  */
-require_once 'config.php';
+require_once 'bootstrap.php';
 require_once 'auth.php';
 
 // Check authentication

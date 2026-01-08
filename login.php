@@ -2,7 +2,7 @@
 /**
  * Login Page with Twig Template
  */
-require_once 'config.php';
+require_once 'bootstrap.php';
 require_once 'auth.php';
 
 // If already logged in, redirect to mailbox
