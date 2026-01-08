@@ -37,8 +37,7 @@ try {
         $admin = AdminUser::create([
             'username' => 'admin',
             'password' => 'admin123', // Will be hashed by model mutator
-            'email' => 'admin@whatsapp-mailbox.local',
-            'is_active' => 1
+            'email' => 'admin@whatsapp-mailbox.local'
         ]);
         
         echo "✓ Default admin user created successfully!\n";

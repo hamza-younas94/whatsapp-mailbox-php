@@ -14,6 +14,7 @@ return new class {
             $table->string('username', 50)->unique();
             $table->string('password_hash', 255);
             $table->string('email', 255)->nullable();
+            $table->boolean('is_active')->default(true);
             $table->dateTime('last_login')->nullable();
             $table->timestamps();
         });
