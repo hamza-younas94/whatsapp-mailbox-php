@@ -76,9 +76,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             logger("[WEBHOOK] Message processing result: " . ($result ? 'SUCCESS' : 'FAILED'));
                         } elseif ($field === 'message_status' || $field === 'messages_status') {
                             logger("[WEBHOOK] Processing message status update...");
-                            // Status updates are handled within processWebhookMessage
                             $result = $whatsappService->processWebhookMessage($change['value']);
                             logger("[WEBHOOK] Status update result: " . ($result ? 'SUCCESS' : 'FAILED'));
+                        } elseif ($field === 'history') {
+                            logger("[WEBHOOK] Processing history field (conversation import)...");
+                            logger("[WEBHOOK] History payload: " . json_encode($change['value']));
+                            // History field contains conversation threads - extract messages
+                            if (isset($change['value']['history'])) {
+                                foreach ($change['value']['history'] as $historyItem) {
+                                    if (isset($historyItem['threads'])) {
+                                        foreach ($historyItem['threads'] as $thread) {
+                                            if (isset($thread['messages'])) {
+                                                logger("[WEBHOOK] Found " . count($thread['messages']) . " messages in history thread");
+                                                // Convert history format to regular messages format
+                                                $regularFormat = [
+                                                    'messaging_product' => $change['value']['messaging_product'] ?? 'whatsapp',
+                                                    'messages' => $thread['messages'],
+                                                    'contacts' => [] // History might not have contact info
+                                                ];
+                                                $result = $whatsappService->processWebhookMessage($regularFormat);
+                                                logger("[WEBHOOK] History messages result: " . ($result ? 'SUCCESS' : 'FAILED'));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         } else {
                             logger("[WEBHOOK] Skipping field: {$field} - not configured for processing");
                         }
