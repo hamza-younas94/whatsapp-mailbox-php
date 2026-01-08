@@ -10,9 +10,11 @@ class AdminUser extends Model
 
     protected $fillable = [
         'username',
+        'password',
         'password_hash',
         'email',
-        'last_login'
+        'last_login',
+        'is_active'
     ];
 
     protected $hidden = [
@@ -27,6 +29,14 @@ class AdminUser extends Model
      * Hash password before saving
      */
     public function setPasswordAttribute($password)
+    {
+        $this->attributes['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
+    }
+    
+    /**
+     * Alias for password_hash
+     */
+    public function setPasswordHashAttribute($password)
     {
         $this->attributes['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
     }
