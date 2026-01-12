@@ -3,6 +3,24 @@
 {% block title %}Mailbox - {{ app_name }}{% endblock %}
 
 {% block content %}
+<!-- Top Navigation -->
+<div class="top-nav">
+    <div class="nav-links">
+        <a href="{{ app_url }}/index.php" class="nav-link active">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+            </svg>
+            Mailbox
+        </a>
+        <a href="{{ app_url }}/crm_dashboard.php" class="nav-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3Z"/>
+            </svg>
+            CRM Dashboard
+        </a>
+    </div>
+</div>
+
 <div class="mailbox-container">
     <!-- Sidebar -->
     <div class="sidebar">
@@ -52,6 +70,13 @@
                 </button>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- CRM Modal -->
+<div id="crmModal" class="modal">
+    <div class="modal-content" id="crmModalContent">
+        <!-- Content loaded by JavaScript -->
     </div>
 </div>
 {% endblock %}

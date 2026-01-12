@@ -74,14 +74,24 @@ function renderContacts(contactsList) {
             : '';
         const activeClass = currentContactId === contact.id ? 'active' : '';
         
+        // CRM features
+        const stageBadge = contact.stage ? `<span class="stage-badge stage-${contact.stage}">${contact.stage}</span>` : '';
+        const leadScore = contact.lead_score !== null ? `<span class="lead-score" title="Lead Score">${contact.lead_score}</span>` : '';
+        const companyInfo = contact.company_name ? `<div class="contact-company">${escapeHtml(contact.company_name)}</div>` : '';
+        
         return `
             <div class="contact-item ${activeClass}" onclick="selectContact(${contact.id}, '${escapeHtml(contact.name)}', '${contact.phone_number}')">
                 <div class="contact-avatar">${initials}</div>
                 <div class="contact-info">
-                    <div class="contact-name">${escapeHtml(contact.name)}</div>
+                    <div class="contact-name-row">
+                        <span class="contact-name">${escapeHtml(contact.name)}</span>
+                        ${stageBadge}
+                    </div>
+                    ${companyInfo}
                     <div class="contact-last-message">${escapeHtml(lastMessage)}</div>
                 </div>
                 <div class="contact-meta">
+                    ${leadScore}
                     <div class="contact-time">${time}</div>
                     ${unreadBadge}
                 </div>
@@ -113,13 +123,32 @@ function filterContacts(query) {
 async function selectContact(contactId, name, phoneNumber) {
     currentContactId = contactId;
     
+    // Get full contact data
+    const contact = contacts.find(c => c.id === contactId);
+    
     // Update UI
     const chatHeader = document.getElementById('chatHeader');
+    const crmInfo = contact ? `
+        <div class="chat-crm-info">
+            ${contact.company_name ? `<span class="crm-company">${escapeHtml(contact.company_name)}</span>` : ''}
+            ${contact.stage ? `<span class="stage-badge stage-${contact.stage}">${contact.stage}</span>` : ''}
+            ${contact.lead_score !== null ? `<span class="lead-score-badge">${contact.lead_score}/100</span>` : ''}
+        </div>
+    ` : '';
+    
     chatHeader.innerHTML = `
         <div class="contact-avatar">${getInitials(name)}</div>
         <div class="chat-contact-info">
             <h3>${escapeHtml(name)}</h3>
             <div class="chat-contact-phone">${phoneNumber}</div>
+            ${crmInfo}
+        </div>
+        <div class="crm-actions">
+            <button onclick="openCrmModal(${contactId})" class="btn-crm" title="CRM Actions">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3Z"/>
+                </svg>
+            </button>
         </div>
     `;
     
@@ -325,4 +354,245 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/**
+ * Open CRM modal
+ */
+function openCrmModal(contactId) {
+    const contact = contacts.find(c => c.id === contactId);
+    if (!contact) return;
+    
+    const modal = document.getElementById('crmModal');
+    const content = document.getElementById('crmModalContent');
+    
+    content.innerHTML = `
+        <div class="modal-header">
+            <h2>CRM: ${escapeHtml(contact.name)}</h2>
+            <button onclick="closeCrmModal()" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="crm-section">
+                <h3>Stage Management</h3>
+                <select id="crmStage" class="crm-select">
+                    <option value="new" ${contact.stage === 'new' ? 'selected' : ''}>New</option>
+                    <option value="contacted" ${contact.stage === 'contacted' ? 'selected' : ''}>Contacted</option>
+                    <option value="qualified" ${contact.stage === 'qualified' ? 'selected' : ''}>Qualified</option>
+                    <option value="proposal" ${contact.stage === 'proposal' ? 'selected' : ''}>Proposal</option>
+                    <option value="negotiation" ${contact.stage === 'negotiation' ? 'selected' : ''}>Negotiation</option>
+                    <option value="customer" ${contact.stage === 'customer' ? 'selected' : ''}>Customer</option>
+                    <option value="lost" ${contact.stage === 'lost' ? 'selected' : ''}>Lost</option>
+                </select>
+                <button onclick="updateStage(${contactId})" class="btn-primary">Update Stage</button>
+            </div>
+            
+            <div class="crm-section">
+                <h3>Lead Score: <span id="currentScore">${contact.lead_score || 0}</span>/100</h3>
+                <div class="score-bar">
+                    <div class="score-fill" style="width: ${contact.lead_score || 0}%"></div>
+                </div>
+            </div>
+            
+            <div class="crm-section">
+                <h3>Company Information</h3>
+                <input type="text" id="crmCompany" class="crm-input" placeholder="Company Name" value="${contact.company_name || ''}">
+                <input type="email" id="crmEmail" class="crm-input" placeholder="Email" value="${contact.email || ''}">
+                <input type="text" id="crmCity" class="crm-input" placeholder="City" value="${contact.city || ''}">
+                <button onclick="updateCompanyInfo(${contactId})" class="btn-primary">Update Info</button>
+            </div>
+            
+            <div class="crm-section">
+                <h3>Deal Information</h3>
+                <input type="number" id="crmDealValue" class="crm-input" placeholder="Deal Value" value="${contact.deal_value || ''}">
+                <input type="date" id="crmExpectedClose" class="crm-input" value="${contact.expected_close_date || ''}">
+                <button onclick="updateDealInfo(${contactId})" class="btn-primary">Update Deal</button>
+            </div>
+            
+            <div class="crm-section">
+                <h3>Add Note</h3>
+                <textarea id="crmNote" class="crm-textarea" placeholder="Type your note here..." rows="3"></textarea>
+                <select id="crmNoteType" class="crm-select">
+                    <option value="general">General</option>
+                    <option value="call">Call</option>
+                    <option value="meeting">Meeting</option>
+                    <option value="email">Email</option>
+                </select>
+                <button onclick="addNote(${contactId})" class="btn-primary">Add Note</button>
+            </div>
+            
+            <div class="crm-section">
+                <h3>Recent Notes</h3>
+                <div id="notesList" class="notes-list">
+                    <div class="loading">Loading notes...</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.style.display = 'block';
+    loadNotes(contactId);
+}
+
+/**
+ * Close CRM modal
+ */
+function closeCrmModal() {
+    document.getElementById('crmModal').style.display = 'none';
+}
+
+/**
+ * Update contact stage
+ */
+async function updateStage(contactId) {
+    const stage = document.getElementById('crmStage').value;
+    
+    try {
+        const response = await fetch(`crm.php/contact/${contactId}/crm`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ stage })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            alert('Stage updated successfully!');
+            loadContacts();
+            selectContact(contactId, '', '');
+        } else {
+            alert('Failed to update stage: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error updating stage:', error);
+        alert('Failed to update stage');
+    }
+}
+
+/**
+ * Update company info
+ */
+async function updateCompanyInfo(contactId) {
+    const company_name = document.getElementById('crmCompany').value;
+    const email = document.getElementById('crmEmail').value;
+    const city = document.getElementById('crmCity').value;
+    
+    try {
+        const response = await fetch(`crm.php/contact/${contactId}/crm`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ company_name, email, city })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            alert('Company info updated!');
+            loadContacts();
+        } else {
+            alert('Failed to update: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error updating company info:', error);
+        alert('Failed to update');
+    }
+}
+
+/**
+ * Update deal info
+ */
+async function updateDealInfo(contactId) {
+    const deal_value = document.getElementById('crmDealValue').value;
+    const expected_close_date = document.getElementById('crmExpectedClose').value;
+    
+    try {
+        const response = await fetch(`crm.php/contact/${contactId}/crm`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ deal_value, expected_close_date })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            alert('Deal info updated!');
+            loadContacts();
+        } else {
+            alert('Failed to update: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error updating deal info:', error);
+        alert('Failed to update');
+    }
+}
+
+/**
+ * Add note
+ */
+async function addNote(contactId) {
+    const content = document.getElementById('crmNote').value.trim();
+    const type = document.getElementById('crmNoteType').value;
+    
+    if (!content) {
+        alert('Please enter a note');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`crm.php/contact/${contactId}/note`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ content, type })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            document.getElementById('crmNote').value = '';
+            loadNotes(contactId);
+            alert('Note added!');
+        } else {
+            alert('Failed to add note: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error adding note:', error);
+        alert('Failed to add note');
+    }
+}
+
+/**
+ * Load notes for contact
+ */
+async function loadNotes(contactId) {
+    try {
+        const response = await fetch(`crm.php/contact/${contactId}/notes`);
+        const result = await response.json();
+        
+        const notesList = document.getElementById('notesList');
+        
+        if (result.success && result.notes.length > 0) {
+            notesList.innerHTML = result.notes.map(note => `
+                <div class="note-item note-type-${note.type}">
+                    <div class="note-header">
+                        <span class="note-type">${note.type}</span>
+                        <span class="note-date">${formatTime(note.created_at)}</span>
+                    </div>
+                    <div class="note-content">${escapeHtml(note.content)}</div>
+                    <div class="note-author">by ${note.created_by_name || 'Admin'}</div>
+                </div>
+            `).join('');
+        } else {
+            notesList.innerHTML = '<div class="empty-state"><p>No notes yet</p></div>';
+        }
+    } catch (error) {
+        console.error('Error loading notes:', error);
+        document.getElementById('notesList').innerHTML = '<div class="empty-state"><p>Failed to load notes</p></div>';
+    }
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('crmModal');
+    if (event.target === modal) {
+        closeCrmModal();
+    }
 }

@@ -1,0 +1,127 @@
+{% extends "base.html.twig" %}
+
+{% block title %}CRM Dashboard - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Top Navigation -->
+<div class="top-nav">
+    <div class="nav-links">
+        <a href="{{ app_url }}/index.php" class="nav-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+            </svg>
+            Mailbox
+        </a>
+        <a href="{{ app_url }}/crm_dashboard.php" class="nav-link active">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3Z"/>
+            </svg>
+            CRM Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="crm-dashboard">
+    <!-- Stats Cards -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #e3f2fd;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#1976d2">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value" id="totalContacts">0</div>
+                <div class="stat-label">Total Contacts</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #e8f5e9;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#388e3c">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value" id="qualifiedLeads">0</div>
+                <div class="stat-label">Qualified Leads</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #fff3e0;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#f57c00">
+                    <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value" id="totalDealValue">$0</div>
+                <div class="stat-label">Total Deal Value</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #f3e5f5;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#7b1fa2">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value" id="averageScore">0</div>
+                <div class="stat-label">Avg Lead Score</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stage Filter -->
+    <div class="crm-controls">
+        <div class="stage-filters">
+            <button class="stage-filter-btn active" data-stage="all" onclick="filterByStage('all')">All</button>
+            <button class="stage-filter-btn" data-stage="new" onclick="filterByStage('new')">New</button>
+            <button class="stage-filter-btn" data-stage="contacted" onclick="filterByStage('contacted')">Contacted</button>
+            <button class="stage-filter-btn" data-stage="qualified" onclick="filterByStage('qualified')">Qualified</button>
+            <button class="stage-filter-btn" data-stage="proposal" onclick="filterByStage('proposal')">Proposal</button>
+            <button class="stage-filter-btn" data-stage="negotiation" onclick="filterByStage('negotiation')">Negotiation</button>
+            <button class="stage-filter-btn" data-stage="customer" onclick="filterByStage('customer')">Customer</button>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="crmSearch" placeholder="Search contacts...">
+        </div>
+    </div>
+    
+    <!-- Contacts Table -->
+    <div class="crm-table-container">
+        <table class="crm-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Company</th>
+                    <th>Phone</th>
+                    <th>Stage</th>
+                    <th>Lead Score</th>
+                    <th>Deal Value</th>
+                    <th>Last Activity</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="crmTableBody">
+                <tr>
+                    <td colspan="8" class="loading">Loading CRM data...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- CRM Modal (same as mailbox) -->
+<div id="crmModal" class="modal">
+    <div class="modal-content" id="crmModalContent">
+        <!-- Content loaded by JavaScript -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ app_url }}/assets/js/crm.js"></script>
+{% endblock %}
