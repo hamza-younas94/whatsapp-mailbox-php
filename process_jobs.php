@@ -4,7 +4,7 @@
  * Run this as a cron job every minute: * * * * * php /path/to/process_jobs.php
  */
 
-require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config.php';
 
 use App\Models\ScheduledMessage;
 use App\Models\Broadcast;

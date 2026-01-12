@@ -3,7 +3,7 @@
  * Run All New Feature Migrations
  */
 
-require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config.php';
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 

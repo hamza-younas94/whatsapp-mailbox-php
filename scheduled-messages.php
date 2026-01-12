@@ -3,8 +3,8 @@
  * Scheduled Messages Management
  */
 
-require_once __DIR__ . '/includes/auth.php';
-require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/config.php';
 
 use App\Models\ScheduledMessage;
 use App\Models\Contact;
