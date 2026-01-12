@@ -15,64 +15,55 @@
     <link rel="stylesheet" href="assets/css/style.css">
     
     <style>
-        /* Ensure modals work properly */
+        /* Modern Navigation Styles */
         body.modal-open {
             overflow: hidden;
             padding-right: 0 !important;
         }
         
-        .modal {
-            z-index: 1055 !important;
-        }
-        
-        .modal-backdrop {
-            z-index: 1050 !important;
-        }
-        
-        .modal-dialog {
-            pointer-events: auto !important;
-        }
-        
-        .modal-content {
-            pointer-events: auto !important;
-        }
-        
         .top-nav {
-            background: #128C7E;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: relative;
+            background: linear-gradient(135deg, #128C7E 0%, #075E54 100%);
+            padding: 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
             z-index: 1000;
-        }
-        .top-nav {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 1rem;
         }
-        
         .top-nav .nav-links {
             display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
+            gap: 0;
+            align-items: center;
             flex: 1;
         }
         .top-nav .nav-link {
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.95rem;
-            transition: background 0.2s;
+            padding: 1rem 1.5rem;
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            border-bottom: 3px solid transparent;
         }
-        .top-nav .nav-link:hover,
+        .top-nav .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
         .top-nav .nav-link.active {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-bottom-color: #25D366;
         }
+        .top-nav .nav-link i {
+            font-size: 1.1rem;
+        }
+        
+        /* Dropdown Styles */
         .top-nav .dropdown {
             position: relative;
         }
@@ -82,47 +73,115 @@
         .top-nav .dropdown-menu {
             display: none;
             position: absolute;
-            top: calc(100% - 0.25rem); /* Reduce gap */
+            top: 100%;
             left: 0;
             background: white;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border-radius: 4px;
-            min-width: 200px;
-            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            min-width: 220px;
+            z-index: 1001;
             padding: 0.5rem 0;
+            margin-top: 0;
+            animation: slideDown 0.2s ease;
         }
-        /* Keep dropdown visible on hover - no gap */
-        .top-nav .dropdown:hover .dropdown-menu,
-        .top-nav .dropdown-menu:hover,
-        .top-nav .dropdown.show .dropdown-menu {
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .top-nav .dropdown:hover .dropdown-menu {
             display: block;
         }
         .top-nav .dropdown-menu a {
-            display: block;
-            padding: 0.75rem 1rem;
             display: flex;
             align-items: center;
-            gap: 1rem;
-            color: white;
-            white-space: nowrapwn-menu a:hover {
-            background: #f5f5f5;
+            gap: 0.75rem;
+            padding: 0.75rem 1.25rem;
+            color: #333;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
         }
+        .top-nav .dropdown-menu a:hover {
+            background: #f5f5f5;
+            color: #128C7E;
+            padding-left: 1.5rem;
+        }
+        .top-nav .dropdown-menu a.active {
+            background: #e8f5e9;
+            color: #128C7E;
+            font-weight: 600;
+        }
+        
+        /* User Info */
         .user-info {
-            margin-left: auto;
             display: flex;
             align-items: center;
             gap: 1rem;
-            color: white;
+            padding: 0 1.5rem;
+            color: rgba(255,255,255,0.9);
+        }
+        .user-info i {
+            font-size: 1.2rem;
         }
         .logout-btn {
-            color: white;
+            color: rgba(255,255,255,0.9);
             text-decoration: none;
             padding: 0.5rem;
-            border-radius: 4px;
-            transition: background 0.2s;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
         }
         .logout-btn:hover {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+        
+        /* Modal Improvements */
+        .modal {
+            z-index: 1055 !important;
+        }
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
+        .modal-dialog {
+            pointer-events: auto !important;
+        }
+        .modal-content {
+            pointer-events: auto !important;
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #128C7E 0%, #075E54 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            border-bottom: none;
+            padding: 1.5rem;
+        }
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .top-nav .nav-link {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+            .top-nav .nav-link span:not(.d-none) {
+                display: none;
+            }
+            .user-info span {
+                display: none;
+            }
         }
     </style>
 </head>
