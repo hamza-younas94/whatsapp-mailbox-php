@@ -123,5 +123,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ app_url }}/assets/js/crm.js"></script>
+<script src="{{ app_url }}/assets/js/crm.js?v={{ "now"|date("U") }}"></script>
 {% endblock %}
