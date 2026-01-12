@@ -100,15 +100,15 @@ function getContacts() {
             'unread_count' => $contact->unread_count,
             'last_message' => $contact->lastMessage?->message_body,
             'initials' => $contact->initials,
-            // CRM fields
-            'stage' => $contact->stage,
-            'lead_score' => $contact->lead_score,
+            // CRM fields with defaults
+            'stage' => $contact->stage ?: 'new',
+            'lead_score' => $contact->lead_score ?: 0,
             'company_name' => $contact->company_name,
             'email' => $contact->email,
             'city' => $contact->city,
             'country' => $contact->country,
             'deal_value' => $contact->deal_value,
-            'deal_currency' => $contact->deal_currency,
+            'deal_currency' => $contact->deal_currency ?: 'USD',
             'expected_close_date' => $contact->expected_close_date,
             'last_activity_at' => $contact->last_activity_at?->format('Y-m-d H:i:s'),
             'last_activity_type' => $contact->last_activity_type
