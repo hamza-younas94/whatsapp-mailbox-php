@@ -72,6 +72,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 echo json_encode(['success' => true, 'broadcast' => $broadcast]);
                 break;
             
+            case 'update':
+                $broadcast = Broadcast::findOrFail($_POST['id']);
+                
+                if ($broadcast->status !== 'draft' && $broadcast->status !== 'scheduled') {
+                    throw new Exception('Cannot edit a broadcast that has been sent');
+                }
+                
+                $broadcast->update([
+                    'name' => $_POST['name'],
+                    'message' => $_POST['message'],
+                    'scheduled_at' => !empty($_POST['scheduled_at']) ? $_POST['scheduled_at'] : null,
+                    'status' => !empty($_POST['scheduled_at']) ? 'scheduled' : 'draft'
+                ]);
+                
+                echo json_encode(['success' => true, 'broadcast' => $broadcast]);
+                break;
+            
+            case 'get':
+                $broadcast = Broadcast::findOrFail($_POST['id']);
+                echo json_encode(['success' => true, 'broadcast' => $broadcast]);
+                break;
+            
             case 'send':
                 $broadcast = Broadcast::findOrFail($_POST['id']);
                 
@@ -120,7 +142,21 @@ $broadcasts = Broadcast::with('creator')
 // Get filters data
 $tags = Tag::orderBy('name')->get();
 $segments = Segment::orderBy('name')->get();
-$stages = ['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'customer'];
+// Get all unique stages from contacts
+$stages = Contact::select('stage')
+    ->distinct()
+    ->whereNotNull('stage')
+    ->pluck('stage')
+    ->toArray();
+// Add default stages if empty
+if (empty($stages)) {
+    $stages = ['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'customer', 'lost'];
+} else {
+    // Ensure default stages are included
+    $defaultStages = ['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'customer', 'lost'];
+    $stages = array_unique(array_merge($stages, $defaultStages));
+    sort($stages);
+}
 
 // Render page
 $pageTitle = 'Broadcast Messaging';
@@ -214,23 +250,26 @@ require_once __DIR__ . '/includes/header.php';
                             </td>
                             <td>
                                 <?php if ($broadcast->status === 'draft' || $broadcast->status === 'scheduled'): ?>
-                                <button class="btn btn-sm btn-success" onclick="sendBroadcast(<?php echo $broadcast->id; ?>)">
-                                    <i class="fas fa-paper-plane"></i> Send
+                                <button class="btn btn-sm btn-primary" onclick="editBroadcast(<?php echo $broadcast->id; ?>)" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="sendBroadcast(<?php echo $broadcast->id; ?>)" title="Send">
+                                    <i class="fas fa-paper-plane"></i>
                                 </button>
                                 <?php endif; ?>
                                 
                                 <?php if ($broadcast->status === 'sending'): ?>
-                                <button class="btn btn-sm btn-warning" onclick="cancelBroadcast(<?php echo $broadcast->id; ?>)">
-                                    <i class="fas fa-stop"></i> Cancel
+                                <button class="btn btn-sm btn-warning" onclick="cancelBroadcast(<?php echo $broadcast->id; ?>)" title="Cancel">
+                                    <i class="fas fa-stop"></i>
                                 </button>
                                 <?php endif; ?>
                                 
-                                <button class="btn btn-sm btn-outline-primary" onclick="viewBroadcast(<?php echo $broadcast->id; ?>)">
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewBroadcast(<?php echo $broadcast->id; ?>)" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 
                                 <?php if ($broadcast->status !== 'sending'): ?>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteBroadcast(<?php echo $broadcast->id; ?>)">
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteBroadcast(<?php echo $broadcast->id; ?>)" title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
                                 <?php endif; ?>
@@ -310,6 +349,7 @@ require_once __DIR__ . '/includes/header.php';
 
 <script>
 let broadcastModal;
+let currentBroadcastId = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     const modalElement = document.getElementById('broadcastModal');
@@ -323,13 +363,23 @@ function openBroadcastModal() {
         console.error('Modal not initialized');
         return;
     }
+    currentBroadcastId = null;
     document.getElementById('broadcastForm').reset();
+    document.querySelector('#broadcastModal .modal-title').textContent = 'New Broadcast';
+    document.querySelector('#broadcastModal .btn-primary').textContent = 'Create Broadcast';
     broadcastModal.show();
 }
 
-function saveBroadcast() {
-    const formData = new FormData(document.getElementById('broadcastForm'));
-    formData.append('action', 'create');
+function editBroadcast(id) {
+    if (!broadcastModal) {
+        console.error('Modal not initialized');
+        return;
+    }
+    
+    currentBroadcastId = id;
+    const formData = new FormData();
+    formData.append('action', 'get');
+    formData.append('id', id);
     
     fetch('broadcasts.php', {
         method: 'POST',
@@ -339,7 +389,42 @@ function saveBroadcast() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('Broadcast created successfully!', 'success');
+            document.getElementById('broadcast_name').value = data.broadcast.name;
+            document.getElementById('broadcast_message').value = data.broadcast.message;
+            if (data.broadcast.scheduled_at) {
+                const date = new Date(data.broadcast.scheduled_at);
+                const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+                document.getElementById('scheduled_at').value = localDate.toISOString().slice(0, 16);
+            }
+            document.querySelector('#broadcastModal .modal-title').textContent = 'Edit Broadcast';
+            document.querySelector('#broadcastModal .btn-primary').textContent = 'Update Broadcast';
+            broadcastModal.show();
+        } else {
+            showToast('Error loading broadcast: ' + data.error, 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        showToast('Error loading broadcast', 'error');
+    });
+}
+
+function saveBroadcast() {
+    const formData = new FormData(document.getElementById('broadcastForm'));
+    formData.append('action', currentBroadcastId ? 'update' : 'create');
+    if (currentBroadcastId) {
+        formData.append('id', currentBroadcastId);
+    }
+    
+    fetch('broadcasts.php', {
+        method: 'POST',
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast((currentBroadcastId ? 'Broadcast updated' : 'Broadcast created') + ' successfully!', 'success');
             broadcastModal.hide();
             location.reload();
         } else {
