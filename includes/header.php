@@ -45,10 +45,18 @@
             position: relative;
             z-index: 1000;
         }
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        
         .top-nav .nav-links {
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
+            flex: 1;
         }
         .top-nav .nav-link {
             color: white;
@@ -92,11 +100,11 @@
         .top-nav .dropdown-menu a {
             display: block;
             padding: 0.75rem 1rem;
-            color: #333;
-            text-decoration: none;
-            transition: background 0.2s;
-        }
-        .top-nav .dropdown-menu a:hover {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+            white-space: nowrapwn-menu a:hover {
             background: #f5f5f5;
         }
         .user-info {
@@ -142,27 +150,25 @@
                 <i class="fas fa-chart-bar"></i>
                 Analytics
             </a>
-            
             <div class="dropdown">
                 <a href="#" class="nav-link">
                     <i class="fas fa-ellipsis-h"></i>
                     More ▾
                 </a>
                 <div class="dropdown-menu">
-                    <a href="tags.php"><i class="fas fa-tags"></i> Tags</a>
-                    <a href="segments.php"><i class="fas fa-users"></i> Segments</a>
-                    <a href="scheduled-messages.php"><i class="fas fa-clock"></i> Scheduled</a>
-                    <a href="notes.php"><i class="fas fa-sticky-note"></i> Notes</a>
-                    <a href="deals.php"><i class="fas fa-handshake"></i> Deals</a>
+                    <a href="tags.php">🏷️ Tags</a>
+                    <a href="segments.php">📊 Segments</a>
+                    <a href="scheduled-messages.php">⏰ Scheduled</a>
+                    <a href="notes.php">📝 Notes</a>
+                    <a href="deals.php">💰 Deals</a>
                 </div>
             </div>
-            
-            <div class="user-info">
-                <span><i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($user->username ?? 'Admin'); ?></span>
-                <a href="logout.php" class="logout-btn" title="Logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                </a>
-            </div>
+        </div>
+        <div class="user-info ms-auto">
+            <span><i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($user->username ?? 'Admin'); ?></span>
+            <a href="logout.php" class="logout-btn" title="Logout">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
         </div>
     </div>
     
