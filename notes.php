@@ -51,6 +51,7 @@ $user = getCurrentUser();
 
 echo render('notes.html.twig', [
     'notes' => $notes,
+    'notesCount' => $notes->count(),
     'contacts' => $contacts,
     'totalNotes' => $totalNotes,
     'notesByType' => $notesByType,

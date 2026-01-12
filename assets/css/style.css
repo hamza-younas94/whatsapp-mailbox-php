@@ -1582,8 +1582,12 @@ body {
 }
 
 .notes-list-container {
+    padding: 20px;
+}
+
+.notes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: 20px;
 }
 
@@ -1594,6 +1598,8 @@ body {
     border-left: 4px solid var(--primary-color);
     overflow: hidden;
     transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
 }
 
 .note-card:hover {
@@ -1630,23 +1636,42 @@ body {
 .note-type-badge {
     background: var(--primary-color);
     color: white;
-    padding: 4px 10px;
-    border-radius: 4px;
+    padding: 5px 12px;
+    border-radius: 6px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.note-card.note-type-call .note-type-badge {
+.note-badge-call {
     background: #3b82f6;
 }
 
-.note-card.note-type-meeting .note-type-badge {
+.note-badge-meeting {
     background: #8b5cf6;
 }
 
-.note-card.note-type-email .note-type-badge {
+.note-badge-email {
     background: #ec4899;
+}
+
+.note-badge-general {
+    background: var(--primary-color);
+}
+
+.note-card.note-type-call {
+    border-left-color: #3b82f6;
+}
+
+.note-card.note-type-meeting {
+    border-left-color: #8b5cf6;
+}
+
+.note-card.note-type-email {
+    border-left-color: #ec4899;
 }
 
 .note-contact {
