@@ -27,10 +27,33 @@ class WhatsAppService
     }
 
     /**
+     * Format phone number for WhatsApp API
+     */
+    private function formatPhoneNumber($phone)
+    {
+        // Remove all non-numeric characters
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        // Remove leading zeros
+        $phone = ltrim($phone, '0');
+        
+        // If doesn't start with country code, assume Pakistan (92)
+        if (!str_starts_with($phone, '92') && !str_starts_with($phone, '1')) {
+            $phone = '92' . $phone;
+        }
+        
+        logger("[PHONE] Formatted: {$phone}");
+        return $phone;
+    }
+
+    /**
      * Send a text message
      */
     public function sendTextMessage($to, $message)
     {
+        // Format phone number
+        $to = $this->formatPhoneNumber($to);
+        
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
 
         $payload = [

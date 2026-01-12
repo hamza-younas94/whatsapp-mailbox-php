@@ -11,12 +11,33 @@ class Contact extends Model
         'name',
         'profile_picture_url',
         'last_message_time',
-        'unread_count'
+        'unread_count',
+        // CRM fields
+        'stage',
+        'lead_score',
+        'assigned_to',
+        'source',
+        'company_name',
+        'email',
+        'city',
+        'country',
+        'tags',
+        'last_activity_at',
+        'last_activity_type',
+        'deal_value',
+        'deal_currency',
+        'expected_close_date',
+        'custom_fields'
     ];
 
     protected $casts = [
         'last_message_time' => 'datetime',
-        'unread_count' => 'integer'
+        'unread_count' => 'integer',
+        'lead_score' => 'integer',
+        'last_activity_at' => 'datetime',
+        'deal_value' => 'decimal:2',
+        'expected_close_date' => 'date',
+        'custom_fields' => 'array'
     ];
 
     /**
@@ -43,6 +64,118 @@ class Contact extends Model
         return $this->hasMany(Message::class)
             ->where('direction', 'incoming')
             ->where('is_read', false);
+    }
+
+    /**
+     * Get notes for this contact
+     */
+    public function notes()
+    {
+        return $this->hasMany(Note::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get activities for this contact
+     */
+    public function activities()
+    {
+        return $this->hasMany(Activity::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get assigned user
+     */
+    public function assignedUser()
+    {
+        return $this->belongsTo(AdminUser::class, 'assigned_to');
+    }
+
+    /**
+     * Get tags as array
+     */
+    public function getTagsArrayAttribute()
+    {
+        return $this->tags ? explode(',', $this->tags) : [];
+    }
+
+    /**
+     * Set tags from array
+     */
+    public function setTagsFromArray($tags)
+    {
+        $this->tags = is_array($tags) ? implode(',', $tags) : $tags;
+    }
+
+    /**
+     * Add activity log
+     */
+    public function addActivity($type, $title, $description = null, $metadata = null)
+    {
+        return Activity::create([
+            'contact_id' => $this->id,
+            'type' => $type,
+            'title' => $title,
+            'description' => $description,
+            'metadata' => $metadata,
+            'created_by' => $_SESSION['user_id'] ?? null
+        ]);
+    }
+
+    /**
+     * Update lead score
+     */
+    public function updateLeadScore()
+    {
+        $score = 0;
+        
+        // Has email: +10
+        if ($this->email) $score += 10;
+        
+        // Has company: +15
+        if ($this->company_name) $score += 15;
+        
+        // Message count: +1 per message (max 20)
+        $messageCount = $this->messages()->count();
+        $score += min($messageCount, 20);
+        
+        // Recent activity: +10
+        if ($this->last_activity_at && $this->last_activity_at->diffInDays(now()) < 7) {
+            $score += 10;
+        }
+        
+        // Has deal value: +20
+        if ($this->deal_value > 0) $score += 20;
+        
+        // Stage bonus
+        $stageScores = [
+            'new' => 0,
+            'contacted' => 5,
+            'qualified' => 10,
+            'proposal' => 15,
+            'negotiation' => 20,
+            'customer' => 25
+        ];
+        $score += $stageScores[$this->stage] ?? 0;
+        
+        $this->update(['lead_score' => min($score, 100)]);
+    }
+
+    /**
+     * Change stage and log activity
+     */
+    public function changeStage($newStage)
+    {
+        $oldStage = $this->stage;
+        $this->update(['stage' => $newStage]);
+        
+        $this->addActivity(
+            'stage_changed',
+            "Stage changed from {$oldStage} to {$newStage}",
+            null,
+            ['old_stage' => $oldStage, 'new_stage' => $newStage]
+        );
+        
+        $this->updateLeadScore();
     }
 
     /**
