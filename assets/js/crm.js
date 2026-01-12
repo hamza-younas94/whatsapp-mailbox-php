@@ -216,13 +216,6 @@ function openCrmModal(contactId) {
             </div>
             
             <div class="crm-section">
-                <h3>Deal Information</h3>
-                <input type="number" id="crmDealValue" class="crm-input" placeholder="Deal Value" value="${contact.deal_value || ''}">
-                <input type="date" id="crmExpectedClose" class="crm-input" value="${contact.expected_close_date || ''}">
-                <button onclick="updateDealInfo(${contactId})" class="btn-primary">Update Deal</button>
-            </div>
-            
-            <div class="crm-section">
                 <h3>Add Note</h3>
                 <textarea id="crmNote" class="crm-textarea" placeholder="Type your note here..." rows="3"></textarea>
                 <select id="crmNoteType" class="crm-select">
@@ -298,31 +291,6 @@ async function updateCompanyInfo(contactId) {
         }
     } catch (error) {
         console.error('Error updating company info:', error);
-        alert('Failed to update');
-    }
-}
-
-async function updateDealInfo(contactId) {
-    const deal_value = document.getElementById('crmDealValue').value;
-    const expected_close_date = document.getElementById('crmExpectedClose').value;
-    
-    try {
-        const response = await fetch(`crm.php/contact/${contactId}/crm`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ deal_value, expected_close_date })
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-            alert('Deal info updated!');
-            loadCrmData();
-        } else {
-            alert('Failed to update: ' + (result.error || 'Unknown error'));
-        }
-    } catch (error) {
-        console.error('Error updating deal info:', error);
         alert('Failed to update');
     }
 }
