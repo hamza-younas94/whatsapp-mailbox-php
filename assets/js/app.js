@@ -434,12 +434,40 @@ function openCrmModal(contactId) {
                     <div class="loading">Loading notes...</div>
                 </div>
             </div>
+            
+            <div class="crm-section">
+                <h3>Deal History</h3>
+                <div class="deal-summary" id="dealSummary">
+                    <div class="loading">Loading deals...</div>
+                </div>
+                <div id="dealsList" class="deals-list">
+                </div>
+                <button onclick="showAddDealForm(${contactId})" class="btn-secondary">+ Add New Deal</button>
+            </div>
+            
+            <div class="crm-section" id="addDealForm" style="display: none;">
+                <h3>Add New Deal</h3>
+                <input type="text" id="dealName" class="crm-input" placeholder="Deal Name (e.g., Website Package)">
+                <input type="number" id="dealAmount" class="crm-input" placeholder="Amount" step="0.01">
+                <select id="dealStatus" class="crm-select">
+                    <option value="pending">Pending</option>
+                    <option value="won">Won</option>
+                    <option value="lost">Lost</option>
+                </select>
+                <input type="date" id="dealDate" class="crm-input">
+                <textarea id="dealNotes" class="crm-textarea" placeholder="Deal notes..." rows="2"></textarea>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="saveDeal(${contactId})" class="btn-primary" style="flex: 1;">Save Deal</button>
+                    <button onclick="hideAddDealForm()" class="btn-secondary" style="flex: 1;">Cancel</button>
+                </div>
+            </div>
         </div>
     `;
     
     panel.style.display = 'flex';
     container.classList.add('panel-open');
     loadNotes(contactId);
+    loadDeals(contactId);
 }
 
 /**
@@ -624,7 +652,151 @@ async function loadNotes(contactId) {
         }
     }
 }
+/**
+ * Load deals for contact
+ */
+async function loadDeals(contactId) {
+    console.log('Loading deals for contact:', contactId);
+    try {
+        const response = await fetch(`crm.php/contact/${contactId}/deals`);
+        const result = await response.json();
+        
+        console.log('Deals API response:', result);
+        
+        const dealSummary = document.getElementById('dealSummary');
+        const dealsList = document.getElementById('dealsList');
+        
+        if (!dealsList) {
+            console.error('dealsList element not found!');
+            return;
+        }
+        
+        const deals = result.deals || [];
+        
+        // Calculate summary
+        const totalDeals = deals.length;
+        const wonDeals = deals.filter(d => d.status === 'won');
+        const totalRevenue = wonDeals.reduce((sum, d) => sum + parseFloat(d.amount), 0);
+        
+        // Display summary
+        dealSummary.innerHTML = `
+            <div class="deal-stats">
+                <div class="deal-stat">
+                    <span class="deal-stat-value">${totalDeals}</span>
+                    <span class="deal-stat-label">Total Deals</span>
+                </div>
+                <div class="deal-stat">
+                    <span class="deal-stat-value">${wonDeals.length}</span>
+                    <span class="deal-stat-label">Won</span>
+                </div>
+                <div class="deal-stat success">
+                    <span class="deal-stat-value">PKR ${totalRevenue.toFixed(0)}</span>
+                    <span class="deal-stat-label">Revenue</span>
+                </div>
+            </div>
+        `;
+        
+        if (deals.length > 0) {
+            dealsList.innerHTML = deals.map(deal => {
+                const statusColors = {
+                    won: '#10b981',
+                    pending: '#f59e0b',
+                    lost: '#ef4444',
+                    cancelled: '#6b7280'
+                };
+                
+                return `
+                <div class="deal-item deal-status-${deal.status}">
+                    <div class="deal-header">
+                        <span class="deal-name">${escapeHtml(deal.deal_name || 'Unnamed Deal')}</span>
+                        <span class="deal-amount">${deal.currency} ${parseFloat(deal.amount).toFixed(0)}</span>
+                    </div>
+                    <div class="deal-meta">
+                        <span class="deal-status" style="background: ${statusColors[deal.status]};">${deal.status.toUpperCase()}</span>
+                        <span class="deal-date">${formatPakistanTime(deal.deal_date || deal.created_at)}</span>
+                    </div>
+                    ${deal.notes ? `<div class="deal-notes">${escapeHtml(deal.notes)}</div>` : ''}
+                </div>
+            `;
+            }).join('');
+        } else {
+            dealsList.innerHTML = '<div class="empty-state"><p>No deals yet</p></div>';
+        }
+    } catch (error) {
+        console.error('Error loading deals:', error);
+        const dealsList = document.getElementById('dealsList');
+        if (dealsList) {
+            dealsList.innerHTML = '<div class="empty-state"><p>Failed to load deals</p></div>';
+        }
+    }
+}
 
+/**
+ * Show add deal form
+ */
+function showAddDealForm(contactId) {
+    const form = document.getElementById('addDealForm');
+    form.style.display = 'block';
+    document.getElementById('dealDate').valueAsDate = new Date();
+}
+
+/**
+ * Hide add deal form
+ */
+function hideAddDealForm() {
+    const form = document.getElementById('addDealForm');
+    form.style.display = 'none';
+    // Clear form
+    document.getElementById('dealName').value = '';
+    document.getElementById('dealAmount').value = '';
+    document.getElementById('dealStatus').value = 'pending';
+    document.getElementById('dealDate').valueAsDate = new Date();
+    document.getElementById('dealNotes').value = '';
+}
+
+/**
+ * Save new deal
+ */
+async function saveDeal(contactId) {
+    const dealName = document.getElementById('dealName').value.trim();
+    const amount = document.getElementById('dealAmount').value;
+    const status = document.getElementById('dealStatus').value;
+    const dealDate = document.getElementById('dealDate').value;
+    const notes = document.getElementById('dealNotes').value.trim();
+    
+    if (!dealName || !amount) {
+        showToast('Please enter deal name and amount', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`crm.php/contact/${contactId}/deal`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                deal_name: dealName,
+                amount: amount,
+                status: status,
+                deal_date: dealDate,
+                notes: notes
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            showToast('Deal added successfully!', 'success');
+            hideAddDealForm();
+            await loadDeals(contactId);
+            loadContacts(); // Refresh contact list
+        } else {
+            showToast('Failed to add deal: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error('Error adding deal:', error);
+        showToast('Failed to add deal', 'error');
+    }
+}
 // Close panel when clicking outside
 window.onclick = function(event) {
     const panel = document.getElementById('crmSidePanel');

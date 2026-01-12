@@ -1667,3 +1667,146 @@ body {
 .btn-action:hover {
     background: var(--primary-dark);
 }
+
+/* Deal History Styles */
+.deal-summary {
+    margin-bottom: 15px;
+}
+
+.deal-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.deal-stat {
+    background: var(--bg-color);
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    border-left: 3px solid var(--primary-color);
+}
+
+.deal-stat.success {
+    border-left-color: #10b981;
+}
+
+.deal-stat-value {
+    display: block;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 4px;
+}
+
+.deal-stat.success .deal-stat-value {
+    color: #10b981;
+}
+
+.deal-stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.deals-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.deal-item {
+    background: var(--bg-color);
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+    border-left: 3px solid #f59e0b;
+    transition: all 0.3s;
+}
+
+.deal-item:hover {
+    transform: translateX(3px);
+    box-shadow: var(--shadow-sm);
+}
+
+.deal-item.deal-status-won {
+    border-left-color: #10b981;
+}
+
+.deal-item.deal-status-lost {
+    border-left-color: #ef4444;
+}
+
+.deal-item.deal-status-cancelled {
+    border-left-color: #6b7280;
+}
+
+.deal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.deal-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.deal-amount {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 14px;
+}
+
+.deal-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.deal-status {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+}
+
+.deal-date {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.deal-notes {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+    border-color: var(--primary-color);
+}

@@ -8,6 +8,7 @@ require_once __DIR__ . '/bootstrap.php';
 use App\Models\Contact;
 use App\Models\Note;
 use App\Models\Activity;
+use App\Models\Deal;
 
 header('Content-Type: application/json');
 
@@ -117,6 +118,59 @@ try {
             ->get();
         
         echo json_encode(['activities' => $activities]);
+        exit;
+    }
+    
+    // Get deals for contact
+    if ($method === 'GET' && preg_match('/^\/contact\/(\d+)\/deals$/', $path, $matches)) {
+        $contactId = $matches[1];
+        
+        $deals = Deal::where('contact_id', $contactId)
+            ->with('creator')
+            ->orderBy('deal_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        echo json_encode(['success' => true, 'deals' => $deals]);
+        exit;
+    }
+    
+    // Add deal to contact
+    if ($method === 'POST' && preg_match('/^\/contact\/(\d+)\/deal$/', $path, $matches)) {
+        $contactId = $matches[1];
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (empty($data['deal_name']) || empty($data['amount'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Deal name and amount are required']);
+            exit;
+        }
+        
+        $deal = Deal::create([
+            'contact_id' => $contactId,
+            'deal_name' => $data['deal_name'],
+            'amount' => $data['amount'],
+            'currency' => $data['currency'] ?? 'PKR',
+            'status' => $data['status'] ?? 'pending',
+            'deal_date' => $data['deal_date'] ?? now(),
+            'notes' => $data['notes'] ?? null,
+            'created_by' => $_SESSION['user_id']
+        ]);
+        
+        // Add activity
+        $contact = Contact::find($contactId);
+        $contact->addActivity('deal_added', "Deal added: {$data['deal_name']} - PKR " . number_format($data['amount'], 0));
+        $contact->touch('last_activity_at');
+        
+        // Update lead score if deal is won
+        if ($data['status'] === 'won') {
+            $contact->updateLeadScore();
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'deal' => $deal
+        ]);
         exit;
     }
     
