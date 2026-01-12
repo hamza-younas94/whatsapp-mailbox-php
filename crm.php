@@ -102,7 +102,7 @@ try {
             ->orderBy('created_at', 'desc')
             ->get();
         
-        echo json_encode(['notes' => $notes]);
+        echo json_encode(['success' => true, 'notes' => $notes]);
         exit;
     }
     

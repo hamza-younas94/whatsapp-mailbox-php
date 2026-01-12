@@ -1,0 +1,11 @@
+#!/bin/bash
+echo "=== Checking Server Files ==="
+echo ""
+echo "1. Check base.html.twig on server:"
+ssh pakmfguk@whatsapp.nexofydigital.com "cat public_html/templates/base.html.twig | head -10"
+echo ""
+echo "2. Check git log on server:"
+ssh pakmfguk@whatsapp.nexofydigital.com "cd public_html && git log -1 --oneline"
+echo ""
+echo "3. Force pull on server:"
+ssh pakmfguk@whatsapp.nexofydigital.com "cd public_html && git fetch origin && git reset --hard origin/main"

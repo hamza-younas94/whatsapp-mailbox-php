@@ -516,6 +516,7 @@ async function updateDealInfo(contactId) {
         if (response.ok && result.success) {
             alert('Deal info updated!');
             loadContacts();
+            openCrmModal(contactId); // Refresh modal to show updated values
         } else {
             alert('Failed to update: ' + (result.error || 'Unknown error'));
         }
@@ -569,7 +570,7 @@ async function loadNotes(contactId) {
         
         const notesList = document.getElementById('notesList');
         
-        if (result.success && result.notes.length > 0) {
+        if (result.notes && result.notes.length > 0) {
             notesList.innerHTML = result.notes.map(note => `
                 <div class="note-item note-type-${note.type}">
                     <div class="note-header">

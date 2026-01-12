@@ -1,0 +1,12 @@
+🚨 QUICK FIX - 2 COMMANDS ONLY 🚨
+
+1. SSH and Pull:
+ssh pakmfguk@whatsapp.nexofydigital.com "cd public_html && git pull origin main"
+
+2. Hard Refresh Browser:
+Press: Ctrl + Shift + R (Windows) or Cmd + Shift + R (Mac)
+
+✅ DONE! CRM Dashboard will be styled like your Inbox page.
+✅ Inbox page will stay exactly the same (already working perfectly).
+
+The fix is deployed. Just pull and refresh!

@@ -3,11 +3,11 @@
 
 echo "🗑️  Clearing Twig Template Cache...\n\n";
 
-$cacheDir = __DIR__ . '/cache';
+$twigCacheDir = __DIR__ . '/cache/twig';
 
-if (is_dir($cacheDir)) {
+if (is_dir($twigCacheDir)) {
     $files = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($cacheDir, RecursiveDirectoryIterator::SKIP_DOTS),
+        new RecursiveDirectoryIterator($twigCacheDir, RecursiveDirectoryIterator::SKIP_DOTS),
         RecursiveIteratorIterator::CHILD_FIRST
     );
 
@@ -18,10 +18,10 @@ if (is_dir($cacheDir)) {
         $count++;
     }
     
-    echo "✅ Deleted $count cached template files\n";
+    echo "✅ Deleted $count cached template files from cache/twig/\n";
     echo "✅ Cache directory cleared!\n\n";
 } else {
-    echo "ℹ️  No cache directory found (that's okay)\n\n";
+    echo "ℹ️  No cache/twig/ directory found (that's okay)\n\n";
 }
 
 // Also check for any opcache
