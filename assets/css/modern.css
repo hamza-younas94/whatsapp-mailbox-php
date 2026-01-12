@@ -428,6 +428,33 @@ body {
     padding-top: 0;
 }
 
+.deals-page .card-body {
+    padding: 1rem;
+}
+
+.deals-page .form-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.deals-page .form-select,
+.deals-page .form-control {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.deals-page .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+}
+
 .deals-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -571,6 +598,50 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
+    padding: 1.25rem;
+}
+
+.segments-page .stat-card .stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.segments-page .stat-card h5 {
+    font-size: 1rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.segments-page .stat-card p {
+    font-size: 0.8rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.segments-page .stat-card .stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #128C7E;
+}
+
+.segments-page .stat-card .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.segments-page .action-buttons {
+    margin-top: auto;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.segments-page .action-buttons .btn {
+    flex: 1;
+    font-size: 0.8rem;
+    padding: 0.4rem;
 }
 
 @media (max-width: 768px) {
