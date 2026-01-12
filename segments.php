@@ -174,10 +174,17 @@ let segmentModal;
 const segmentsData = <?php echo json_encode($segments); ?>;
 
 document.addEventListener('DOMContentLoaded', function() {
-    segmentModal = new bootstrap.Modal(document.getElementById('segmentModal'));
+    const modalElement = document.getElementById('segmentModal');
+    if (modalElement) {
+        segmentModal = new bootstrap.Modal(modalElement);
+    }
 });
 
 function openSegmentModal() {
+    if (!segmentModal) {
+        console.error('Modal not initialized');
+        return;
+    }
     document.getElementById('segmentForm').reset();
     document.getElementById('segment_id').value = '';
     document.getElementById('segmentModalTitle').textContent = 'New Segment';
@@ -185,6 +192,10 @@ function openSegmentModal() {
 }
 
 function editSegment(id) {
+    if (!segmentModal) {
+        console.error('Modal not initialized');
+        return;
+    }
     const segment = segmentsData.find(s => s.id === id);
     if (segment) {
         document.getElementById('segment_id').value = segment.id;

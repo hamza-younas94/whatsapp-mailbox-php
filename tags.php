@@ -192,10 +192,17 @@ require_once __DIR__ . '/includes/header.php';
 let tagModal;
 
 document.addEventListener('DOMContentLoaded', function() {
-    tagModal = new bootstrap.Modal(document.getElementById('tagModal'));
+    const modalElement = document.getElementById('tagModal');
+    if (modalElement) {
+        tagModal = new bootstrap.Modal(modalElement);
+    }
 });
 
 function openTagModal() {
+    if (!tagModal) {
+        console.error('Modal not initialized');
+        return;
+    }
     document.getElementById('tagForm').reset();
     document.getElementById('tag_id').value = '';
     document.getElementById('tagModalTitle').textContent = 'New Tag';

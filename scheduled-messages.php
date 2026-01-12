@@ -178,15 +178,25 @@ require_once __DIR__ . '/includes/header.php';
 let scheduleModal;
 
 document.addEventListener('DOMContentLoaded', function() {
-    scheduleModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+    const modalElement = document.getElementById('scheduleModal');
+    if (modalElement) {
+        scheduleModal = new bootstrap.Modal(modalElement);
+    }
     
     // Set minimum datetime to now
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('scheduled_at').min = now.toISOString().slice(0, 16);
+    const datetimeInput = document.getElementById('scheduled_at');
+    if (datetimeInput) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        datetimeInput.min = now.toISOString().slice(0, 16);
+    }
 });
 
 function openScheduleModal() {
+    if (!scheduleModal) {
+        console.error('Modal not initialized');
+        return;
+    }
     document.getElementById('scheduleForm').reset();
     scheduleModal.show();
 }

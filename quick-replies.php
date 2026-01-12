@@ -197,10 +197,17 @@ let replyModal;
 const repliesData = <?php echo json_encode($replies); ?>;
 
 document.addEventListener('DOMContentLoaded', function() {
-    replyModal = new bootstrap.Modal(document.getElementById('replyModal'));
+    const modalElement = document.getElementById('replyModal');
+    if (modalElement) {
+        replyModal = new bootstrap.Modal(modalElement);
+    }
 });
 
 function openReplyModal() {
+    if (!replyModal) {
+        console.error('Modal not initialized');
+        return;
+    }
     document.getElementById('replyForm').reset();
     document.getElementById('reply_id').value = '';
     document.getElementById('reply_is_active').checked = true;
@@ -209,6 +216,10 @@ function openReplyModal() {
 }
 
 function editReply(id) {
+    if (!replyModal) {
+        console.error('Modal not initialized');
+        return;
+    }
     const reply = repliesData.find(r => r.id === id);
     if (reply) {
         document.getElementById('reply_id').value = reply.id;

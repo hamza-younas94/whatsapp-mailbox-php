@@ -312,10 +312,17 @@ require_once __DIR__ . '/includes/header.php';
 let broadcastModal;
 
 document.addEventListener('DOMContentLoaded', function() {
-    broadcastModal = new bootstrap.Modal(document.getElementById('broadcastModal'));
+    const modalElement = document.getElementById('broadcastModal');
+    if (modalElement) {
+        broadcastModal = new bootstrap.Modal(modalElement);
+    }
 });
 
 function openBroadcastModal() {
+    if (!broadcastModal) {
+        console.error('Modal not initialized');
+        return;
+    }
     document.getElementById('broadcastForm').reset();
     broadcastModal.show();
 }
