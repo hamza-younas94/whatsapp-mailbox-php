@@ -448,24 +448,40 @@ class WhatsAppService
                 }
             }
             
-            // Try with / prefix first
-            if (strpos($searchText, '/') === 0) {
-                $shortcut = $searchText;
-                logger("[QUICK_REPLY] Found / prefix shortcut: {$shortcut}");
-            } else {
-                // Try without / prefix
-                $shortcut = '/' . $searchText;
-                logger("[QUICK_REPLY] Trying shortcut: {$shortcut}");
+            // Fuzzy matching: Find quick replies that match the message
+            logger("[QUICK_REPLY] Starting fuzzy search for message: {$searchText}");
+            
+            // Get all active quick replies
+            $allQuickReplies = \App\Models\QuickReply::where('is_active', true)->get();
+            $quickReply = null;
+            
+            // Try exact match first (with or without /)
+            foreach ($allQuickReplies as $qr) {
+                $qrShortcut = strtolower(trim($qr->shortcut));
+                $qrShortcutNoSlash = ltrim($qrShortcut, '/');
+                
+                if ($searchText === $qrShortcut || $searchText === $qrShortcutNoSlash) {
+                    $quickReply = $qr;
+                    logger("[QUICK_REPLY] ✅ Exact match found: {$qr->shortcut}");
+                    break;
+                }
             }
             
-            logger("[QUICK_REPLY] Searching database for: {$shortcut}");
+            // If no exact match, try fuzzy matching (keyword appears anywhere in message)
+            if (!$quickReply) {
+                foreach ($allQuickReplies as $qr) {
+                    $qrShortcut = strtolower(ltrim(trim($qr->shortcut), '/'));
+                    
+                    // Check if the shortcut keyword appears in the message
+                    if (strpos($searchText, $qrShortcut) !== false) {
+                        $quickReply = $qr;
+                        logger("[QUICK_REPLY] ✅ Fuzzy match found: {$qr->shortcut} in message");
+                        break;
+                    }
+                }
+            }
             
-            // Find matching quick reply (use \App\Models\ to ensure proper namespace)
-            $quickReply = \App\Models\QuickReply::where('shortcut', $shortcut)
-                ->where('is_active', true)
-                ->first();
-            
-            logger("[QUICK_REPLY] Query result: " . ($quickReply ? "FOUND" : "NOT FOUND"));
+            logger("[QUICK_REPLY] Final result: " . ($quickReply ? "FOUND - {$quickReply->shortcut}" : "NOT FOUND"));
             
             if ($quickReply) {
                 logger("[QUICK_REPLY] Match found: " . $quickReply->title);

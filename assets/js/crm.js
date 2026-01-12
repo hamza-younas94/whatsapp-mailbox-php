@@ -418,16 +418,52 @@ async function saveContactTags(contactId) {
         });
         const result = await response.json();
         if (response.ok && result.success) {
-            alert('Tags updated successfully!');
+            showToast('Tags updated successfully!', 'success');
             loadCrmData();
             closeCrmModal();
         } else {
-            alert('Failed to update tags: ' + (result.error || 'Unknown error'));
+            showToast('Failed to update tags: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (err) {
         console.error('Error saving tags:', err);
-        alert('Failed to update tags');
+        showToast('Failed to update tags', 'error');
     }
+}
+
+/**
+ * Show toast notification
+ */
+function showToast(message, type = 'info') {
+    // Create toast element if it doesn't exist
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.style.cssText = 'position:fixed;top:20px;right:20px;z-index:10000;';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type} show`;
+    toast.style.cssText = 'background:white;padding:16px 24px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);margin-bottom:10px;border-left:4px solid;display:flex;align-items:center;gap:10px;min-width:300px;animation:slideIn 0.3s ease;';
+    
+    const colors = {
+        success: '#10b981',
+        error: '#ef4444',
+        info: '#3b82f6'
+    };
+    toast.style.borderLeftColor = colors[type] || colors.info;
+    
+    const icon = type === 'success' ? '✓' : type === 'error' ? '✗' : 'ℹ';
+    toast.innerHTML = `<span style="font-size:18px;">${icon}</span><span style="color:#1f2937;font-weight:500;">${message}</span>`;
+    
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(400px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 // Utility functions
