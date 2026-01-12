@@ -40,6 +40,19 @@ function formatPakistanTime(dateString) {
 document.addEventListener('DOMContentLoaded', function() {
     loadContacts();
     
+    // Check for contact parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const contactId = urlParams.get('contact');
+    if (contactId) {
+        // Wait a bit for contacts to load, then select the contact
+        setTimeout(() => {
+            const contact = contacts.find(c => c.id == contactId);
+            if (contact) {
+                selectContact(contact.id, contact.name, contact.phone_number);
+            }
+        }, 500);
+    }
+    
     // Search contacts
     document.getElementById('searchContacts').addEventListener('input', function(e) {
         const query = e.target.value.toLowerCase();
