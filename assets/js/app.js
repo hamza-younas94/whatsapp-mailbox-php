@@ -231,7 +231,7 @@ async function sendMessage() {
     // Get contact phone number
     const contact = contacts.find(c => c.id === currentContactId);
     if (!contact) {
-        alert('Contact not found');
+        showToast('Contact not found', 'error');
         return;
     }
     
@@ -267,21 +267,15 @@ async function sendMessage() {
             
             // Check if it's a 24-hour window issue
             if (response.status === 403 && errorMsg.includes('not messaged you recently')) {
-                alert('⚠️ Cannot Send Message\n\n' + 
-                      'This contact has not messaged you recently.\n\n' +
-                      'WhatsApp Business API Rules:\n' +
-                      '• Contacts must message you first, OR\n' +
-                      '• You can only reply within 24 hours of their last message, OR\n' +
-                      '• You need to use a template message\n\n' +
-                      'Wait for the contact to message you first.');
+                showToast('Cannot send: Contact must message you first (24-hour window)', 'error');
             } else {
-                alert('Failed to send message: ' + errorMsg);
+                showToast('Failed to send: ' + errorMsg, 'error');
             }
         }
         
     } catch (error) {
         console.error('Error sending message:', error);
-        alert('Failed to send message');
+        showToast('Failed to send message', 'error');
     } finally {
         input.disabled = false;
         input.focus();
@@ -477,15 +471,15 @@ async function updateStage(contactId) {
         const result = await response.json();
         
         if (response.ok && result.success) {
-            alert('Stage updated successfully!');
+            showToast('Stage updated successfully!', 'success');
             loadContacts();
             selectContact(contactId, '', '');
         } else {
-            alert('Failed to update stage: ' + (result.error || 'Unknown error'));
+            showToast('Failed to update stage: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error updating stage:', error);
-        alert('Failed to update stage');
+        showToast('Failed to update stage', 'error');
     }
 }
 
@@ -507,14 +501,14 @@ async function updateCompanyInfo(contactId) {
         const result = await response.json();
         
         if (response.ok && result.success) {
-            alert('Company info updated!');
+            showToast('Company info updated!', 'success');
             loadContacts();
         } else {
-            alert('Failed to update: ' + (result.error || 'Unknown error'));
+            showToast('Failed to update: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error updating company info:', error);
-        alert('Failed to update');
+        showToast('Failed to update', 'error');
     }
 }
 
@@ -535,15 +529,15 @@ async function updateDealInfo(contactId) {
         const result = await response.json();
         
         if (response.ok && result.success) {
-            alert('Deal info updated!');
+            showToast('Deal info updated!', 'success');
             loadContacts();
             openCrmModal(contactId); // Refresh modal to show updated values
         } else {
-            alert('Failed to update: ' + (result.error || 'Unknown error'));
+            showToast('Failed to update: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error updating deal info:', error);
-        alert('Failed to update');
+        showToast('Failed to update', 'error');
     }
 }
 
@@ -555,7 +549,7 @@ async function addNote(contactId) {
     const type = document.getElementById('crmNoteType').value;
     
     if (!content) {
-        alert('Please enter a note');
+        showToast('Please enter a note', 'error');
         return;
     }
     
@@ -570,14 +564,14 @@ async function addNote(contactId) {
         
         if (response.ok && result.success) {
             document.getElementById('crmNote').value = '';
-            alert('Note added!');
+            showToast('Note added successfully!', 'success');
             await loadNotes(contactId);
         } else {
-            alert('Failed to add note: ' + (result.error || 'Unknown error'));
+            showToast('Failed to add note: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error adding note:', error);
-        alert('Failed to add note');
+        showToast('Failed to add note', 'error');
     }
 }
 
@@ -607,7 +601,7 @@ async function loadNotes(contactId) {
                 <div class="note-item note-type-${note.type}">
                     <div class="note-header">
                         <span class="note-type">${note.type.toUpperCase()}</span>
-                        <span class="note-date">${new Date(note.created_at).toLocaleString()}</span>
+                        <span class="note-date">${formatPakistanTime(note.created_at)}</span>
                     </div>
                     <div class="note-content">${escapeHtml(note.content)}</div>
                     <div class="note-author">by ${note.created_by_name || note.creator?.name || 'Admin'}</div>
