@@ -711,6 +711,34 @@ body {
     margin-bottom: 3px;
 }
 
+/* Contact Tags */
+.contact-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 4px 0;
+}
+
+.tag-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+    opacity: 0.95;
+}
+
+.tag-badge:hover {
+    opacity: 1;
+}
+
+.chat-tags {
+    display: inline-flex;
+    gap: 6px;
+}
+
 /* Chat Header CRM Info */
 .chat-crm-info {
     display: flex;
