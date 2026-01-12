@@ -9,6 +9,7 @@ require_once __DIR__ . '/auth.php';
 use App\Models\Contact;
 use App\Models\Message;
 use App\Services\WhatsAppService;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 // Enable CORS
 header('Access-Control-Allow-Origin: *');
@@ -48,6 +49,12 @@ try {
         case 'send':
             if ($method === 'POST') {
                 sendMessage();
+            }
+            break;
+            
+        case 'message-limit':
+            if ($method === 'GET') {
+                getMessageLimit();
             }
             break;
             
@@ -146,6 +153,19 @@ function getMessages() {
  * Send a WhatsApp message
  */
 function sendMessage() {
+    // Check message limit
+    $messagesSent = (int)Capsule::table('config')
+        ->where('key', 'messages_sent_count')
+        ->value('value') ?? 0;
+    
+    $messageLimit = (int)Capsule::table('config')
+        ->where('key', 'message_limit')
+        ->value('value') ?? 500;
+    
+    if ($messagesSent >= $messageLimit) {
+        response_error('Message limit reached. You have sent ' . $messagesSent . ' out of ' . $messageLimit . ' free messages. Please upgrade your plan to continue.', 429);
+    }
+    
     $input = json_decode(file_get_contents('php://input'), true);
     
     $to = sanitize($input['to'] ?? '');
@@ -206,10 +226,25 @@ function sendMessage() {
     // Update contact last message time
     Contact::find($contactId)->update(['last_message_time' => now()]);
     
+    // Increment message counter
+    Capsule::table('config')
+        ->where('key', 'messages_sent_count')
+        ->increment('value');
+    
+    // Get updated count
+    $newCount = (int)Capsule::table('config')
+        ->where('key', 'messages_sent_count')
+        ->value('value') ?? 0;
+    
+    $limit = (int)Capsule::table('config')
+        ->where('key', 'message_limit')
+        ->value('value') ?? 500;
+    
     response_json([
         'success' => true,
         'message_id' => $result['message_id'],
-        'message' => $savedMessage
+        'message' => $savedMessage,
+        'messages_remaining' => max(0, $limit - $newCount)
     ]);
 }
 
@@ -262,4 +297,24 @@ function searchMessages() {
         });
     
     response_json($results);
+}
+
+/**
+ * Get message limit and current count
+ */
+function getMessageLimit() {
+    $messagesSent = (int)Capsule::table('config')
+        ->where('key', 'messages_sent_count')
+        ->value('value') ?? 0;
+    
+    $messageLimit = (int)Capsule::table('config')
+        ->where('key', 'message_limit')
+        ->value('value') ?? 500;
+    
+    response_json([
+        'sent' => $messagesSent,
+        'limit' => $messageLimit,
+        'remaining' => max(0, $messageLimit - $messagesSent),
+        'percentage' => $messageLimit > 0 ? round(($messagesSent / $messageLimit) * 100, 1) : 0
+    ]);
 }

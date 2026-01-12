@@ -38,7 +38,7 @@ if ($search) {
     });
 }
 
-$notes = $query->paginate(50);
+$notes = $query->get();
 $contacts = Contact::orderBy('name')->get();
 
 // Stats

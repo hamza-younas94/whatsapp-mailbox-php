@@ -7,6 +7,35 @@ let contacts = [];
 let messages = [];
 let messagePollingInterval = null;
 
+/**
+ * Show toast notification
+ */
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = `toast toast-${type} show`;
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+/**
+ * Format date/time in Pakistan timezone
+ */
+function formatPakistanTime(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-PK', { 
+        timeZone: 'Asia/Karachi',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     loadContacts();
@@ -28,7 +57,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Poll for new messages every 5 seconds
     setInterval(loadContacts, 5000);
+    
+    // Load message limit on page load
+    updateMessageLimitDisplay();
 });
+
+/**
+ * Update message limit display
+ */
+async function updateMessageLimitDisplay() {
+    try {
+        const response = await fetch('api.php/message-limit');
+        const data = await response.json();
+        
+        const limitBadge = document.getElementById('messageLimitBadge');
+        if (limitBadge) {
+            limitBadge.innerHTML = `
+                <span class="limit-text">${data.remaining} / ${data.limit} messages</span>
+                ${data.remaining <= 10 ? '<span class="limit-warning">⚠️</span>' : ''}
+            `;
+            
+            if (data.remaining === 0) {
+                limitBadge.classList.add('limit-exceeded');
+                document.getElementById('messageInput').disabled = true;
+                document.getElementById('messageInput').placeholder = '❌ Message limit reached - Upgrade to continue';
+            } else if (data.remaining <= 10) {
+                limitBadge.classList.add('limit-warning');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading message limit:', error);
+    }
+}
 
 /**
  * Load all contacts
@@ -262,8 +322,24 @@ async function sendMessage() {
             
             // Reload contacts
             loadContacts();
+            
+            // Update message limit display
+            if (result.messages_remaining !== undefined) {
+                updateMessageLimitDisplay();
+                if (result.messages_remaining <= 10) {
+                    showToast(`Warning: Only ${result.messages_remaining} messages remaining!`, 'info');
+                }
+            }
         } else {
             const errorMsg = result.error || 'Unknown error';
+            
+            // Check if it's message limit
+            if (response.status === 429) {
+                showToast('Message limit reached! Please upgrade to continue.', 'error');
+                document.getElementById('messageInput').disabled = true;
+                updateMessageLimitDisplay();
+                return;
+            }
             
             // Check if it's a 24-hour window issue
             if (response.status === 403 && errorMsg.includes('not messaged you recently')) {
