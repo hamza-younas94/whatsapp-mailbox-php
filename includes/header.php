@@ -143,7 +143,7 @@
     </div>
     
     <!-- Toast Container -->
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 9999">
         <div id="toastContainer"></div>
     </div>
     

@@ -376,48 +376,51 @@ class WhatsAppService
             
             // Trim and normalize the message
             $messageBody = trim($messageBody);
+            $searchText = strtolower($messageBody);
             
-            // Check if message starts with / (shortcut indicator)
-            if (strpos($messageBody, '/') === 0) {
-                $shortcut = strtolower($messageBody);
-                logger("[QUICK_REPLY] Found potential shortcut: {$shortcut}");
+            // Try with / prefix first
+            if (strpos($searchText, '/') === 0) {
+                $shortcut = $searchText;
+                logger("[QUICK_REPLY] Found / prefix shortcut: {$shortcut}");
+            } else {
+                // Try without / prefix
+                $shortcut = '/' . $searchText;
+                logger("[QUICK_REPLY] Trying shortcut: {$shortcut}");
+            }
+            
+            // Find matching quick reply
+            $quickReply = QuickReply::where('shortcut', $shortcut)
+                ->where('is_active', true)
+                ->first();
+            
+            if ($quickReply) {
+                logger("[QUICK_REPLY] Match found: " . $quickReply->title);
                 
-                // Find matching quick reply
-                $quickReply = QuickReply::where('shortcut', $shortcut)
-                    ->where('is_active', true)
-                    ->first();
+                // Send the quick reply message
+                $response = $this->sendTextMessage($phoneNumber, $quickReply->message);
                 
-                if ($quickReply) {
-                    logger("[QUICK_REPLY] Match found: " . $quickReply->title);
+                if ($response['success']) {
+                    // Increment usage count
+                    $quickReply->increment('usage_count');
+                    logger("[QUICK_REPLY] ✅ Sent successfully, usage count: " . $quickReply->usage_count);
                     
-                    // Send the quick reply message
-                    $response = $this->sendTextMessage($phoneNumber, $quickReply->message);
-                    
-                    if ($response['success']) {
-                        // Increment usage count
-                        $quickReply->increment('usage_count');
-                        logger("[QUICK_REPLY] ✅ Sent successfully, usage count: " . $quickReply->usage_count);
-                        
-                        // Save the outgoing message to database
-                        Message::create([
-                            'contact_id' => $contact->id,
-                            'phone_number' => $phoneNumber,
-                            'message_id' => $response['message_id'],
-                            'message_type' => 'text',
-                            'direction' => 'outgoing',
-                            'message_body' => $quickReply->message,
-                            'timestamp' => now(),
-                            'status' => 'sent',
-                            'is_read' => true
-                        ]);
-                    } else {
-                        logger("[QUICK_REPLY] ❌ Failed to send: " . ($response['error'] ?? 'Unknown error'), 'error');
-                    }
+                    // Save the outgoing message to database
+                    Message::create([
+                        'contact_id' => $contact->id,
+                        'phone_number' => $phoneNumber,
+                        'message_id' => $response['message_id'],
+                        'message_type' => 'text',
+                        'direction' => 'outgoing',
+                        'message_body' => $quickReply->message,
+                        'timestamp' => now(),
+                        'status' => 'sent',
+                        'is_read' => true
+                    ]);
                 } else {
-                    logger("[QUICK_REPLY] No active quick reply found for: {$shortcut}");
+                    logger("[QUICK_REPLY] ❌ Failed to send: " . ($response['error'] ?? 'Unknown error'), 'error');
                 }
             } else {
-                logger("[QUICK_REPLY] Message doesn't start with / - skipping");
+                logger("[QUICK_REPLY] No active quick reply found for: {$shortcut}");
             }
         } catch (\Exception $e) {
             logger("[QUICK_REPLY ERROR] " . $e->getMessage(), 'error');
