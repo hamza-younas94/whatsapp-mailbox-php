@@ -47,7 +47,7 @@ $notesByType = Note::selectRaw('type, COUNT(*) as count')
     ->groupBy('type')
     ->pluck('count', 'type');
 
-$user = getAuthenticatedUser();
+$user = getCurrentUser();
 
 echo render('notes.html.twig', [
     'notes' => $notes,

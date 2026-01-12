@@ -365,18 +365,50 @@ function searchMessages() {
  * Get message limit and current count
  */
 function getMessageLimit() {
-    $messagesSent = (int)Capsule::table('config')
-        ->where('config_key', 'messages_sent_count')
-        ->value('config_value') ?? 0;
-    
-    $messageLimit = (int)Capsule::table('config')
-        ->where('config_key', 'message_limit')
-        ->value('config_value') ?? 500;
-    
-    response_json([
-        'sent' => $messagesSent,
-        'limit' => $messageLimit,
-        'remaining' => max(0, $messageLimit - $messagesSent),
-        'percentage' => $messageLimit > 0 ? round(($messagesSent / $messageLimit) * 100, 1) : 0
-    ]);
+    try {
+        // Check if config records exist, create if not
+        $messagesSent = Capsule::table('config')
+            ->where('config_key', 'messages_sent_count')
+            ->value('config_value');
+        
+        if ($messagesSent === null) {
+            // Create the record if it doesn't exist
+            Capsule::table('config')->insert([
+                'config_key' => 'messages_sent_count',
+                'config_value' => '0',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+            $messagesSent = 0;
+        } else {
+            $messagesSent = (int)$messagesSent;
+        }
+        
+        $messageLimit = Capsule::table('config')
+            ->where('config_key', 'message_limit')
+            ->value('config_value');
+        
+        if ($messageLimit === null) {
+            // Create the record if it doesn't exist
+            Capsule::table('config')->insert([
+                'config_key' => 'message_limit',
+                'config_value' => '500',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+            $messageLimit = 500;
+        } else {
+            $messageLimit = (int)$messageLimit;
+        }
+        
+        response_json([
+            'sent' => $messagesSent,
+            'limit' => $messageLimit,
+            'remaining' => max(0, $messageLimit - $messagesSent),
+            'percentage' => $messageLimit > 0 ? round(($messagesSent / $messageLimit) * 100, 1) : 0
+        ]);
+    } catch (\Exception $e) {
+        logger('Message limit error: ' . $e->getMessage(), 'error');
+        response_error('Failed to get message limit: ' . $e->getMessage(), 500);
+    }
 }

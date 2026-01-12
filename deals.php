@@ -52,7 +52,7 @@ $dealsByStatus = Deal::selectRaw('status, COUNT(*) as count')
 $wonDeals = Deal::where('status', 'won')->get();
 $totalRevenue = $wonDeals->sum('amount');
 
-$user = getAuthenticatedUser();
+$user = getCurrentUser();
 
 echo render('deals.html.twig', [
     'deals' => $deals,
