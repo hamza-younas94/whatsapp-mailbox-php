@@ -378,6 +378,55 @@ class WhatsAppService
             $messageBody = trim($messageBody);
             $searchText = strtolower($messageBody);
             
+            // Check for IP address command (dcmb ip <IP>)
+            if (preg_match('/^dcmb\s+ip\s+([0-9a-fA-F:\.]+)$/i', $messageBody, $matches)) {
+                $ipAddress = $matches[1];
+                logger("[IP_COMMAND] Detected IP command: {$ipAddress}");
+                
+                try {
+                    // Call the analytics API
+                    $apiUrl = "https://analytics.dealcart.io/add-ip/{$ipAddress}";
+                    logger("[IP_COMMAND] Calling API: {$apiUrl}");
+                    
+                    $ch = curl_init($apiUrl);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+                    $apiResponse = curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_close($ch);
+                    
+                    logger("[IP_COMMAND] API Response Code: {$httpCode}");
+                    logger("[IP_COMMAND] API Response: " . substr($apiResponse, 0, 200));
+                    
+                    // Send the API response back to user
+                    $responseMessage = "IP Command Result:\n\n{$apiResponse}";
+                    $response = $this->sendTextMessage($phoneNumber, $responseMessage);
+                    
+                    if ($response['success']) {
+                        // Save the outgoing message to database
+                        Message::create([
+                            'contact_id' => $contact->id,
+                            'phone_number' => $phoneNumber,
+                            'message_id' => $response['message_id'],
+                            'message_type' => 'text',
+                            'direction' => 'outgoing',
+                            'message_body' => $responseMessage,
+                            'timestamp' => now(),
+                            'status' => 'sent',
+                            'is_read' => true
+                        ]);
+                        logger("[IP_COMMAND] ✅ Response sent successfully");
+                    }
+                    
+                    return; // Exit early after handling IP command
+                } catch (\Exception $e) {
+                    logger("[IP_COMMAND] ❌ Error: " . $e->getMessage(), 'error');
+                    $this->sendTextMessage($phoneNumber, "Error processing IP command: " . $e->getMessage());
+                    return;
+                }
+            }
+            
             // Try with / prefix first
             if (strpos($searchText, '/') === 0) {
                 $shortcut = $searchText;
