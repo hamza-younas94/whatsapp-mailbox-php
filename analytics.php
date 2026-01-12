@@ -10,7 +10,7 @@ use App\Models\Message;
 use App\Models\Contact;
 use App\Models\Deal;
 use App\Models\Broadcast;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 $user = getCurrentUser();
 if (!$user) {
@@ -28,7 +28,7 @@ $incomingMessages = Message::where('direction', 'incoming')->whereBetween('times
 $outgoingMessages = Message::where('direction', 'outgoing')->whereBetween('timestamp', [$startDate, $endDate])->count();
 $avgResponseTime = Message::where('direction', 'outgoing')
     ->whereBetween('timestamp', [$startDate, $endDate])
-    ->avg(DB::raw('TIMESTAMPDIFF(MINUTE, created_at, timestamp)')) ?? 0;
+    ->avg(Capsule::raw('TIMESTAMPDIFF(MINUTE, created_at, timestamp)')) ?? 0;
 
 // Contact statistics
 $totalContacts = Contact::count();
