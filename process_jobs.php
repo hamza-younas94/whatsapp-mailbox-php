@@ -97,17 +97,18 @@ function processScheduledMessages($client, $phoneNumberId, $accessToken) {
             
             // Try to save to message history (don't fail if this errors)
             try {
-                \App\Models\Message::create([
-                    'contact_id' => $msg->contact->id,
-                    'message_id' => $whatsappMessageId,
-                    'phone_number' => $msg->contact->phone_number,
-                    'direction' => 'outgoing',
-                    'message_type' => 'text',
-                    'message_body' => $msg->message,
-                    'timestamp' => now(),
-                    'status' => 'sent',
-                    'is_read' => true
-                ]);
+                \App\Models\Message::updateOrCreate(
+                    ['message_id' => $whatsappMessageId],
+                    [
+                        'contact_id' => $msg->contact->id,
+                        'phone_number' => $msg->contact->phone_number,
+                        'direction' => 'outgoing',
+                        'message_type' => 'text',
+                        'message_body' => $msg->message,
+                        'timestamp' => now(),
+                        'is_read' => true
+                    ]
+                );
                 echo "  ✅ Sent to {$msg->contact->phone_number} (saved to history)\n";
             } catch (\Exception $e) {
                 echo "  ✅ Sent to {$msg->contact->phone_number} (history save failed: {$e->getMessage()})\n";
@@ -205,17 +206,18 @@ function processBroadcasts($client, $phoneNumberId, $accessToken) {
                 
                 // Try to save to message history (don't fail if this errors)
                 try {
-                    \App\Models\Message::create([
-                        'contact_id' => $recipient->contact->id,
-                        'message_id' => $whatsappMessageId,
-                        'phone_number' => $recipient->contact->phone_number,
-                        'direction' => 'outgoing',
-                        'message_type' => 'text',
-                        'message_body' => $broadcast->message,
-                        'timestamp' => now(),
-                        'status' => 'sent',
-                        'is_read' => true
-                    ]);
+                    \App\Models\Message::updateOrCreate(
+                        ['message_id' => $whatsappMessageId],
+                        [
+                            'contact_id' => $recipient->contact->id,
+                            'phone_number' => $recipient->contact->phone_number,
+                            'direction' => 'outgoing',
+                            'message_type' => 'text',
+                            'message_body' => $broadcast->message,
+                            'timestamp' => now(),
+                            'is_read' => true
+                        ]
+                    );
                     echo "  ✅ Sent to {$recipient->contact->phone_number} (saved to history)\n";
                 } catch (\Exception $e) {
                     echo "  ✅ Sent to {$recipient->contact->phone_number} (history save failed: {$e->getMessage()})\n";
