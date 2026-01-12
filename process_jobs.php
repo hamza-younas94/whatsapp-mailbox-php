@@ -97,12 +97,14 @@ function processScheduledMessages($client, $phoneNumberId, $accessToken) {
             // Save to message history
             \App\Models\Message::create([
                 'contact_id' => $msg->contact->id,
-                'whatsapp_message_id' => $whatsappMessageId,
+                'message_id' => $whatsappMessageId,
+                'phone_number' => $msg->contact->phone_number,
                 'direction' => 'outgoing',
-                'type' => 'text',
-                'message' => $msg->message,
+                'message_type' => 'text',
+                'message_body' => $msg->message,
                 'timestamp' => now(),
-                'status' => 'sent'
+                'status' => 'sent',
+                'is_read' => true
             ]);
             
             echo "  ✅ Sent to {$msg->contact->phone_number}\n";
@@ -197,12 +199,14 @@ function processBroadcasts($client, $phoneNumberId, $accessToken) {
                 // Save to message history
                 \App\Models\Message::create([
                     'contact_id' => $recipient->contact->id,
-                    'whatsapp_message_id' => $whatsappMessageId,
+                    'message_id' => $whatsappMessageId,
+                    'phone_number' => $recipient->contact->phone_number,
                     'direction' => 'outgoing',
-                    'type' => 'text',
-                    'message' => $broadcast->message,
+                    'message_type' => 'text',
+                    'message_body' => $broadcast->message,
                     'timestamp' => now(),
-                    'status' => 'sent'
+                    'status' => 'sent',
+                    'is_read' => true
                 ]);
                 
                 $broadcast->increment('sent_count');
