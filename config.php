@@ -15,11 +15,6 @@ define('WEBHOOK_VERIFY_TOKEN', 'YOUR_VERIFY_TOKEN_HERE'); // You create this tok
 define('WHATSAPP_API_URL', 'https://graph.facebook.com/v18.0');
 define('BASE_URL', 'https://yourdomain.com'); // Your Namecheap domain
 
-// Session Configuration
-ini_set('session.cookie_httponly', 1);
-ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', 1); // Set to 1 if using HTTPS (recommended)
-
 // Timezone
 date_default_timezone_set('UTC');
 

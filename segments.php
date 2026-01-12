@@ -3,8 +3,8 @@
  * Segments Management - Smart contact grouping
  */
 
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/config.php';
 
 use App\Models\Segment;
 
