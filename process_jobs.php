@@ -88,26 +88,30 @@ function processScheduledMessages($client, $phoneNumberId, $accessToken) {
             $result = json_decode($response->getBody(), true);
             $whatsappMessageId = $result['messages'][0]['id'] ?? null;
             
+            // Mark scheduled message as sent
             $msg->update([
                 'status' => 'sent',
                 'sent_at' => now(),
                 'whatsapp_message_id' => $whatsappMessageId
             ]);
             
-            // Save to message history
-            \App\Models\Message::create([
-                'contact_id' => $msg->contact->id,
-                'message_id' => $whatsappMessageId,
-                'phone_number' => $msg->contact->phone_number,
-                'direction' => 'outgoing',
-                'message_type' => 'text',
-                'message_body' => $msg->message,
-                'timestamp' => now(),
-                'status' => 'sent',
-                'is_read' => true
-            ]);
-            
-            echo "  ✅ Sent to {$msg->contact->phone_number}\n";
+            // Try to save to message history (don't fail if this errors)
+            try {
+                \App\Models\Message::create([
+                    'contact_id' => $msg->contact->id,
+                    'message_id' => $whatsappMessageId,
+                    'phone_number' => $msg->contact->phone_number,
+                    'direction' => 'outgoing',
+                    'message_type' => 'text',
+                    'message_body' => $msg->message,
+                    'timestamp' => now(),
+                    'status' => 'sent',
+                    'is_read' => true
+                ]);
+                echo "  ✅ Sent to {$msg->contact->phone_number} (saved to history)\n";
+            } catch (\Exception $e) {
+                echo "  ✅ Sent to {$msg->contact->phone_number} (history save failed: {$e->getMessage()})\n";
+            }
             
             // If recurring, schedule next occurrence
             if ($msg->is_recurring && $msg->recurrence_pattern) {
@@ -190,28 +194,32 @@ function processBroadcasts($client, $phoneNumberId, $accessToken) {
                 
                 $whatsappMessageId = $result['messages'][0]['id'] ?? null;
                 
+                // Mark broadcast recipient as sent
                 $recipient->update([
                     'status' => 'sent',
                     'sent_at' => now(),
                     'whatsapp_message_id' => $whatsappMessageId
                 ]);
                 
-                // Save to message history
-                \App\Models\Message::create([
-                    'contact_id' => $recipient->contact->id,
-                    'message_id' => $whatsappMessageId,
-                    'phone_number' => $recipient->contact->phone_number,
-                    'direction' => 'outgoing',
-                    'message_type' => 'text',
-                    'message_body' => $broadcast->message,
-                    'timestamp' => now(),
-                    'status' => 'sent',
-                    'is_read' => true
-                ]);
-                
                 $broadcast->increment('sent_count');
                 
-                echo "  ✅ Sent to {$recipient->contact->phone_number}\n";
+                // Try to save to message history (don't fail if this errors)
+                try {
+                    \App\Models\Message::create([
+                        'contact_id' => $recipient->contact->id,
+                        'message_id' => $whatsappMessageId,
+                        'phone_number' => $recipient->contact->phone_number,
+                        'direction' => 'outgoing',
+                        'message_type' => 'text',
+                        'message_body' => $broadcast->message,
+                        'timestamp' => now(),
+                        'status' => 'sent',
+                        'is_read' => true
+                    ]);
+                    echo "  ✅ Sent to {$recipient->contact->phone_number} (saved to history)\n";
+                } catch (\Exception $e) {
+                    echo "  ✅ Sent to {$recipient->contact->phone_number} (history save failed: {$e->getMessage()})\n";
+                }
                 
             } catch (Exception $e) {
                 $recipient->update([
