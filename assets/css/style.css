@@ -348,16 +348,16 @@ body {
 }
 
 .contact-avatar {
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: var(--primary-color);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
-    font-weight: bold;
+    font-size: 16px;
+    font-weight: 600;
     flex-shrink: 0;
 }
 
@@ -368,13 +368,14 @@ body {
 
 .contact-name {
     font-weight: 600;
-    font-size: 16px;
-    margin-bottom: 5px;
+    font-size: 14px;
+    margin-bottom: 3px;
+    color: #1a1a1a;
 }
 
 .contact-last-message {
-    font-size: 14px;
-    color: var(--text-secondary);
+    font-size: 13px;
+    color: #8b8b8b;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -388,18 +389,19 @@ body {
 }
 
 .contact-time {
-    font-size: 12px;
-    color: var(--text-secondary);
+    font-size: 11px;
+    color: #999;
+    font-weight: 400;
 }
 
 .unread-badge {
     background: var(--primary-color);
     color: white;
-    border-radius: 12px;
-    padding: 2px 8px;
-    font-size: 12px;
-    font-weight: bold;
-    min-width: 20px;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 18px;
     text-align: center;
 }
 
@@ -612,20 +614,19 @@ body {
 /* Stage Badges */
 .stage-badge {
     display: inline-block;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s ease;
-    border: 1.5px solid transparent;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    opacity: 0.85;
 }
 
 .stage-badge:hover {
-    transform: scale(1.05);
-    box-shadow: var(--shadow-md);
+    opacity: 1;
 }
 
 .stage-new { 
@@ -667,12 +668,12 @@ body {
 /* Lead Score */
 .lead-score {
     display: flex;
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: white;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
     align-items: center;
     justify-content: center;
