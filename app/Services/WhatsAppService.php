@@ -399,6 +399,16 @@ class WhatsAppService
                     logger("[IP_COMMAND] API Response Code: {$httpCode}");
                     logger("[IP_COMMAND] API Response: " . substr($apiResponse, 0, 200));
                     
+                    // Save IP command to database
+                    \App\Models\IpCommand::create([
+                        'ip_address' => $ipAddress,
+                        'contact_name' => $contact->name,
+                        'phone_number' => $phoneNumber,
+                        'api_response' => $apiResponse,
+                        'http_code' => $httpCode,
+                        'status' => ($httpCode >= 200 && $httpCode < 300) ? 'success' : 'failed'
+                    ]);
+                    
                     // Send the API response back to user
                     $responseMessage = "IP Command Result:\n\n{$apiResponse}";
                     $response = $this->sendTextMessage($phoneNumber, $responseMessage);
@@ -422,6 +432,17 @@ class WhatsAppService
                     return; // Exit early after handling IP command
                 } catch (\Exception $e) {
                     logger("[IP_COMMAND] ❌ Error: " . $e->getMessage(), 'error');
+                    
+                    // Save failed command
+                    \App\Models\IpCommand::create([
+                        'ip_address' => $ipAddress,
+                        'contact_name' => $contact->name,
+                        'phone_number' => $phoneNumber,
+                        'api_response' => $e->getMessage(),
+                        'http_code' => 0,
+                        'status' => 'failed'
+                    ]);
+                    
                     $this->sendTextMessage($phoneNumber, "Error processing IP command: " . $e->getMessage());
                     return;
                 }
