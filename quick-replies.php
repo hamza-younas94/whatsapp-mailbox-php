@@ -87,6 +87,32 @@ require_once __DIR__ . '/includes/header.php';
         </button>
     </div>
 
+    <!-- Fuzzy Matching Info Banner -->
+    <div class="alert alert-info d-flex align-items-start mb-4" style="border-left: 4px solid #3b82f6;">
+        <i class="fas fa-magic" style="font-size: 24px; margin-right: 15px; margin-top: 3px;"></i>
+        <div>
+            <h5 class="alert-heading mb-2">
+                <i class="fas fa-sparkles"></i> Smart Fuzzy Matching Enabled
+            </h5>
+            <p class="mb-2">
+                Quick replies now trigger automatically when the shortcut keyword appears <strong>anywhere</strong> in the customer's message!
+            </p>
+            <div class="d-flex gap-3 flex-wrap">
+                <div class="badge bg-light text-dark px-3 py-2" style="font-size: 13px;">
+                    <strong>Example:</strong> Shortcut <code style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px;">/hello</code> triggers on:
+                    <br><small class="text-muted">✓ "hello" • "hello there" • "say hello" • "HELLO" • "Hello!"</small>
+                </div>
+                <div class="badge bg-light text-dark px-3 py-2" style="font-size: 13px;">
+                    <strong>Example:</strong> Shortcut <code style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px;">/price</code> triggers on:
+                    <br><small class="text-muted">✓ "price" • "what's the price" • "show prices" • "pricing info"</small>
+                </div>
+            </div>
+            <small class="text-muted mt-2 d-block">
+                <i class="fas fa-info-circle"></i> Works with or without the <code>/</code> prefix and is case-insensitive
+            </small>
+        </div>
+    </div>
+
     <!-- Quick Replies Table -->
     <div class="card">
         <div class="card-body">
@@ -107,13 +133,23 @@ require_once __DIR__ . '/includes/header.php';
                         <?php foreach ($replies as $reply): ?>
                         <tr>
                             <td>
-                                <code class="bg-light px-2 py-1 rounded"><?php echo htmlspecialchars($reply->shortcut); ?></code>
+                                <div class="d-flex align-items-center gap-2">
+                                    <code class="bg-light px-2 py-1 rounded" style="font-weight: 600;"><?php echo htmlspecialchars($reply->shortcut); ?></code>
+                                    <span class="badge bg-info" style="font-size: 10px;" title="Fuzzy matching enabled">
+                                        <i class="fas fa-magic"></i> Smart
+                                    </span>
+                                </div>
+                                <small class="text-muted d-block mt-1" style="font-size: 11px;">
+                                    <i class="fas fa-search"></i> Matches anywhere in message
+                                </small>
                             </td>
                             <td><?php echo htmlspecialchars($reply->title); ?></td>
                             <td>
-                                <small class="text-muted">
-                                    <?php echo htmlspecialchars(substr($reply->message, 0, 50)) . (strlen($reply->message) > 50 ? '...' : ''); ?>
-                                </small>
+                                <div class="message-preview" style="background: #f8f9fa; padding: 8px 12px; border-radius: 8px; border-left: 3px solid #10b981;">
+                                    <small style="font-family: -apple-system, system-ui; line-height: 1.4;">
+                                        <?php echo nl2br(htmlspecialchars(substr($reply->message, 0, 80)) . (strlen($reply->message) > 80 ? '...' : '')); ?>
+                                    </small>
+                                </div>
                             </td>
                             <td>
                                 <span class="badge bg-info"><?php echo $reply->usage_count; ?> times</span>
@@ -160,13 +196,23 @@ require_once __DIR__ . '/includes/header.php';
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="reply_shortcut" class="form-label">Shortcut <small class="text-muted">(e.g., /hello)</small></label>
+                            <label for="reply_shortcut" class="form-label">
+                                <i class="fas fa-bolt"></i> Shortcut 
+                                <small class="text-muted">(keyword to trigger)</small>
+                            </label>
                             <input type="text" class="form-control" id="reply_shortcut" name="shortcut" required placeholder="/hello">
+                            <small class="text-muted">
+                                <i class="fas fa-magic"></i> <strong>Fuzzy Match:</strong> Triggers when this word appears anywhere in message
+                                <br><span class="text-success">✓ Example: "/price" matches "what's the price?", "pricing", "show me price"</span>
+                            </small>
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <label for="reply_title" class="form-label">Title</label>
+                            <label for="reply_title" class="form-label">
+                                <i class="fas fa-tag"></i> Title
+                            </label>
                             <input type="text" class="form-control" id="reply_title" name="title" required placeholder="Welcome Message">
+                            <small class="text-muted">Display name for this quick reply</small>
                         </div>
                     </div>
                     
