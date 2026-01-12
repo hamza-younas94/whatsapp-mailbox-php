@@ -48,48 +48,46 @@
     </div>
 </div>
 
-<div class="notes-container">
-    <div class="notes-header">
-        <div class="notes-title">
-            <h1>💰 Deal History</h1>
-            <p>Track all deals and revenue across customers</p>
-        </div>
-        <div class="user-info">
-            <span>{{ user.username }}</span>
-            <a href="{{ app_url }}/logout.php" class="logout-btn" title="Logout">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
-                </svg>
-            </a>
-        </div>
+<div class="container-fluid deals-page">
+    <div class="page-header">
+        <h1>💰 Deal History</h1>
+        <p>Track all deals and revenue across customers</p>
     </div>
 
     <!-- Stats Overview -->
-    <div class="notes-stats">
-        <div class="stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-content">
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-icon" style="background: #e3f2fd;">
+                    <i class="fas fa-handshake" style="color: #1976d2; font-size: 1.5rem;"></i>
+                </div>
                 <div class="stat-value">{{ totalDeals }}</div>
                 <div class="stat-label">Total Deals</div>
             </div>
         </div>
-        <div class="stat-card success">
-            <div class="stat-icon">✅</div>
-            <div class="stat-content">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-icon" style="background: #e8f5e9;">
+                    <i class="fas fa-check-circle" style="color: #388e3c; font-size: 1.5rem;"></i>
+                </div>
                 <div class="stat-value">{{ wonDealsCount }}</div>
                 <div class="stat-label">Won Deals</div>
             </div>
         </div>
-        <div class="stat-card pending">
-            <div class="stat-icon">⏳</div>
-            <div class="stat-content">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-icon" style="background: #fff3e0;">
+                    <i class="fas fa-clock" style="color: #f57c00; font-size: 1.5rem;"></i>
+                </div>
                 <div class="stat-value">{{ dealsByStatus['pending'] ?? 0 }}</div>
                 <div class="stat-label">Pending</div>
             </div>
         </div>
-        <div class="stat-card revenue">
-            <div class="stat-icon">💵</div>
-            <div class="stat-content">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-icon" style="background: #e8f5e9;">
+                    <i class="fas fa-dollar-sign" style="color: #25D366; font-size: 1.5rem;"></i>
+                </div>
                 <div class="stat-value">PKR {{ totalRevenue|number_format(0) }}</div>
                 <div class="stat-label">Total Revenue</div>
             </div>
@@ -97,39 +95,42 @@
     </div>
 
     <!-- Filters -->
-    <div class="notes-filters">
-        <form method="GET" action="deals.php" class="filter-form">
-            <div class="filter-group">
-                <label>Contact</label>
-                <select name="contact_id" class="filter-select">
-                    <option value="">All Contacts</option>
-                    {% for contact in contacts %}
-                        <option value="{{ contact.id }}" {{ currentContactId == contact.id ? 'selected' : '' }}>
-                            {{ contact.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="deals.php" class="row g-3">\n                <div class="col-md-4">\n                    <label class="form-label">Contact</label>
+                    <select name="contact_id" class="form-select">
+                        <option value="">All Contacts</option>
+                        {% for contact in contacts %}
+                            <option value="{{ contact.id }}" {{ currentContactId == contact.id ? 'selected' : '' }}>
+                                {{ contact.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="filter-group">
-                <label>Status</label>
-                <select name="status" class="filter-select">
-                    <option value="all" {{ currentStatus == 'all' ? 'selected' : '' }}>All Status</option>
-                    <option value="pending" {{ currentStatus == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="won" {{ currentStatus == 'won' ? 'selected' : '' }}>Won</option>
-                    <option value="lost" {{ currentStatus == 'lost' ? 'selected' : '' }}>Lost</option>
-                    <option value="cancelled" {{ currentStatus == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                </select>
-            </div>
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="all" {{ currentStatus == 'all' ? 'selected' : '' }}>All Status</option>
+                        <option value="pending" {{ currentStatus == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="won" {{ currentStatus == 'won' ? 'selected' : '' }}>Won</option>
+                        <option value="lost" {{ currentStatus == 'lost' ? 'selected' : '' }}>Lost</option>
+                        <option value="cancelled" {{ currentStatus == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                </div>
 
-            <div class="filter-group search-group">
-                <label>Search</label>
-                <input type="text" name="search" placeholder="Search deals, notes..." value="{{ searchQuery }}" class="filter-input">
-            </div>
-
-            <button type="submit" class="filter-btn">Apply Filters</button>
-            <a href="deals.php" class="filter-btn-reset">Reset</a>
-        </form>
+                <div class="col-md-4">
+                    <label class="form-label">Search</label>
+                    <div class="input-group">
+                        <input type="text" name="search" placeholder="Search deals..." value="{{ searchQuery }}" class="form-control">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <a href="deals.php" class="btn btn-outline-secondary">Reset</a>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Deals List -->

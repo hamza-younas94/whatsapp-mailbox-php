@@ -65,11 +65,11 @@ $pageTitle = 'Scheduled Messages';
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid scheduled-messages-page">
+    <div class="page-header d-flex justify-content-between align-items-center">
         <div>
-            <h1 class="h3 mb-0">⏰ Scheduled Messages</h1>
-            <p class="text-muted">Schedule messages to be sent later</p>
+            <h1>⏰ Scheduled Messages</h1>
+            <p>Schedule messages to be sent later</p>
         </div>
         <button class="btn btn-primary" onclick="openScheduleModal()">
             <i class="fas fa-plus"></i> Schedule Message
@@ -78,8 +78,7 @@ require_once __DIR__ . '/includes/header.php';
 
     <!-- Scheduled Messages Table -->
     <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
+        <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
