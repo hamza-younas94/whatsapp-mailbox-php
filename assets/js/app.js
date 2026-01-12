@@ -562,8 +562,8 @@ async function addNote(contactId) {
         
         if (response.ok && result.success) {
             document.getElementById('crmNote').value = '';
-            loadNotes(contactId);
             alert('Note added!');
+            await loadNotes(contactId);
         } else {
             alert('Failed to add note: ' + (result.error || 'Unknown error'));
         }
@@ -587,11 +587,11 @@ async function loadNotes(contactId) {
             notesList.innerHTML = result.notes.map(note => `
                 <div class="note-item note-type-${note.type}">
                     <div class="note-header">
-                        <span class="note-type">${note.type}</span>
-                        <span class="note-date">${formatTime(note.created_at)}</span>
+                        <span class="note-type">${note.type.toUpperCase()}</span>
+                        <span class="note-date">${new Date(note.created_at).toLocaleString()}</span>
                     </div>
                     <div class="note-content">${escapeHtml(note.content)}</div>
-                    <div class="note-author">by ${note.created_by_name || 'Admin'}</div>
+                    <div class="note-author">by ${note.created_by_name || note.creator?.name || 'Admin'}</div>
                 </div>
             `).join('');
         } else {

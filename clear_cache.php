@@ -3,7 +3,7 @@
 
 echo "🗑️  Clearing Twig Template Cache...\n\n";
 
-$twigCacheDir = __DIR__ . '/cache/twig';
+$twigCacheDir = __DIR__ . '/storage/cache/twig';
 
 if (is_dir($twigCacheDir)) {
     $files = new RecursiveIteratorIterator(
