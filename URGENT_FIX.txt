@@ -1,0 +1,31 @@
+🔥 URGENT FIX - DO THESE EXACT STEPS NOW
+
+Your Namecheap server needs these 4 commands:
+
+1. SSH to your server
+2. Run these commands ONE BY ONE:
+
+cd public_html
+git fetch origin
+git reset --hard origin/main
+php init_crm_data.php
+
+3. Then in your browser:
+   - Press Ctrl+Shift+Delete (Windows) or Cmd+Shift+Delete (Mac)
+   - Select "Cached images and files"  
+   - Click "Clear data"
+   - Go to: whatsapp.nexofydigital.com/index.php
+   
+4. If STILL not working, open browser Console (F12) and paste this:
+
+localStorage.clear();
+sessionStorage.clear();
+location.reload(true);
+
+THAT'S IT. After these steps you WILL see:
+- Green gradient navigation bar
+- Stage badges on contacts
+- Lead scores in circles  
+- Modern styling everywhere
+
+The problem: Your server has OLD files. The git reset --hard will FORCE update everything.
