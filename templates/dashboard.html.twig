@@ -71,10 +71,23 @@
             </form>
         </div>
     </div>
+    
+    <!-- CRM Side Panel -->
+    <div class="crm-side-panel" id="crmSidePanel" style="display: none;">
+        <div class="crm-panel-header">
+            <h3>CRM Details</h3>
+            <button onclick="closeCrmPanel()" class="close-panel-btn">&times;</button>
+        </div>
+        <div class="crm-panel-content" id="crmPanelContent">
+            <!-- Content loaded by JavaScript -->
+        </div>
+    </div>
+</div>
+    </div>
 </div>
 
-<!-- CRM Modal -->
-<div id="crmModal" class="modal">
+<!-- CRM Modal (kept for backward compatibility) -->
+<div id="crmModal" class="modal" style="display: none;">
     <div class="modal-content" id="crmModalContent">
         <!-- Content loaded by JavaScript -->
     </div>

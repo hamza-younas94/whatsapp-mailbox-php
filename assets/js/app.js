@@ -370,14 +370,15 @@ function escapeHtml(text) {
 }
 
 /**
- * Open CRM modal
+ * Open CRM side panel
  */
 function openCrmModal(contactId) {
     const contact = contacts.find(c => c.id === contactId);
     if (!contact) return;
     
-    const modal = document.getElementById('crmModal');
-    const content = document.getElementById('crmModalContent');
+    const panel = document.getElementById('crmSidePanel');
+    const content = document.getElementById('crmPanelContent');
+    const container = document.querySelector('.mailbox-container');
     
     content.innerHTML = `
         <div class="modal-header">
@@ -442,15 +443,22 @@ function openCrmModal(contactId) {
         </div>
     `;
     
-    modal.style.display = 'block';
+    panel.style.display = 'flex';
+    container.classList.add('panel-open');
     loadNotes(contactId);
 }
 
 /**
- * Close CRM modal
+ * Close CRM side panel
  */
+function closeCrmPanel() {
+    document.getElementById('crmSidePanel').style.display = 'none';
+    document.querySelector('.mailbox-container').classList.remove('panel-open');
+}
+
+// Keep old function for backward compatibility
 function closeCrmModal() {
-    document.getElementById('crmModal').style.display = 'none';
+    closeCrmPanel();
 }
 
 /**
@@ -603,10 +611,10 @@ async function loadNotes(contactId) {
     }
 }
 
-// Close modal when clicking outside
+// Close panel when clicking outside
 window.onclick = function(event) {
-    const modal = document.getElementById('crmModal');
-    if (event.target === modal) {
-        closeCrmModal();
+    const panel = document.getElementById('crmSidePanel');
+    if (event.target === panel) {
+        closeCrmPanel();
     }
 }
