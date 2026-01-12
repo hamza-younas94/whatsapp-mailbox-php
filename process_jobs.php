@@ -18,8 +18,10 @@ $phoneNumberId = getenv('WHATSAPP_PHONE_NUMBER_ID');
 $accessToken = getenv('WHATSAPP_ACCESS_TOKEN');
 
 if (!$phoneNumberId || !$accessToken) {
-    echo "ERROR: WhatsApp credentials not configured\n";
-    exit(1);
+    echo "⚠️  WhatsApp credentials not configured - skipping job processing\n";
+    echo "   To enable: Set WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN in .env\n";
+    echo "[" . date('Y-m-d H:i:s') . "] Job processor completed (skipped)\n\n";
+    exit(0); // Exit gracefully without error
 }
 
 $client = new Client([

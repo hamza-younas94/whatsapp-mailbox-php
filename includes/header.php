@@ -55,8 +55,13 @@
             margin-top: 0.5rem;
             min-width: 200px;
             z-index: 1000;
+            padding: 0.5rem 0;
         }
-        .top-nav .dropdown:hover .dropdown-menu {
+        .top-nav .dropdown:hover .dropdown-menu,
+        .top-nav .dropdown-menu:hover {
+            display: block;
+        }
+        .top-nav .dropdown.show .dropdown-menu {
             display: block;
         }
         .top-nav .dropdown-menu a {
@@ -140,3 +145,25 @@
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
         <div id="toastContainer"></div>
     </div>
+    
+    <script>
+    // Handle dropdown toggle on click
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdown = document.querySelector('.top-nav .dropdown');
+        const dropdownToggle = dropdown?.querySelector('.nav-link');
+        
+        if (dropdownToggle) {
+            dropdownToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                dropdown.classList.toggle('show');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!dropdown.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        }
+    });
+    </script>
