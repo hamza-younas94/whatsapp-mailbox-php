@@ -15,11 +15,35 @@
     <link rel="stylesheet" href="assets/css/style.css">
     
     <style>
+        /* Ensure modals work properly */
+        body.modal-open {
+            overflow: hidden;
+            padding-right: 0 !important;
+        }
+        
+        .modal {
+            z-index: 1055 !important;
+        }
+        
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
+        
+        .modal-dialog {
+            pointer-events: auto !important;
+        }
+        
+        .modal-content {
+            pointer-events: auto !important;
+        }
+        
         .top-nav {
             background: #128C7E;
             padding: 1rem;
             margin-bottom: 2rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1000;
         }
         .top-nav .nav-links {
             display: flex;
@@ -143,8 +167,8 @@
     </div>
     
     <!-- Toast Container -->
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 2000">
-        <div id="toastContainer"></div>
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1060; pointer-events: none;">
+        <div id="toastContainer" style="pointer-events: auto;"></div>
     </div>
     
     <script>
