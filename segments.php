@@ -92,8 +92,8 @@ require_once __DIR__ . '/includes/header.php';
                     <i class="fas fa-<?php echo $segment->is_dynamic ? 'sync-alt' : 'layer-group'; ?>" 
                        style="color: <?php echo $segment->is_dynamic ? '#25D366' : '#6c757d'; ?>; font-size: 1.5rem;"></i>
                 </div>
-                <h5 class="mb-2" style="font-size: 1.1rem; font-weight: 600;"><?php echo htmlspecialchars($segment->name); ?></h5>
-                <p class="text-muted small mb-3"><?php echo htmlspecialchars($segment->description ?? 'No description'); ?></p>
+                <h5 class="mb-2" style="font-size: 1.1rem; font-weight: 600; color: #1a1a1a;"><?php echo htmlspecialchars($segment->name); ?></h5>
+                <p class="mb-3" style="font-size: 0.875rem; color: #6c757d; line-height: 1.4;"><?php echo htmlspecialchars($segment->description ?? 'No description'); ?></p>
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div class="stat-value"><?php echo number_format($segment->contact_count); ?></div>
                     <span class="badge bg-<?php echo $segment->is_dynamic ? 'success' : 'secondary'; ?>">
