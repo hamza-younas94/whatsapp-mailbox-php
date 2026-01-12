@@ -51,7 +51,20 @@ function processScheduledMessages($client, $phoneNumberId, $accessToken) {
         ->get();
     
     if ($dueMessages->isEmpty()) {
-        echo "No scheduled messages due\n";
+        // Check upcoming messages for better logging
+        $upcomingCount = ScheduledMessage::where('status', 'pending')
+            ->where('scheduled_at', '>', now())
+            ->count();
+        
+        if ($upcomingCount > 0) {
+            $nextMessage = ScheduledMessage::where('status', 'pending')
+                ->where('scheduled_at', '>', now())
+                ->orderBy('scheduled_at', 'asc')
+                ->first();
+            echo "No scheduled messages due. Next message at: {$nextMessage->scheduled_at} ({$upcomingCount} pending)\n";
+        } else {
+            echo "No scheduled messages due\n";
+        }
         return;
     }
     
@@ -73,11 +86,23 @@ function processScheduledMessages($client, $phoneNumberId, $accessToken) {
             ]);
             
             $result = json_decode($response->getBody(), true);
+            $whatsappMessageId = $result['messages'][0]['id'] ?? null;
             
             $msg->update([
                 'status' => 'sent',
                 'sent_at' => now(),
-                'whatsapp_message_id' => $result['messages'][0]['id'] ?? null
+                'whatsapp_message_id' => $whatsappMessageId
+            ]);
+            
+            // Save to message history
+            \App\Models\Message::create([
+                'contact_id' => $msg->contact->id,
+                'whatsapp_message_id' => $whatsappMessageId,
+                'direction' => 'outgoing',
+                'type' => 'text',
+                'message' => $msg->message,
+                'timestamp' => now(),
+                'status' => 'sent'
             ]);
             
             echo "  ✅ Sent to {$msg->contact->phone_number}\n";
