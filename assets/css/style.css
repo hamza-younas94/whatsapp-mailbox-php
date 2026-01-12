@@ -827,7 +827,7 @@ body {
 .stat-card {
     background: white;
     border-radius: 12px;
-    padding: 20px;
+    padding: 24px;
     display: flex;
     align-items: center;
     gap: 20px;
@@ -852,19 +852,22 @@ body {
 
 .stat-info {
     flex: 1;
+    min-width: 0;
 }
 
 .stat-value {
     font-size: 32px;
     font-weight: bold;
     color: var(--text-primary);
-    line-height: 1;
+    line-height: 1.2;
     margin-bottom: 5px;
+    word-break: break-word;
 }
 
 .stat-label {
     font-size: 14px;
     color: var(--text-secondary);
+    font-weight: 500;
 }
 
 /* CRM Controls */

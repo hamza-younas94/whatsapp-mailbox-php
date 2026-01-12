@@ -99,7 +99,19 @@ function getContacts() {
             'last_message_time' => $contact->last_message_time?->format('Y-m-d H:i:s'),
             'unread_count' => $contact->unread_count,
             'last_message' => $contact->lastMessage?->message_body,
-            'initials' => $contact->initials
+            'initials' => $contact->initials,
+            // CRM fields
+            'stage' => $contact->stage,
+            'lead_score' => $contact->lead_score,
+            'company_name' => $contact->company_name,
+            'email' => $contact->email,
+            'city' => $contact->city,
+            'country' => $contact->country,
+            'deal_value' => $contact->deal_value,
+            'deal_currency' => $contact->deal_currency,
+            'expected_close_date' => $contact->expected_close_date,
+            'last_activity_at' => $contact->last_activity_at?->format('Y-m-d H:i:s'),
+            'last_activity_type' => $contact->last_activity_type
         ];
     });
     

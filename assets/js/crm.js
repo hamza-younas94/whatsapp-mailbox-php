@@ -44,25 +44,26 @@ async function loadCrmData() {
  */
 function updateStats(contacts) {
     // Total contacts
-    document.getElementById('totalContacts').textContent = contacts.length;
+    document.getElementById('totalContacts').textContent = contacts.length || '0';
     
     // Qualified leads (qualified stage or higher)
     const qualifiedStages = ['qualified', 'proposal', 'negotiation', 'customer'];
-    const qualified = contacts.filter(c => qualifiedStages.includes(c.stage)).length;
-    document.getElementById('qualifiedLeads').textContent = qualified;
+    const qualified = contacts.filter(c => c.stage && qualifiedStages.includes(c.stage)).length;
+    document.getElementById('qualifiedLeads').textContent = qualified || '0';
     
     // Total deal value
     const totalDealValue = contacts.reduce((sum, c) => {
-        return sum + (parseFloat(c.deal_value) || 0);
+        const value = parseFloat(c.deal_value);
+        return sum + (isNaN(value) ? 0 : value);
     }, 0);
-    document.getElementById('totalDealValue').textContent = '$' + totalDealValue.toLocaleString();
+    document.getElementById('totalDealValue').textContent = '$' + (totalDealValue || 0).toLocaleString();
     
     // Average lead score
-    const scores = contacts.filter(c => c.lead_score !== null).map(c => c.lead_score);
+    const scores = contacts.filter(c => c.lead_score !== null && c.lead_score !== undefined).map(c => parseInt(c.lead_score));
     const avgScore = scores.length > 0 
         ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
         : 0;
-    document.getElementById('averageScore').textContent = avgScore;
+    document.getElementById('averageScore').textContent = avgScore || '0';
 }
 
 /**
@@ -78,19 +79,19 @@ function renderCrmTable(contacts) {
     
     tbody.innerHTML = contacts.map(contact => {
         const stageBadge = contact.stage 
-            ? `<span class="stage-badge stage-${contact.stage}">${contact.stage}</span>`
-            : '<span class="text-muted">-</span>';
+            ? `<span class="stage-badge stage-${contact.stage}">${contact.stage.toUpperCase()}</span>`
+            : '<span class="text-muted">New</span>';
         
-        const leadScore = contact.lead_score !== null
+        const leadScore = contact.lead_score !== null && contact.lead_score !== undefined
             ? `<div class="score-indicator">
                 <div class="score-bar-small">
                     <div class="score-fill" style="width: ${contact.lead_score}%"></div>
                 </div>
                 <span>${contact.lead_score}/100</span>
                </div>`
-            : '<span class="text-muted">-</span>';
+            : '<span class="text-muted">0/100</span>';
         
-        const dealValue = contact.deal_value 
+        const dealValue = contact.deal_value && !isNaN(parseFloat(contact.deal_value))
             ? `$${parseFloat(contact.deal_value).toLocaleString()}`
             : '<span class="text-muted">-</span>';
         

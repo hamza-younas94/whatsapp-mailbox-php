@@ -6,13 +6,13 @@
 <!-- Top Navigation -->
 <div class="top-nav">
     <div class="nav-links">
-        <a href="{{ app_url }}/index.php" class="nav-link">
+        <a href="index.php" class="nav-link">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
             </svg>
             Mailbox
         </a>
-        <a href="{{ app_url }}/crm_dashboard.php" class="nav-link active">
+        <a href="crm_dashboard.php" class="nav-link active">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3Z"/>
             </svg>
@@ -31,7 +31,7 @@
                 </svg>
             </div>
             <div class="stat-info">
-                <div class="stat-value" id="totalContacts">0</div>
+                <div class="stat-value" id="totalContacts">-</div>
                 <div class="stat-label">Total Contacts</div>
             </div>
         </div>
@@ -43,7 +43,7 @@
                 </svg>
             </div>
             <div class="stat-info">
-                <div class="stat-value" id="qualifiedLeads">0</div>
+                <div class="stat-value" id="qualifiedLeads">-</div>
                 <div class="stat-label">Qualified Leads</div>
             </div>
         </div>
@@ -55,7 +55,7 @@
                 </svg>
             </div>
             <div class="stat-info">
-                <div class="stat-value" id="totalDealValue">$0</div>
+                <div class="stat-value" id="totalDealValue">-</div>
                 <div class="stat-label">Total Deal Value</div>
             </div>
         </div>
@@ -63,11 +63,11 @@
         <div class="stat-card">
             <div class="stat-icon" style="background: #f3e5f5;">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="#7b1fa2">
-                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
                 </svg>
             </div>
             <div class="stat-info">
-                <div class="stat-value" id="averageScore">0</div>
+                <div class="stat-value" id="averageScore">-</div>
                 <div class="stat-label">Avg Lead Score</div>
             </div>
         </div>
