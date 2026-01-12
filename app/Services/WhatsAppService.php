@@ -388,16 +388,22 @@ class WhatsAppService
                 logger("[QUICK_REPLY] Trying shortcut: {$shortcut}");
             }
             
-            // Find matching quick reply
-            $quickReply = QuickReply::where('shortcut', $shortcut)
+            logger("[QUICK_REPLY] Searching database for: {$shortcut}");
+            
+            // Find matching quick reply (use \App\Models\ to ensure proper namespace)
+            $quickReply = \App\Models\QuickReply::where('shortcut', $shortcut)
                 ->where('is_active', true)
                 ->first();
+            
+            logger("[QUICK_REPLY] Query result: " . ($quickReply ? "FOUND" : "NOT FOUND"));
             
             if ($quickReply) {
                 logger("[QUICK_REPLY] Match found: " . $quickReply->title);
                 
                 // Send the quick reply message
                 $response = $this->sendTextMessage($phoneNumber, $quickReply->message);
+                
+                logger("[QUICK_REPLY] Send response: " . json_encode($response));
                 
                 if ($response['success']) {
                     // Increment usage count
@@ -424,6 +430,7 @@ class WhatsAppService
             }
         } catch (\Exception $e) {
             logger("[QUICK_REPLY ERROR] " . $e->getMessage(), 'error');
+            logger("[QUICK_REPLY ERROR] Stack: " . $e->getTraceAsString(), 'error');
         }
     }
 }
