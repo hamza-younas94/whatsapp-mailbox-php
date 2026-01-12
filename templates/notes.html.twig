@@ -49,61 +49,95 @@
 </div>
 
 <div class="notes-page">
-    <div class="notes-header">
-        <h1>All Notes</h1>
-        <div class="notes-stats">
-            <div class="stat-badge">
-                <span class="stat-value">{{ totalNotes }}</span>
-                <span class="stat-label">Total Notes</span>
+    <div class="page-header mb-4">
+        <div>
+            <h1><i class="fas fa-sticky-note" style="color: #128C7E;"></i> Activity Notes</h1>
+            <p style="color: #6c757d; font-size: 0.95rem; margin-top: 0.5rem;">Track conversations, calls, meetings and important information</p>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-icon" style="background: #e8f5e9;">
+                    <i class="fas fa-clipboard-list" style="color: #25D366; font-size: 1.3rem;"></i>
+                </div>
+                <div class="stat-value">{{ totalNotes }}</div>
+                <div class="stat-label">Total Notes</div>
             </div>
-            <div class="stat-badge">
-                <span class="stat-value">{{ notesByType.general ?? 0 }}</span>
-                <span class="stat-label">General</span>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-icon" style="background: #e3f2fd;">
+                    <i class="fas fa-sticky-note" style="color: #2196f3; font-size: 1.3rem;"></i>
+                </div>
+                <div class="stat-value">{{ notesByType.general ?? 0 }}</div>
+                <div class="stat-label">General</div>
             </div>
-            <div class="stat-badge">
-                <span class="stat-value">{{ notesByType.call ?? 0 }}</span>
-                <span class="stat-label">Calls</span>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-icon" style="background: #fff3e0;">
+                    <i class="fas fa-phone-alt" style="color: #f57c00; font-size: 1.3rem;"></i>
+                </div>
+                <div class="stat-value">{{ notesByType.call ?? 0 }}</div>
+                <div class="stat-label">Calls</div>
             </div>
-            <div class="stat-badge">
-                <span class="stat-value">{{ notesByType.meeting ?? 0 }}</span>
-                <span class="stat-label">Meetings</span>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-icon" style="background: #f3e5f5;">
+                    <i class="fas fa-users" style="color: #7b1fa2; font-size: 1.3rem;"></i>
+                </div>
+                <div class="stat-value">{{ notesByType.meeting ?? 0 }}</div>
+                <div class="stat-label">Meetings</div>
             </div>
         </div>
     </div>
 
-    <div class="notes-filters">
-        <form method="GET" class="filter-form">
-            <div class="filter-group">
-                <label>Search</label>
-                <input type="text" name="search" placeholder="Search notes..." value="{{ searchQuery }}">
-            </div>
-            
-            <div class="filter-group">
-                <label>Contact</label>
-                <select name="contact_id">
-                    <option value="">All Contacts</option>
-                    {% for contact in contacts %}
-                        <option value="{{ contact.id }}" {% if currentContactId == contact.id %}selected{% endif %}>
-                            {{ contact.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label>Type</label>
-                <select name="type">
-                    <option value="all" {% if currentType == 'all' %}selected{% endif %}>All Types</option>
-                    <option value="general" {% if currentType == 'general' %}selected{% endif %}>General</option>
-                    <option value="call" {% if currentType == 'call' %}selected{% endif %}>Call</option>
-                    <option value="meeting" {% if currentType == 'meeting' %}selected{% endif %}>Meeting</option>
-                    <option value="email" {% if currentType == 'email' %}selected{% endif %}>Email</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="btn-filter">Filter</button>
-            <a href="notes.php" class="btn-reset">Reset</a>
-        </form>
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body" style="padding: 1rem;">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: #6c757d; text-transform: uppercase;">Search</label>
+                    <input type="text" name="search" class="form-control" placeholder="Search notes or contacts..." value="{{ searchQuery }}" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: #6c757d; text-transform: uppercase;">Contact</label>
+                    <select name="contact_id" class="form-select" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                        <option value="">All Contacts</option>
+                        {% for contact in contacts %}
+                            <option value="{{ contact.id }}" {% if currentContactId == contact.id %}selected{% endif %}>
+                                {{ contact.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: #6c757d; text-transform: uppercase;">Note Type</label>
+                    <select name="type" class="form-select" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                        <option value="all" {% if currentType == 'all' %}selected{% endif %}>All Types</option>
+                        <option value="general" {% if currentType == 'general' %}selected{% endif %}>📝 General</option>
+                        <option value="call" {% if currentType == 'call' %}selected{% endif %}>📞 Call</option>
+                        <option value="meeting" {% if currentType == 'meeting' %}selected{% endif %}>🤝 Meeting</option>
+                        <option value="email" {% if currentType == 'email' %}selected{% endif %}>📧 Email</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2" style="display: flex; align-items: flex-end; gap: 0.5rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1; font-size: 0.875rem; padding: 0.5rem;">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <a href="notes.php" class="btn btn-outline-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+                        <i class="fas fa-redo"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 
     <div class="notes-list-container">
@@ -112,45 +146,45 @@
             {% for note in notes %}
                 <div class="note-card note-type-{{ note.type }}">
                     <div class="note-card-header">
-                        <div class="note-meta">
-                            <span class="note-type-badge note-badge-{{ note.type }}">
-                                {% if note.type == 'call' %}📞{% endif %}
-                                {% if note.type == 'meeting' %}🤝{% endif %}
-                                {% if note.type == 'email' %}📧{% endif %}
-                                {% if note.type == 'general' %}📝{% endif %}
-                                {{ note.type|upper }}
-                            </span>
-                            <a href="index.php?contact={{ note.contact_id }}" class="note-contact">
+                        <span class="note-type-badge note-badge-{{ note.type }}">
+                            {% if note.type == 'call' %}<i class="fas fa-phone-alt"></i> Call{% endif %}
+                            {% if note.type == 'meeting' %}<i class="fas fa-users"></i> Meeting{% endif %}
+                            {% if note.type == 'email' %}<i class="fas fa-envelope"></i> Email{% endif %}
+                            {% if note.type == 'general' %}<i class="fas fa-sticky-note"></i> General{% endif %}
+                        </span>
+                        <span class="note-date">
+                            <i class="far fa-clock"></i> {{ note.created_at|date('M d, Y') }}
+                        </span>
+                    </div>
+                    
+                    <div class="note-card-body">
+                        <div class="note-contact-info">
+                            <i class="fas fa-user" style="color: #128C7E;"></i>
+                            <a href="index.php?contact={{ note.contact_id }}" class="note-contact-name">
                                 {{ note.contact.name ?? 'Unknown Contact' }}
                             </a>
                         </div>
-                        <span class="note-date">
-                            {{ note.created_at|date('M d, Y - h:i A') }}
-                        </span>
+                        <p class="note-content">{{ note.content|nl2br }}</p>
                     </div>
-                    <div class="note-card-body">
-                        <p>{{ note.content|nl2br }}</p>
-                    </div>
+                    
                     <div class="note-card-footer">
                         <span class="note-author">
-                            👤 {{ note.creator.username ?? 'Admin' }}
+                            <i class="fas fa-user-edit" style="color: #6c757d;"></i> {{ note.creator.username ?? 'Admin' }}
                         </span>
-                        <div class="note-actions">
-                            <a href="index.php?contact={{ note.contact_id }}" class="btn-action">
-                                View Contact →
-                            </a>
-                        </div>
+                        <a href="index.php?contact={{ note.contact_id }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-comments"></i> Open Chat
+                        </a>
                     </div>
                 </div>
             {% endfor %}
             </div>
         {% else %}
             <div class="empty-state">
-                <svg width="100" height="100" viewBox="0 0 24 24" fill="#ccc">
-                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                </svg>
-                <h3>No notes found</h3>
-                <p>Start adding notes to your contacts in the mailbox</p>
+                <div style="text-align: center; padding: 3rem;">
+                    <i class="fas fa-sticky-note" style="font-size: 4rem; color: #ddd; margin-bottom: 1rem;"></i>
+                    <h3 style="color: #6c757d; font-size: 1.25rem; margin-bottom: 0.5rem;">No notes found</h3>
+                    <p style="color: #999; font-size: 0.95rem;">Start adding notes to track your customer interactions</p>
+                </div>
             </div>
         {% endif %}
     </div>
