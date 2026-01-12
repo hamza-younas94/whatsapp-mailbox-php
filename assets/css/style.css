@@ -1435,3 +1435,235 @@ body {
         opacity: 1;
     }
 }
+
+/* Notes Page */
+.notes-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.notes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.notes-header h1 {
+    font-size: 32px;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.notes-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 25px;
+    background: white;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border-top: 3px solid var(--primary-color);
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.notes-filters {
+    background: white;
+    padding: 25px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 30px;
+}
+
+.filter-form {
+    display: flex;
+    gap: 20px;
+    align-items: end;
+}
+
+.filter-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.btn-filter,
+.btn-reset {
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-filter {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+    color: white;
+}
+
+.btn-reset {
+    background: #f3f4f6;
+    color: var(--text-secondary);
+}
+
+.notes-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.note-card {
+    background: white;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--primary-color);
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.note-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.note-card.note-type-call {
+    border-left-color: #3b82f6;
+}
+
+.note-card.note-type-meeting {
+    border-left-color: #8b5cf6;
+}
+
+.note-card.note-type-email {
+    border-left-color: #ec4899;
+}
+
+.note-card-header {
+    padding: 15px 20px;
+    background: var(--bg-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.note-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.note-type-badge {
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.note-card.note-type-call .note-type-badge {
+    background: #3b82f6;
+}
+
+.note-card.note-type-meeting .note-type-badge {
+    background: #8b5cf6;
+}
+
+.note-card.note-type-email .note-type-badge {
+    background: #ec4899;
+}
+
+.note-contact {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.note-contact:hover {
+    color: var(--primary-color);
+}
+
+.note-date {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.note-card-body {
+    padding: 20px;
+}
+
+.note-card-body p {
+    margin: 0;
+    color: var(--text-primary);
+    line-height: 1.6;
+    font-size: 14px;
+}
+
+.note-card-footer {
+    padding: 15px 20px;
+    background: var(--bg-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.note-author {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.btn-action {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-action:hover {
+    background: var(--primary-dark);
+}

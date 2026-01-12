@@ -83,6 +83,46 @@ class Contact extends Model
     }
 
     /**
+     * Get deals/transactions for this contact
+     */
+    public function deals()
+    {
+        return $this->hasMany(Deal::class)->orderBy('deal_date', 'desc');
+    }
+
+    /**
+     * Get won deals
+     */
+    public function wonDeals()
+    {
+        return $this->hasMany(Deal::class)->where('status', 'won');
+    }
+
+    /**
+     * Get total revenue from this customer (won deals)
+     */
+    public function getTotalRevenueAttribute()
+    {
+        return $this->wonDeals()->sum('amount');
+    }
+
+    /**
+     * Get deal count
+     */
+    public function getDealCountAttribute()
+    {
+        return $this->deals()->count();
+    }
+
+    /**
+     * Get won deal count
+     */
+    public function getWonDealCountAttribute()
+    {
+        return $this->wonDeals()->count();
+    }
+
+    /**
      * Get assigned user
      */
     public function assignedUser()

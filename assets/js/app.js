@@ -593,9 +593,12 @@ async function loadNotes(contactId) {
             return;
         }
         
-        if (result.success && result.notes && result.notes.length > 0) {
-            console.log('Rendering', result.notes.length, 'notes');
-            notesList.innerHTML = result.notes.map(note => {
+        // Check if API returned notes (with or without success field)
+        const notesArray = result.notes || [];
+        
+        if (notesArray.length > 0) {
+            console.log('Rendering', notesArray.length, 'notes');
+            notesList.innerHTML = notesArray.map(note => {
                 console.log('Note:', note);
                 return `
                 <div class="note-item note-type-${note.type}">
