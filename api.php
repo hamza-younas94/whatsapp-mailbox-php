@@ -90,7 +90,7 @@ try {
 function getContacts() {
     $search = sanitize($_GET['search'] ?? '');
     
-    $query = Contact::with('lastMessage')
+    $query = Contact::with(['lastMessage', 'contactTags'])
         ->withCount(['unreadMessages as unread_count']);
     
     if ($search) {
@@ -124,7 +124,16 @@ function getContacts() {
             'deal_currency' => $contact->deal_currency ?: 'USD',
             'expected_close_date' => $contact->expected_close_date,
             'last_activity_at' => $contact->last_activity_at?->format('Y-m-d H:i:s'),
-            'last_activity_type' => $contact->last_activity_type
+            'last_activity_type' => $contact->last_activity_type,
+            // Tags via pivot
+            'tags' => $contact->contactTags->map(function($tag){
+                return [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'color' => $tag->color
+                ];
+            })->values()->all(),
+            'tag_ids' => $contact->contactTags->pluck('id')->values()->all()
         ];
     });
     

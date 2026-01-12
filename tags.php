@@ -28,6 +28,20 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                 echo json_encode(['success' => true, 'tag' => $tag]);
                 exit;
             }
+            
+            if ($_GET['action'] === 'list') {
+                $tags = Tag::withCount('contacts')->orderBy('name')->get()->map(function($tag){
+                    return [
+                        'id' => $tag->id,
+                        'name' => $tag->name,
+                        'color' => $tag->color,
+                        'description' => $tag->description,
+                        'contacts_count' => $tag->contacts_count
+                    ];
+                });
+                echo json_encode(['success' => true, 'tags' => $tags]);
+                exit;
+            }
         } catch (Exception $e) {
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
             exit;

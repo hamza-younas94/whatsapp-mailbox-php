@@ -151,6 +151,9 @@ function renderContacts(contactsList) {
         const stageBadge = contact.stage ? `<span class="stage-badge stage-${contact.stage}">${contact.stage}</span>` : '';
         const leadScore = contact.lead_score !== null ? `<span class="lead-score" title="Lead Score">${contact.lead_score}</span>` : '';
         const companyInfo = contact.company_name ? `<div class="contact-company">${escapeHtml(contact.company_name)}</div>` : '';
+        const tagBadges = Array.isArray(contact.tags) && contact.tags.length > 0 
+            ? `<div class="contact-tags">${renderTagBadges(contact.tags)}</div>`
+            : '';
         
         return `
             <div class="contact-item ${activeClass}" onclick="selectContact(${contact.id}, '${escapeHtml(contact.name)}', '${contact.phone_number}')">
@@ -161,6 +164,7 @@ function renderContacts(contactsList) {
                         ${stageBadge}
                     </div>
                     ${companyInfo}
+                    ${tagBadges}
                     <div class="contact-last-message">${escapeHtml(lastMessage)}</div>
                 </div>
                 <div class="contact-meta">
@@ -206,6 +210,7 @@ async function selectContact(contactId, name, phoneNumber) {
             ${contact.company_name ? `<span class="crm-company">${escapeHtml(contact.company_name)}</span>` : ''}
             ${contact.stage ? `<span class="stage-badge stage-${contact.stage}">${contact.stage}</span>` : ''}
             ${contact.lead_score !== null ? `<span class="lead-score-badge">${contact.lead_score}/100</span>` : ''}
+            ${Array.isArray(contact.tags) && contact.tags.length > 0 ? `<span class="chat-tags">${renderTagBadges(contact.tags)}</span>` : ''}
         </div>
     ` : '';
     
@@ -446,6 +451,17 @@ function getStatusIcon(status) {
         default:
             return '';
     }
+}
+
+/**
+ * Render tag badges
+ */
+function renderTagBadges(tags) {
+    return tags.map(t => {
+        const color = t.color || '#6b7280';
+        const name = escapeHtml(t.name || 'Tag');
+        return `<span class="tag-badge" style="background-color: ${color};">${name}</span>`;
+    }).join(' ');
 }
 
 /**

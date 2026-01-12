@@ -233,11 +233,20 @@ function openCrmModal(contactId) {
                     <div class="loading">Loading notes...</div>
                 </div>
             </div>
+
+            <div class="crm-section">
+                <h3>Tags</h3>
+                <div id="crmTagsList" class="tags-list">
+                    <div class="loading">Loading tags...</div>
+                </div>
+                <button onclick="saveContactTags(${contactId})" class="btn-primary">Save Tags</button>
+            </div>
         </div>
     `;
     
     modal.style.display = 'block';
     loadNotes(contactId);
+    loadTagsForCrm(contactId, contact);
 }
 
 function closeCrmModal() {
@@ -350,6 +359,74 @@ async function loadNotes(contactId) {
     } catch (error) {
         console.error('Error loading notes:', error);
         document.getElementById('notesList').innerHTML = '<div class="empty-state"><p>Failed to load notes</p></div>';
+    }
+}
+
+/**
+ * Load tags list and preselect for contact
+ */
+async function loadTagsForCrm(contactId, contact) {
+    try {
+        const response = await fetch('tags.php?action=list', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const result = await response.json();
+        const container = document.getElementById('crmTagsList');
+        
+        if (!container) return;
+        
+        if (response.ok && result.success) {
+            const tags = result.tags || [];
+            const selectedIds = (contact && Array.isArray(contact.tag_ids)) ? contact.tag_ids : [];
+            container.innerHTML = tags.map(tag => {
+                const checked = selectedIds.includes(tag.id) ? 'checked' : '';
+                const color = tag.color || '#6b7280';
+                const name = escapeHtml(tag.name);
+                return `
+                    <label class="tag-option">
+                        <input type="checkbox" class="tag-checkbox" value="${tag.id}" ${checked}>
+                        <span class="tag-color" style="background-color: ${color};"></span>
+                        <span class="tag-name">${name}</span>
+                    </label>
+                `;
+            }).join('');
+        } else {
+            container.innerHTML = '<div class="empty-state"><p>Failed to load tags</p></div>';
+        }
+    } catch (err) {
+        console.error('Error loading tags:', err);
+        const container = document.getElementById('crmTagsList');
+        if (container) container.innerHTML = '<div class="empty-state"><p>Failed to load tags</p></div>';
+    }
+}
+
+/**
+ * Save selected tags for contact
+ */
+async function saveContactTags(contactId) {
+    const checkboxes = document.querySelectorAll('#crmTagsList .tag-checkbox');
+    const tagIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    
+    const formData = new FormData();
+    formData.append('action', 'assign');
+    formData.append('contact_id', contactId);
+    tagIds.forEach(id => formData.append('tag_ids[]', id));
+    
+    try {
+        const response = await fetch('tags.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+            alert('Tags updated successfully!');
+            loadCrmData();
+            closeCrmModal();
+        } else {
+            alert('Failed to update tags: ' + (result.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Error saving tags:', err);
+        alert('Failed to update tags');
     }
 }
 
