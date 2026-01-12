@@ -585,14 +585,25 @@ async function addNote(contactId) {
  * Load notes for contact
  */
 async function loadNotes(contactId) {
+    console.log('Loading notes for contact:', contactId);
     try {
         const response = await fetch(`crm.php/contact/${contactId}/notes`);
         const result = await response.json();
         
+        console.log('Notes API response:', result);
+        
         const notesList = document.getElementById('notesList');
         
-        if (result.notes && result.notes.length > 0) {
-            notesList.innerHTML = result.notes.map(note => `
+        if (!notesList) {
+            console.error('notesList element not found!');
+            return;
+        }
+        
+        if (result.success && result.notes && result.notes.length > 0) {
+            console.log('Rendering', result.notes.length, 'notes');
+            notesList.innerHTML = result.notes.map(note => {
+                console.log('Note:', note);
+                return `
                 <div class="note-item note-type-${note.type}">
                     <div class="note-header">
                         <span class="note-type">${note.type.toUpperCase()}</span>
@@ -601,13 +612,19 @@ async function loadNotes(contactId) {
                     <div class="note-content">${escapeHtml(note.content)}</div>
                     <div class="note-author">by ${note.created_by_name || note.creator?.name || 'Admin'}</div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
+            console.log('Notes rendered successfully');
         } else {
+            console.log('No notes found or empty array');
             notesList.innerHTML = '<div class="empty-state"><p>No notes yet</p></div>';
         }
     } catch (error) {
         console.error('Error loading notes:', error);
-        document.getElementById('notesList').innerHTML = '<div class="empty-state"><p>Failed to load notes</p></div>';
+        const notesList = document.getElementById('notesList');
+        if (notesList) {
+            notesList.innerHTML = '<div class="empty-state"><p>Failed to load notes</p></div>';
+        }
     }
 }
 
