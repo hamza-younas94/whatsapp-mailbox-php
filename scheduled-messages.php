@@ -160,8 +160,12 @@ require_once __DIR__ . '/includes/header.php';
                     </div>
                     
                     <div class="mb-3">
-                        <label for="scheduled_at" class="form-label">Schedule For</label>
+                        <label for="scheduled_at" class="form-label">
+                            Schedule For (Pakistan Time - PKT)
+                            <small class="text-muted">Current time: <span id="currentTime"></span></small>
+                        </label>
                         <input type="datetime-local" class="form-control" id="scheduled_at" name="scheduled_at" required>
+                        <small class="form-text text-muted">Message will be sent at the scheduled Pakistan time</small>
                     </div>
                 </form>
             </div>
@@ -243,6 +247,30 @@ function cancelScheduled(id) {
         }
     });
 }
+
+// Update current time display
+function updateCurrentTime() {
+    const now = new Date();
+    const options = { 
+        timeZone: 'Asia/Karachi',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    };
+    const timeString = now.toLocaleString('en-US', options);
+    const currentTimeEl = document.getElementById('currentTime');
+    if (currentTimeEl) {
+        currentTimeEl.textContent = timeString + ' PKT';
+    }
+}
+
+// Update time every second
+setInterval(updateCurrentTime, 1000);
+updateCurrentTime();
 
 function deleteScheduled(id) {
     if (!confirm('Delete this scheduled message?')) return;
