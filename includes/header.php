@@ -221,6 +221,7 @@
                     <a href="scheduled-messages.php">⏰ Scheduled</a>
                     <a href="notes.php">📝 Notes</a>
                     <a href="deals.php">💰 Deals</a>
+                    <a href="ip-commands.php">🧠 IP Commands</a>
                 </div>
             </div>
         </div>
