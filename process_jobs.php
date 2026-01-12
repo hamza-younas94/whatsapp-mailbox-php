@@ -4,6 +4,9 @@
  * Run this as a cron job every minute: * * * * * php /path/to/process_jobs.php
  */
 
+// Prevent session from starting in CLI mode
+define('NO_SESSION', true);
+
 require_once __DIR__ . '/bootstrap.php';
 
 use App\Models\ScheduledMessage;

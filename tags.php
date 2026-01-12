@@ -17,9 +17,25 @@ if (!isAuthenticated()) {
 $user = getCurrentUser();
 
 // Handle AJAX requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     header('Content-Type: application/json');
     
+    // Handle GET requests for fetching data
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
+        try {
+            if ($_GET['action'] === 'getTag' && isset($_GET['id'])) {
+                $tag = Tag::findOrFail($_GET['id']);
+                echo json_encode(['success' => true, 'tag' => $tag]);
+                exit;
+            }
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            exit;
+        }
+    }
+    
+    // Handle POST requests
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
     try {
@@ -63,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
     exit;
+    }
 }
 
 // Fetch all tags with contact counts
@@ -210,8 +227,14 @@ function openTagModal() {
 }
 
 function editTag(id) {
+    if (!tagModal) {
+        console.error('Modal not initialized');
+        return;
+    }
     // Find tag data from the page
-    fetch(`api.php?action=getTag&id=${id}`)
+    fetch(`tags.php?action=getTag&id=${id}`, {
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -221,8 +244,15 @@ function editTag(id) {
                 document.getElementById('tag_description').value = data.tag.description || '';
                 document.getElementById('tagModalTitle').textContent = 'Edit Tag';
                 tagModal.show();
+            } else {
+                showToast('Error loading tag: ' + (data.error || 'Unknown error'), 'error');
             }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            showToast('Error loading tag', 'error');
         });
+}
 }
 
 function saveTag() {
