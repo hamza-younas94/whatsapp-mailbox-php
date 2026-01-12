@@ -263,7 +263,20 @@ async function sendMessage() {
             // Reload contacts
             loadContacts();
         } else {
-            alert('Failed to send message: ' + (result.error || 'Unknown error'));
+            const errorMsg = result.error || 'Unknown error';
+            
+            // Check if it's a 24-hour window issue
+            if (response.status === 403 && errorMsg.includes('not messaged you recently')) {
+                alert('⚠️ Cannot Send Message\n\n' + 
+                      'This contact has not messaged you recently.\n\n' +
+                      'WhatsApp Business API Rules:\n' +
+                      '• Contacts must message you first, OR\n' +
+                      '• You can only reply within 24 hours of their last message, OR\n' +
+                      '• You need to use a template message\n\n' +
+                      'Wait for the contact to message you first.');
+            } else {
+                alert('Failed to send message: ' + errorMsg);
+            }
         }
         
     } catch (error) {

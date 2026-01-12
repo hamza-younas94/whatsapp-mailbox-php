@@ -20,7 +20,7 @@ git pull origin main
 ```
 
 ### Step 2: Test API (Verify Server Has CRM Data)
-Open in browser: `https://whatsapp.nexofydigital.com/test_crm_api.php`
+Open in browser: `https://whatsapp.nexdonofydigital.com/test_crm_api.php`
 
 **You should see:**
 - ✅ Contact details with CRM fields

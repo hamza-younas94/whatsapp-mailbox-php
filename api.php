@@ -170,6 +170,14 @@ function sendMessage() {
     $result = $whatsappService->sendTextMessage($to, $message);
     
     if (!$result['success']) {
+        // Check if it's a 24-hour window error
+        $errorMsg = $result['error'] ?? '';
+        $response = $result['response'] ?? '';
+        
+        if (strpos($errorMsg, '400') !== false || strpos($response, '"code":100') !== false || strpos($response, 'Invalid parameter') !== false) {
+            response_error('Cannot send message: This contact has not messaged you recently. WhatsApp requires the contact to message you first, or you need to use a template message.', 403, ['details' => $result]);
+        }
+        
         response_error('Failed to send message', 500, ['details' => $result]);
     }
     
