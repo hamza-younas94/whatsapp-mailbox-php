@@ -211,15 +211,41 @@ function editSegment(id) {
         document.getElementById('description').value = segment.description || '';
         document.getElementById('is_dynamic').checked = segment.is_dynamic;
         document.getElementById('segmentModalTitle').textContent = 'Edit Segment';
+        
+        // Populate conditions if they exist
+        if (segment.conditions && typeof segment.conditions === 'object') {
+            const conditionBuilder = document.getElementById('conditions-builder');
+            const firstCondition = Object.keys(segment.conditions)[0];
+            
+            if (firstCondition) {
+                const conditionData = segment.conditions[firstCondition];
+                const fieldSelect = conditionBuilder.querySelector('select[name="field"]');
+                const operatorSelect = conditionBuilder.querySelector('select[name="operator"]');
+                const valueInput = conditionBuilder.querySelector('input[name="value"]');
+                
+                if (fieldSelect) fieldSelect.value = firstCondition;
+                if (operatorSelect && conditionData.operator) operatorSelect.value = conditionData.operator;
+                if (valueInput && conditionData.value) valueInput.value = conditionData.value;
+            }
+        }
+        
         segmentModal.show();
     }
 }
 
 function saveSegment() {
     // Build conditions object from form
-    const conditions = {
-        stage: {operator: '=', value: 'qualified'}
-    };
+    const conditionBuilder = document.getElementById('conditions-builder');
+    const fieldSelect = conditionBuilder.querySelector('select[name="field"]');
+    const operatorSelect = conditionBuilder.querySelector('select[name="operator"]');
+    const valueInput = conditionBuilder.querySelector('input[name="value"]');
+    
+    const field = fieldSelect ? fieldSelect.value : 'stage';
+    const operator = operatorSelect ? operatorSelect.value : '=';
+    const value = valueInput ? valueInput.value : '';
+    
+    const conditions = {};
+    conditions[field] = {operator: operator, value: value};
     
     const formData = new FormData(document.getElementById('segmentForm'));
     const segmentId = document.getElementById('segment_id').value;
