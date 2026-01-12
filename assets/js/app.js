@@ -204,6 +204,11 @@ async function selectContact(contactId, name, phoneNumber) {
             ${crmInfo}
         </div>
         <div class="crm-actions">
+            <button onclick="openTemplateModal(${contactId}, '${phoneNumber}')" class="btn-crm" title="Send Template Message">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20,2H4A2,2 0 0,0 2,4V22L6,18H20A2,2 0 0,0 22,16V4A2,2 0 0,0 20,2M6,9H18V11H6M14,14H6V12H14M18,8H6V6H18"/>
+                </svg>
+            </button>
             <button onclick="openCrmModal(${contactId})" class="btn-crm" title="CRM Actions">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3Z"/>
@@ -873,10 +878,77 @@ async function saveDeal(contactId) {
         showToast('Failed to add deal', 'error');
     }
 }
+
+/**
+ * Template Message Functions
+ */
+let templateContactId = null;
+let templatePhoneNumber = null;
+
+function openTemplateModal(contactId, phoneNumber) {
+    templateContactId = contactId;
+    templatePhoneNumber = phoneNumber;
+    document.getElementById('templateModal').style.display = 'flex';
+}
+
+function closeTemplateModal() {
+    document.getElementById('templateModal').style.display = 'none';
+    templateContactId = null;
+    templatePhoneNumber = null;
+}
+
+async function sendTemplate() {
+    const templateName = document.getElementById('templateName').value.trim();
+    const languageCode = document.getElementById('templateLanguage').value;
+    
+    if (!templateName) {
+        showToast('Please enter a template name', 'error');
+        return;
+    }
+    
+    if (!templateContactId || !templatePhoneNumber) {
+        showToast('Contact information missing', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('api.php/send-template', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                to: templatePhoneNumber,
+                template_name: templateName,
+                language_code: languageCode,
+                contact_id: templateContactId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            showToast('Template message sent successfully!', 'success');
+            closeTemplateModal();
+            await loadMessages(templateContactId);
+            loadContacts();
+        } else {
+            showToast('Failed to send template: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error('Error sending template:', error);
+        showToast('Failed to send template message', 'error');
+    }
+}
+
 // Close panel when clicking outside
 window.onclick = function(event) {
     const panel = document.getElementById('crmSidePanel');
+    const modal = document.getElementById('templateModal');
+    
     if (event.target === panel) {
         closeCrmPanel();
+    }
+    
+    if (event.target === modal) {
+        closeTemplateModal();
     }
 }

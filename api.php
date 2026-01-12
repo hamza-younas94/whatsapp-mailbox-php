@@ -52,6 +52,12 @@ try {
             }
             break;
             
+        case 'send-template':
+            if ($method === 'POST') {
+                sendTemplateMessage();
+            }
+            break;
+            
         case 'message-limit':
             if ($method === 'GET') {
                 getMessageLimit();
@@ -155,12 +161,12 @@ function getMessages() {
 function sendMessage() {
     // Check message limit
     $messagesSent = (int)Capsule::table('config')
-        ->where('key', 'messages_sent_count')
-        ->value('value') ?? 0;
+        ->where('config_key', 'messages_sent_count')
+        ->value('config_value') ?? 0;
     
     $messageLimit = (int)Capsule::table('config')
-        ->where('key', 'message_limit')
-        ->value('value') ?? 500;
+        ->where('config_key', 'message_limit')
+        ->value('config_value') ?? 500;
     
     if ($messagesSent >= $messageLimit) {
         response_error('Message limit reached. You have sent ' . $messagesSent . ' out of ' . $messageLimit . ' free messages. Please upgrade your plan to continue.', 429);
@@ -228,23 +234,79 @@ function sendMessage() {
     
     // Increment message counter
     Capsule::table('config')
-        ->where('key', 'messages_sent_count')
-        ->increment('value');
+        ->where('config_key', 'messages_sent_count')
+        ->increment('config_value');
     
     // Get updated count
     $newCount = (int)Capsule::table('config')
-        ->where('key', 'messages_sent_count')
-        ->value('value') ?? 0;
+        ->where('config_key', 'messages_sent_count')
+        ->value('config_value') ?? 0;
     
     $limit = (int)Capsule::table('config')
-        ->where('key', 'message_limit')
-        ->value('value') ?? 500;
+        ->where('config_key', 'message_limit')
+        ->value('config_value') ?? 500;
     
     response_json([
         'success' => true,
         'message_id' => $result['message_id'],
         'message' => $savedMessage,
         'messages_remaining' => max(0, $limit - $newCount)
+    ]);
+}
+
+/**
+ * Send template message (for starting new conversations)
+ */
+function sendTemplateMessage() {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    $to = sanitize($input['to'] ?? '');
+    $templateName = sanitize($input['template_name'] ?? '');
+    $languageCode = sanitize($input['language_code'] ?? 'en');
+    $contactId = $input['contact_id'] ?? null;
+    
+    // Validate
+    if (!$to || !$templateName) {
+        response_error('Phone number and template name are required', 422);
+    }
+    
+    // Send via WhatsApp API
+    $whatsappService = new WhatsAppService();
+    $result = $whatsappService->sendTemplateMessage($to, $templateName, $languageCode);
+    
+    if (!$result['success']) {
+        response_error('Failed to send template message', 500, ['details' => $result]);
+    }
+    
+    // Get or create contact
+    if (!$contactId) {
+        $contact = Contact::firstOrCreate(
+            ['phone_number' => $to],
+            ['name' => $to]
+        );
+        $contactId = $contact->id;
+    }
+    
+    // Save message to database
+    $savedMessage = Message::create([
+        'message_id' => $result['message_id'],
+        'contact_id' => $contactId,
+        'phone_number' => $to,
+        'message_type' => 'template',
+        'direction' => 'outgoing',
+        'message_body' => "Template: {$templateName}",
+        'timestamp' => now(),
+        'is_read' => true,
+        'status' => 'sent'
+    ]);
+    
+    // Update contact last message time
+    Contact::find($contactId)->update(['last_message_time' => now()]);
+    
+    response_json([
+        'success' => true,
+        'message_id' => $result['message_id'],
+        'message' => $savedMessage
     ]);
 }
 
@@ -304,12 +366,12 @@ function searchMessages() {
  */
 function getMessageLimit() {
     $messagesSent = (int)Capsule::table('config')
-        ->where('key', 'messages_sent_count')
-        ->value('value') ?? 0;
+        ->where('config_key', 'messages_sent_count')
+        ->value('config_value') ?? 0;
     
     $messageLimit = (int)Capsule::table('config')
-        ->where('key', 'message_limit')
-        ->value('value') ?? 500;
+        ->where('config_key', 'message_limit')
+        ->value('config_value') ?? 500;
     
     response_json([
         'sent' => $messagesSent,

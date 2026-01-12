@@ -102,6 +102,79 @@ class WhatsAppService
     }
 
     /**
+     * Send a template message (for starting conversations)
+     */
+    public function sendTemplateMessage($to, $templateName, $languageCode = 'en', $parameters = [])
+    {
+        // Format phone number
+        $to = $this->formatPhoneNumber($to);
+        
+        $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
+
+        // Build template payload
+        $template = [
+            'name' => $templateName,
+            'language' => [
+                'code' => $languageCode
+            ]
+        ];
+
+        // Add parameters if provided
+        if (!empty($parameters)) {
+            $template['components'] = [
+                [
+                    'type' => 'body',
+                    'parameters' => array_map(function($param) {
+                        return ['type' => 'text', 'text' => $param];
+                    }, $parameters)
+                ]
+            ];
+        }
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $to,
+            'type' => 'template',
+            'template' => $template
+        ];
+
+        try {
+            $response = $this->client->post($url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->accessToken,
+                    'Content-Type' => 'application/json'
+                ],
+                'json' => $payload
+            ]);
+
+            $result = json_decode($response->getBody()->getContents(), true);
+
+            if (isset($result['messages'][0]['id'])) {
+                return [
+                    'success' => true,
+                    'message_id' => $result['messages'][0]['id'],
+                    'data' => $result
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error' => 'Failed to send template message',
+                'data' => $result
+            ];
+
+        } catch (RequestException $e) {
+            logger('WhatsApp Template API Error: ' . $e->getMessage(), 'error');
+            
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null
+            ];
+        }
+    }
+
+    /**
      * Process incoming webhook message
      */
     public function processWebhookMessage($value)

@@ -9,34 +9,21 @@ return [
     'up' => function() {
         $schema = Capsule::schema();
         
-        // Add message counter to config table
-        if (!$schema->hasColumn('config', 'message_count')) {
-            $schema->table('config', function ($table) {
-                $table->integer('message_count')->default(0)->after('value');
-            });
-        }
+        // Config table already exists with config_key and config_value columns
+        // Just insert the new config records
         
-        // Insert message limit config
         Capsule::table('config')->updateOrInsert(
-            ['key' => 'message_limit'],
-            ['value' => '500', 'message_count' => 0]
+            ['config_key' => 'message_limit'],
+            ['config_value' => '500', 'created_at' => now(), 'updated_at' => now()]
         );
         
         Capsule::table('config')->updateOrInsert(
-            ['key' => 'messages_sent_count'],
-            ['value' => '0', 'message_count' => 0]
+            ['config_key' => 'messages_sent_count'],
+            ['config_value' => '0', 'created_at' => now(), 'updated_at' => now()]
         );
     },
     
     'down' => function() {
-        $schema = Capsule::schema();
-        
-        if ($schema->hasColumn('config', 'message_count')) {
-            $schema->table('config', function ($table) {
-                $table->dropColumn('message_count');
-            });
-        }
-        
-        Capsule::table('config')->whereIn('key', ['message_limit', 'messages_sent_count'])->delete();
+        Capsule::table('config')->whereIn('config_key', ['message_limit', 'messages_sent_count'])->delete();
     }
 ];
