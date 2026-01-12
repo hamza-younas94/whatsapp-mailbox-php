@@ -66,6 +66,17 @@ $capsule->setAsGlobal();
 // Boot Eloquent
 $capsule->bootEloquent();
 
+// Auto-run migrations on bootstrap (only in web requests, not CLI)
+if (php_sapi_name() !== 'cli' && file_exists(__DIR__ . '/migrate.php')) {
+    try {
+        require_once __DIR__ . '/migrate.php';
+        $migrationRunner = new MigrationRunner();
+        $migrationRunner->run(true); // Silent mode - no output
+    } catch (Exception $e) {
+        error_log("Migration error: " . $e->getMessage());
+    }
+}
+
 // Initialize Twig templating engine
 $loader = new FilesystemLoader(__DIR__ . '/templates');
 $twig = new Environment($loader, [
