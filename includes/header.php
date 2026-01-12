@@ -44,23 +44,24 @@
         .top-nav .dropdown {
             position: relative;
         }
+        .top-nav .dropdown > .nav-link {
+            cursor: pointer;
+        }
         .top-nav .dropdown-menu {
             display: none;
             position: absolute;
-            top: 100%;
+            top: calc(100% - 0.25rem); /* Reduce gap */
             left: 0;
             background: white;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             border-radius: 4px;
-            margin-top: 0.5rem;
             min-width: 200px;
             z-index: 1000;
             padding: 0.5rem 0;
         }
+        /* Keep dropdown visible on hover - no gap */
         .top-nav .dropdown:hover .dropdown-menu,
-        .top-nav .dropdown-menu:hover {
-            display: block;
-        }
+        .top-nav .dropdown-menu:hover,
         .top-nav .dropdown.show .dropdown-menu {
             display: block;
         }

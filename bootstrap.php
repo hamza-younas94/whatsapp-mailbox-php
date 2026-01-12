@@ -6,6 +6,9 @@
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+// Load helper functions
+require_once __DIR__ . '/app/helpers.php';
+
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Container\Container;

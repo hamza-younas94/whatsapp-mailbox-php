@@ -14,8 +14,8 @@ use GuzzleHttp\Client;
 echo "[" . date('Y-m-d H:i:s') . "] Job processor started\n";
 
 // WhatsApp API configuration
-$phoneNumberId = getenv('WHATSAPP_PHONE_NUMBER_ID');
-$accessToken = getenv('WHATSAPP_ACCESS_TOKEN');
+$phoneNumberId = env('WHATSAPP_PHONE_NUMBER_ID');
+$accessToken = env('WHATSAPP_ACCESS_TOKEN');
 
 if (!$phoneNumberId || !$accessToken) {
     echo "⚠️  WhatsApp credentials not configured - skipping job processing\n";
