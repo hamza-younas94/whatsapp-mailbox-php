@@ -267,7 +267,6 @@ function editTag(id) {
             showToast('Error loading tag', 'error');
         });
 }
-}
 
 function saveTag() {
     const formData = new FormData(document.getElementById('tagForm'));
