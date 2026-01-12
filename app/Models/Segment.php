@@ -42,10 +42,6 @@ class Segment extends Model
             $value = $condition['value'] ?? null;
             
             switch ($field) {
-                case 'total_revenue':
-                    $query->where('total_revenue', $operator, $value);
-                    break;
-                
                 case 'stage':
                     if ($operator === 'in' && is_array($value)) {
                         $query->whereIn('stage', $value);

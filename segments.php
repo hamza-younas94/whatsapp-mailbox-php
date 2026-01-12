@@ -72,11 +72,11 @@ $pageTitle = 'Contact Segments';
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid segments-page">
+    <div class="page-header d-flex justify-content-between align-items-center">
         <div>
-            <h1 class="h3 mb-0">📊 Contact Segments</h1>
-            <p class="text-muted">Smart grouping for targeted campaigns</p>
+            <h1>📊 Contact Segments</h1>
+            <p>Smart grouping for targeted campaigns</p>
         </div>
         <button class="btn btn-primary" onclick="openSegmentModal()">
             <i class="fas fa-plus"></i> New Segment
@@ -87,22 +87,31 @@ require_once __DIR__ . '/includes/header.php';
     <div class="row">
         <?php foreach ($segments as $segment): ?>
         <div class="col-md-4 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title"><?php echo htmlspecialchars($segment->name); ?></h5>
-                    <p class="card-text text-muted small"><?php echo htmlspecialchars($segment->description ?? ''); ?></p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h3 class="mb-0"><?php echo number_format($segment->contact_count); ?></h3>
-                        <span class="badge bg-<?php echo $segment->is_dynamic ? 'success' : 'secondary'; ?>">
-                            <?php echo $segment->is_dynamic ? 'Dynamic' : 'Static'; ?>
-                        </span>
-                    </div>
-                    <div class="mt-3">
-                        <button class="btn btn-sm btn-outline-primary" onclick="editSegment(<?php echo $segment->id; ?>)">Edit</button>
-                        <button class="btn btn-sm btn-outline-info" onclick="refreshSegment(<?php echo $segment->id; ?>)">Refresh</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSegment(<?php echo $segment->id; ?>)">Delete</button>
-                    </div>
+            <div class="card stat-card">
+                <div class="stat-icon" style="background: <?php echo $segment->is_dynamic ? '#e8f5e9' : '#f5f5f5'; ?>;">
+                    <i class="fas fa-<?php echo $segment->is_dynamic ? 'sync-alt' : 'layer-group'; ?>" 
+                       style="color: <?php echo $segment->is_dynamic ? '#25D366' : '#6c757d'; ?>; font-size: 1.5rem;"></i>
                 </div>
+                <h5 class="mb-2" style="font-size: 1.1rem; font-weight: 600;"><?php echo htmlspecialchars($segment->name); ?></h5>
+                <p class="text-muted small mb-3"><?php echo htmlspecialchars($segment->description ?? 'No description'); ?></p>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="stat-value"><?php echo number_format($segment->contact_count); ?></div>
+                    <span class="badge bg-<?php echo $segment->is_dynamic ? 'success' : 'secondary'; ?>">
+                        <?php echo $segment->is_dynamic ? 'Dynamic' : 'Static'; ?>
+                    </span>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editSegment(<?php echo $segment->id; ?>)">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="refreshSegment(<?php echo $segment->id; ?>)">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSegment(<?php echo $segment->id; ?>)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
             </div>
         </div>
         <?php endforeach; ?>
@@ -138,8 +147,8 @@ require_once __DIR__ . '/includes/header.php';
                                 <select class="form-select form-select-sm d-inline-block w-auto me-2" name="field">
                                     <option value="stage">Stage</option>
                                     <option value="lead_score">Lead Score</option>
-                                    <option value="total_revenue">Total Revenue</option>
                                     <option value="last_message_days">Days Since Last Message</option>
+                                    <option value="tags">Tags</option>
                                 </select>
                                 <select class="form-select form-select-sm d-inline-block w-auto me-2" name="operator">
                                     <option value="=">=</option>
@@ -210,7 +219,7 @@ function editSegment(id) {
 function saveSegment() {
     // Build conditions object from form
     const conditions = {
-        total_revenue: {operator: '>', value: 10000}
+        stage: {operator: '=', value: 'qualified'}
     };
     
     const formData = new FormData(document.getElementById('segmentForm'));

@@ -161,10 +161,23 @@ function processBroadcasts($client, $phoneNumberId, $accessToken) {
                 
                 $result = json_decode($response->getBody(), true);
                 
+                $whatsappMessageId = $result['messages'][0]['id'] ?? null;
+                
                 $recipient->update([
                     'status' => 'sent',
                     'sent_at' => now(),
-                    'whatsapp_message_id' => $result['messages'][0]['id'] ?? null
+                    'whatsapp_message_id' => $whatsappMessageId
+                ]);
+                
+                // Save to message history
+                \App\Models\Message::create([
+                    'contact_id' => $recipient->contact->id,
+                    'whatsapp_message_id' => $whatsappMessageId,
+                    'direction' => 'outgoing',
+                    'type' => 'text',
+                    'message' => $broadcast->message,
+                    'timestamp' => now(),
+                    'status' => 'sent'
                 ]);
                 
                 $broadcast->increment('sent_count');
