@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Workflow extends Model
+{
+    protected $table = 'workflows';
+    
+    protected $fillable = [
+        'name',
+        'description',
+        'trigger_type',
+        'trigger_conditions',
+        'actions',
+        'is_active',
+        'execution_count',
+        'last_executed_at',
+        'created_by'
+    ];
+    
+    protected $casts = [
+        'trigger_conditions' => 'array',
+        'actions' => 'array',
+        'is_active' => 'boolean',
+        'last_executed_at' => 'datetime'
+    ];
+    
+    /**
+     * Executions
+     */
+    public function executions()
+    {
+        return $this->hasMany(WorkflowExecution::class);
+    }
+    
+    /**
+     * Creator
+     */
+    public function creator()
+    {
+        return $this->belongsTo(AdminUser::class, 'created_by');
+    }
+}

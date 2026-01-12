@@ -2,7 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+
+
+namespace App\Models;
+
+
 
 class Contact extends Model
 {
@@ -128,6 +132,22 @@ class Contact extends Model
     public function assignedUser()
     {
         return $this->belongsTo(AdminUser::class, 'assigned_to');
+    }
+
+    /**
+     * Tags assigned to this contact
+     */
+    public function contactTags()
+    {
+        return $this->belongsToMany(Tag::class, 'contact_tag');
+    }
+
+    /**
+     * Scheduled messages for this contact
+     */
+    public function scheduledMessages()
+    {
+        return $this->hasMany(ScheduledMessage::class);
     }
 
     /**
