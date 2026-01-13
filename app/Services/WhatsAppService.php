@@ -325,7 +325,7 @@ class WhatsAppService
                 $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
-                $mediaFilename = $mediaDetails['filename'] ?? 'image_' . time() . '.jpg';
+                // Don't set media_filename for incoming WhatsApp media (not downloaded locally)
                 break;
 
             case 'audio':
@@ -336,7 +336,7 @@ class WhatsAppService
                 $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
-                $mediaFilename = $mediaDetails['filename'] ?? 'audio_' . time() . '.mp3';
+                // Don't set media_filename for incoming WhatsApp media (not downloaded locally)
                 break;
 
             case 'video':
@@ -348,7 +348,7 @@ class WhatsAppService
                 $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
-                $mediaFilename = $mediaDetails['filename'] ?? 'video_' . time() . '.mp4';
+                // Don't set media_filename for incoming WhatsApp media (not downloaded locally)
                 break;
 
             case 'document':
@@ -360,7 +360,8 @@ class WhatsAppService
                 $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
-                $mediaFilename = $mediaDetails['filename'] ?? $mediaCaption ?? 'document_' . time();
+                // Use caption as display name for documents, but don't set media_filename (not local)
+                $mediaCaption = $mediaCaption ?: 'document_' . time();
                 break;
 
             case 'location':
