@@ -6,14 +6,17 @@
     <title>Feature Implementation Status</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; padding: 40px 20px; }
+        body { font-family: 'Space Grotesk', 'DM Sans', sans-serif; background: linear-gradient(135deg, #f8fbff, #f1f5ff); padding: 40px 20px; color: #0f172a; }
         .container { max-width: 1200px; margin: 0 auto; }
-        h1 { color: #1a202c; margin-bottom: 10px; font-size: 32px; }
-        .subtitle { color: #718096; margin-bottom: 40px; }
-        .phase { background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #041029; margin-bottom: 10px; font-size: 38px; letter-spacing: -0.5px; }
+        .subtitle { color: #5b6477; margin-bottom: 10px; font-size: 18px; }
+        .hero { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; gap: 20px; }
+        .cta { text-decoration: none; background: #0dd198; color: #041029; padding: 12px 20px; border-radius: 999px; font-weight: 600; box-shadow: 0 10px 20px rgba(13,209,152,0.25); transition: transform 0.2s; }
+        .cta:hover { transform: translateY(-2px); }
+        .phase { background: white; border-radius: 24px; padding: 32px; margin-bottom: 32px; box-shadow: 0 25px 60px rgba(6,24,44,0.12); border: 1px solid rgba(15,23,42,0.05); }
         .phase-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; }
-        .phase-number { width: 50px; height: 50px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; }
-        .phase-title { font-size: 24px; font-weight: 600; color: #1a202c; }
+        .phase-number { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg, #0dd198, #0ea5e9); color: #041029; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 26px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
+        .phase-title { font-size: 26px; font-weight: 600; color: #041029; }
         .feature { display: flex; align-items: start; gap: 15px; padding: 15px; border-radius: 8px; margin-bottom: 12px; }
         .feature:hover { background: #f7fafc; }
         .status { min-width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
@@ -35,8 +38,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>🚀 WhatsApp CRM - Feature Implementation Status</h1>
-        <p class="subtitle">Complete 3-Phase Implementation Roadmap</p>
+        <div class="hero">
+            <div>
+                <h1>🚀 WhatsApp CRM - Feature Implementation Status</h1>
+                <p class="subtitle">Complete 3-Phase Implementation Roadmap</p>
+            </div>
+            <a class="cta" href="index.php">← Back to Mailbox</a>
+        </div>
         
         <div class="instructions">
             <h3>📋 Next Steps</h3>
