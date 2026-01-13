@@ -521,28 +521,94 @@ function markAsRead() {
 }
 
 /**
- * Search messages
+ * Search messages with advanced filters
  */
 function searchMessages() {
     $query = sanitize($_GET['q'] ?? '');
+    $stage = sanitize($_GET['stage'] ?? '');
+    $tags = explode(',', sanitize($_GET['tags'] ?? ''));
+    $tags = array_filter($tags);
+    $messageType = sanitize($_GET['message_type'] ?? '');
+    $fromDate = sanitize($_GET['from_date'] ?? '');
+    $toDate = sanitize($_GET['to_date'] ?? '');
+    $direction = sanitize($_GET['direction'] ?? '');
+    $minScore = (int)($_GET['min_score'] ?? 0);
     
     if (!$query) {
         response_json([]);
+        return;
     }
     
-    $results = Message::with('contact')
-        ->search($query)
-        ->orderBy('timestamp', 'desc')
-        ->limit(50)
+    // Build query
+    $qb = Message::with(['contact', 'contact.contactTags']);
+    
+    // Text search
+    $qb->where(function($q) use ($query) {
+        $q->where('message_body', 'like', "%{$query}%")
+          ->orWhere('phone_number', 'like', "%{$query}%")
+          ->orWhereHas('contact', function($c) use ($query) {
+              $c->where('name', 'like', "%{$query}%")
+                ->orWhere('phone_number', 'like', "%{$query}%");
+          });
+    });
+    
+    // Filters
+    if ($stage) {
+        $qb->whereHas('contact', function($c) use ($stage) {
+            $c->where('stage', $stage);
+        });
+    }
+    
+    if (!empty($tags)) {
+        $qb->whereHas('contact.contactTags', function($q) use ($tags) {
+            $q->whereIn('tag_id', $tags);
+        });
+    }
+    
+    if ($messageType) {
+        $qb->where('message_type', $messageType);
+    }
+    
+    if ($fromDate) {
+        $qb->where('timestamp', '>=', $fromDate . ' 00:00:00');
+    }
+    
+    if ($toDate) {
+        $qb->where('timestamp', '<=', $toDate . ' 23:59:59');
+    }
+    
+    if ($direction && in_array($direction, ['incoming', 'outgoing'])) {
+        $qb->where('direction', $direction === 'incoming' ? 'incoming' : 'outgoing');
+    }
+    
+    if ($minScore > 0) {
+        $qb->whereHas('contact', function($c) use ($minScore) {
+            $c->where('lead_score', '>=', $minScore);
+        });
+    }
+    
+    $results = $qb->orderBy('timestamp', 'desc')
+        ->limit(100)
         ->get()
         ->map(function($message) {
             return [
                 'id' => $message->id,
                 'message_body' => $message->message_body,
+                'message_type' => $message->message_type,
                 'timestamp' => $message->timestamp->format('Y-m-d H:i:s'),
+                'contact_id' => $message->contact_id,
                 'contact_name' => $message->contact->name,
-                'contact_phone' => $message->contact->phone_number,
-                'direction' => $message->direction
+                'phone_number' => $message->contact->phone_number,
+                'stage' => $message->contact->stage,
+                'lead_score' => $message->contact->lead_score,
+                'direction' => $message->direction,
+                'tags' => $message->contact->contactTags->map(function($tag) {
+                    return [
+                        'id' => $tag->id,
+                        'name' => $tag->name,
+                        'color' => $tag->color
+                    ];
+                })->values()->all()
             ];
         });
     
