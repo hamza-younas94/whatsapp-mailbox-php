@@ -52,6 +52,12 @@ try {
             }
             break;
             
+        case 'send-media':
+            if ($method === 'POST') {
+                sendMediaMessage();
+            }
+            break;
+            
         case 'send-template':
             if ($method === 'POST') {
                 sendTemplateMessage();
@@ -258,6 +264,143 @@ function sendMessage() {
     response_json([
         'success' => true,
         'message_id' => $result['message_id'],
+        'message' => $savedMessage,
+        'messages_remaining' => max(0, $limit - $newCount)
+    ]);
+}
+
+/**
+ * Send media message (image, video, document, audio)
+ */
+function sendMediaMessage() {
+    // Check message limit
+    $messagesSent = (int)Capsule::table('config')
+        ->where('config_key', 'messages_sent_count')
+        ->value('config_value') ?? 0;
+    
+    $messageLimit = (int)Capsule::table('config')
+        ->where('config_key', 'message_limit')
+        ->value('config_value') ?? 500;
+    
+    if ($messagesSent >= $messageLimit) {
+        response_error('Message limit reached', 429);
+    }
+    
+    // Get form data
+    $to = sanitize($_POST['to'] ?? '');
+    $contactId = $_POST['contact_id'] ?? null;
+    $caption = $_POST['caption'] ?? '';
+    
+    // Validate
+    if (!$to || !isset($_FILES['media'])) {
+        response_error('Phone number and media file are required', 422);
+    }
+    
+    $file = $_FILES['media'];
+    
+    // Validate file upload
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        response_error('File upload failed', 400);
+    }
+    
+    // Check file size (16MB max for WhatsApp)
+    if ($file['size'] > 16 * 1024 * 1024) {
+        response_error('File size must be less than 16MB', 400);
+    }
+    
+    // Determine media type based on MIME
+    $mimeType = mime_content_type($file['tmp_name']);
+    $mediaType = 'document'; // default
+    
+    if (strpos($mimeType, 'image/') === 0) {
+        $mediaType = 'image';
+    } elseif (strpos($mimeType, 'video/') === 0) {
+        $mediaType = 'video';
+    } elseif (strpos($mimeType, 'audio/') === 0) {
+        $mediaType = 'audio';
+    }
+    
+    // Upload file to server
+    $uploadDir = __DIR__ . '/uploads/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    $filename = uniqid() . '_' . basename($file['name']);
+    $uploadPath = $uploadDir . $filename;
+    
+    if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
+        response_error('Failed to save file', 500);
+    }
+    
+    // Get public URL for the file
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'];
+    $mediaUrl = $protocol . '://' . $host . '/uploads/' . $filename;
+    
+    // Send via WhatsApp API
+    $whatsappService = new WhatsAppService();
+    $result = $whatsappService->sendMediaMessage($to, $mediaUrl, $mediaType, $caption, $filename);
+    
+    if (!$result['success']) {
+        // Clean up uploaded file
+        @unlink($uploadPath);
+        
+        // Check if it's a 24-hour window error
+        $errorMsg = $result['error'] ?? '';
+        if (strpos($errorMsg, '400') !== false) {
+            response_error('Cannot send: Contact must message you first (24-hour window)', 403, ['details' => $result]);
+        }
+        
+        response_error('Failed to send media', 500, ['details' => $result]);
+    }
+    
+    // Get or create contact
+    if (!$contactId) {
+        $contact = Contact::firstOrCreate(
+            ['phone_number' => $to],
+            ['name' => $to]
+        );
+        $contactId = $contact->id;
+    }
+    
+    // Save message to database
+    $savedMessage = Message::create([
+        'message_id' => $result['message_id'],
+        'contact_id' => $contactId,
+        'phone_number' => $to,
+        'message_type' => $mediaType,
+        'direction' => 'outgoing',
+        'message_body' => $caption ?: '[' . strtoupper($mediaType) . ']',
+        'media_id' => $result['media_id'] ?? null,
+        'media_filename' => $filename,
+        'media_size' => $file['size'],
+        'timestamp' => now(),
+        'is_read' => true,
+        'status' => 'sent'
+    ]);
+    
+    // Update contact last message time
+    Contact::find($contactId)->update(['last_message_time' => now()]);
+    
+    // Increment message counter
+    Capsule::table('config')
+        ->where('config_key', 'messages_sent_count')
+        ->increment('config_value');
+    
+    // Get updated count
+    $newCount = (int)Capsule::table('config')
+        ->where('config_key', 'messages_sent_count')
+        ->value('config_value') ?? 0;
+    
+    $limit = (int)Capsule::table('config')
+        ->where('config_key', 'message_limit')
+        ->value('config_value') ?? 500;
+    
+    response_json([
+        'success' => true,
+        'message_id' => $result['message_id'],
+        'media_url' => $mediaUrl,
         'message' => $savedMessage,
         'messages_remaining' => max(0, $limit - $newCount)
     ]);

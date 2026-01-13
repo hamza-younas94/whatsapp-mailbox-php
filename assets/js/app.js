@@ -283,10 +283,53 @@ function renderMessages(messagesList) {
         const time = formatTime(message.timestamp);
         const status = direction === 'outgoing' ? getStatusIcon(message.status) : '';
         
+        // Render media messages
+        let content = '';
+        if (message.message_type === 'image' && message.media_filename) {
+            content = `
+                <div class="message-media">
+                    <img src="/uploads/${escapeHtml(message.media_filename)}" alt="Image" onclick="window.open(this.src, '_blank')" style="max-width: 300px; border-radius: 8px; cursor: pointer;">
+                    ${message.message_body && message.message_body !== '[IMAGE]' ? `<div class="message-text" style="margin-top: 8px;">${escapeHtml(message.message_body)}</div>` : ''}
+                </div>
+            `;
+        } else if (message.message_type === 'video' && message.media_filename) {
+            content = `
+                <div class="message-media">
+                    <video controls style="max-width: 300px; border-radius: 8px;">
+                        <source src="/uploads/${escapeHtml(message.media_filename)}" type="video/mp4">
+                    </video>
+                    ${message.message_body && message.message_body !== '[VIDEO]' ? `<div class="message-text" style="margin-top: 8px;">${escapeHtml(message.message_body)}</div>` : ''}
+                </div>
+            `;
+        } else if (message.message_type === 'audio' && message.media_filename) {
+            content = `
+                <div class="message-media">
+                    <audio controls style="max-width: 300px;">
+                        <source src="/uploads/${escapeHtml(message.media_filename)}" type="audio/mpeg">
+                    </audio>
+                    ${message.message_body && message.message_body !== '[AUDIO]' ? `<div class="message-text" style="margin-top: 8px;">${escapeHtml(message.message_body)}</div>` : ''}
+                </div>
+            `;
+        } else if (message.message_type === 'document' && message.media_filename) {
+            content = `
+                <div class="message-media">
+                    <a href="/uploads/${escapeHtml(message.media_filename)}" target="_blank" class="document-link">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                        <span>${escapeHtml(message.media_filename)}</span>
+                    </a>
+                    ${message.message_body && message.message_body !== '[DOCUMENT]' ? `<div class="message-text" style="margin-top: 8px;">${escapeHtml(message.message_body)}</div>` : ''}
+                </div>
+            `;
+        } else {
+            content = `<div class="message-text">${escapeHtml(message.message_body)}</div>`;
+        }
+        
         return `
             <div class="message ${direction}">
                 <div class="message-bubble">
-                    <div class="message-text">${escapeHtml(message.message_body)}</div>
+                    ${content}
                     <div class="message-time">
                         ${time}
                         ${status}
@@ -307,7 +350,12 @@ async function sendMessage() {
     const input = document.getElementById('messageInput');
     const message = input.value.trim();
     
-    if (!message || !currentContactId) {
+    // Check if sending media or text
+    if (!selectedMediaFile && !message) {
+        return;
+    }
+    
+    if (!currentContactId) {
         return;
     }
     
@@ -320,25 +368,53 @@ async function sendMessage() {
     
     // Disable input while sending
     input.disabled = true;
+    const sendBtn = document.querySelector('.send-btn');
+    const originalBtnContent = sendBtn.innerHTML;
+    sendBtn.innerHTML = '<div style="width:20px;height:20px;border:2px solid white;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;"></div>';
+    sendBtn.disabled = true;
     
     try {
-        const response = await fetch('api.php/send', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                to: contact.phone_number,
-                message: message,
-                contact_id: currentContactId
-            })
-        });
+        let response, result;
         
-        const result = await response.json();
+        // Send media if selected
+        if (selectedMediaFile) {
+            const formData = new FormData();
+            formData.append('media', selectedMediaFile);
+            formData.append('to', contact.phone_number);
+            formData.append('contact_id', currentContactId);
+            
+            const caption = document.getElementById('mediaCaption').value.trim();
+            if (caption) {
+                formData.append('caption', caption);
+            }
+            
+            response = await fetch('api.php/send-media', {
+                method: 'POST',
+                body: formData
+            });
+            
+            result = await response.json();
+        } else {
+            // Send text message
+            response = await fetch('api.php/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    to: contact.phone_number,
+                    message: message,
+                    contact_id: currentContactId
+                })
+            });
+            
+            result = await response.json();
+        }
         
         if (response.ok && result.success) {
             // Clear input
             input.value = '';
+            clearMediaSelection();
             
             // Reload messages
             await loadMessages(currentContactId);
@@ -353,6 +429,8 @@ async function sendMessage() {
                     showToast(`Warning: Only ${result.messages_remaining} messages remaining!`, 'info');
                 }
             }
+            
+            showToast(selectedMediaFile ? 'Media sent successfully!' : 'Message sent!', 'success');
         } else {
             const errorMsg = result.error || 'Unknown error';
             
@@ -377,6 +455,8 @@ async function sendMessage() {
         showToast('Failed to send message', 'error');
     } finally {
         input.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = originalBtnContent;
         input.focus();
     }
 }
@@ -980,4 +1060,83 @@ window.onclick = function(event) {
     if (event.target === modal) {
         closeTemplateModal();
     }
+}
+/**
+ * Media Upload Functions
+ */
+let selectedMediaFile = null;
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    selectedMediaFile = file;
+    
+    // Validate file size (max 16MB for WhatsApp)
+    const maxSize = 16 * 1024 * 1024; // 16MB
+    if (file.size > maxSize) {
+        showToast('File size must be less than 16MB', 'error');
+        clearMediaSelection();
+        return;
+    }
+    
+    // Show preview
+    const preview = document.getElementById('mediaPreview');
+    const previewImage = document.getElementById('mediaPreviewImage');
+    const fileName = document.getElementById('mediaFileName');
+    const fileSize = document.getElementById('mediaFileSize');
+    
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
+    
+    // Create preview based on file type
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        };
+        reader.readAsDataURL(file);
+    } else if (file.type.startsWith('video/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.innerHTML = `<video controls><source src="${e.target.result}" type="${file.type}"></video>`;
+        };
+        reader.readAsDataURL(file);
+    } else if (file.type === 'application/pdf') {
+        previewImage.innerHTML = `
+            <div style="padding: 40px; text-align: center;">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="#d32f2f">
+                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M15.5,16H14V19H12.5V16H11V19H9.5V13.5H15.5V16M9.5,11.5A1.5,1.5 0 0,1 8,10V9.5A1.5,1.5 0 0,1 9.5,8H11V11.5H9.5M14.5,11.5A1.5,1.5 0 0,1 13,10V9.5A1.5,1.5 0 0,1 14.5,8H16V11.5H14.5Z"/>
+                </svg>
+                <div style="margin-top: 12px; color: var(--text-secondary);">PDF Document</div>
+            </div>
+        `;
+    } else {
+        previewImage.innerHTML = `
+            <div style="padding: 40px; text-align: center;">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="var(--text-secondary)">
+                    <path d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"/>
+                </svg>
+                <div style="margin-top: 12px; color: var(--text-secondary);">Document</div>
+            </div>
+        `;
+    }
+    
+    preview.style.display = 'block';
+}
+
+function clearMediaSelection() {
+    selectedMediaFile = null;
+    document.getElementById('mediaInput').value = '';
+    document.getElementById('mediaPreview').style.display = 'none';
+    document.getElementById('mediaPreviewImage').innerHTML = '';
+    document.getElementById('mediaCaption').value = '';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
