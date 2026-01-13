@@ -40,6 +40,9 @@ function formatPakistanTime(dateString) {
 document.addEventListener('DOMContentLoaded', function() {
     loadContacts();
     
+    // Request notification permission
+    requestNotificationPermission();
+    
     // Check for contact parameter in URL
     const urlParams = new URLSearchParams(window.location.search);
     const contactId = urlParams.get('contact');
@@ -68,8 +71,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Poll for new messages every 5 seconds
-    setInterval(loadContacts, 5000);
+    // Poll for new messages every 5 seconds and check for notifications
+    setInterval(() => {
+        loadContacts();
+        checkForNewMessages();
+    }, 5000);
     
     // Load message limit on page load
     updateMessageLimitDisplay();
@@ -1139,4 +1145,84 @@ function formatFileSize(bytes) {
     const sizes = ['Bytes', 'KB', 'MB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+/**
+ * Desktop Notifications
+ */
+let lastMessageIds = new Set();
+
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                showToast('Desktop notifications enabled!', 'success');
+            }
+        });
+    }
+}
+
+async function checkForNewMessages() {
+    // Don't check if notifications aren't supported or permitted
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+        return;
+    }
+    
+    // Don't show notifications if user is viewing the page
+    if (!document.hidden) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('api.php/contacts');
+        if (!response.ok) return;
+        
+        const currentContacts = await response.json();
+        
+        for (const contact of currentContacts) {
+            // Check if this contact has unread messages
+            if (contact.unread_count > 0 && contact.last_message) {
+                // Create a unique ID for this message
+                const messageKey = `${contact.id}_${contact.last_message_time}`;
+                
+                // Only notify if we haven't seen this message before
+                if (!lastMessageIds.has(messageKey)) {
+                    lastMessageIds.add(messageKey);
+                    
+                    // Show notification
+                    const notification = new Notification(`New message from ${contact.name}`, {
+                        body: truncateText(contact.last_message, 100),
+                        icon: contact.profile_picture_url || '/assets/img/default-avatar.png',
+                        badge: '/assets/img/whatsapp-icon.png',
+                        tag: `message_${contact.id}`,
+                        requireInteraction: false,
+                        silent: false
+                    });
+                    
+                    // Handle notification click
+                    notification.onclick = function() {
+                        window.focus();
+                        // Navigate to the contact
+                        window.location.href = `index.php?contact=${contact.id}`;
+                        notification.close();
+                    };
+                    
+                    // Auto close after 5 seconds
+                    setTimeout(() => notification.close(), 5000);
+                }
+            }
+        }
+        
+        // Clean up old message IDs (keep only last 100)
+        if (lastMessageIds.size > 100) {
+            const idsArray = Array.from(lastMessageIds);
+            lastMessageIds = new Set(idsArray.slice(-100));
+        }
+    } catch (error) {
+        console.error('Error checking for new messages:', error);
+    }
+}
+
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
