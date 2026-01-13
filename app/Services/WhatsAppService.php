@@ -102,6 +102,72 @@ class WhatsAppService
     }
 
     /**
+     * Send media message (image, document, video, audio)
+     */
+    public function sendMediaMessage($to, $mediaUrl, $mediaType = 'image', $caption = null, $filename = null)
+    {
+        // Format phone number
+        $to = $this->formatPhoneNumber($to);
+        
+        $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
+
+        // Build media payload
+        $mediaPayload = [
+            'link' => $mediaUrl
+        ];
+        
+        if ($caption && in_array($mediaType, ['image', 'video', 'document'])) {
+            $mediaPayload['caption'] = $caption;
+        }
+        
+        if ($filename && $mediaType === 'document') {
+            $mediaPayload['filename'] = $filename;
+        }
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $to,
+            'type' => $mediaType,
+            $mediaType => $mediaPayload
+        ];
+
+        try {
+            $response = $this->client->post($url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->accessToken,
+                    'Content-Type' => 'application/json'
+                ],
+                'json' => $payload
+            ]);
+
+            $result = json_decode($response->getBody()->getContents(), true);
+
+            if (isset($result['messages'][0]['id'])) {
+                return [
+                    'success' => true,
+                    'message_id' => $result['messages'][0]['id'],
+                    'data' => $result
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error' => 'Failed to send media',
+                'data' => $result
+            ];
+
+        } catch (RequestException $e) {
+            logger('WhatsApp Media Error: ' . $e->getMessage(), 'error');
+            
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null
+            ];
+        }
+    }
+
+    /**
      * Send a template message (for starting conversations)
      */
     public function sendTemplateMessage($to, $templateName, $languageCode = 'en', $parameters = [])
@@ -307,7 +373,25 @@ class WhatsAppService
         // Check for quick reply shortcuts (only for text messages)
         if ($messageType === 'text' && !empty($messageBody)) {
             $this->checkAndSendQuickReply($messageBody, $contact, $from);
+            
+            // Apply auto-tagging rules
+            $this->applyAutoTagging($messageBody, $contact);
         }
+        
+        // Trigger webhooks
+        $this->triggerWebhooks('message.received', [
+            'message_id' => $messageId,
+            'contact' => [
+                'id' => $contact->id,
+                'name' => $contact->name,
+                'phone' => $from
+            ],
+            'message' => [
+                'type' => $messageType,
+                'body' => $messageBody,
+                'timestamp' => $timestamp
+            ]
+        ]);
     }
 
     /**
@@ -517,6 +601,53 @@ class WhatsAppService
         } catch (\Exception $e) {
             logger("[QUICK_REPLY ERROR] " . $e->getMessage(), 'error');
             logger("[QUICK_REPLY ERROR] Stack: " . $e->getTraceAsString(), 'error');
+        }
+    }
+    
+    /**
+     * Apply auto-tagging rules to contact based on message content
+     */
+    private function applyAutoTagging($messageBody, $contact)
+    {
+        try {
+            logger("[AUTO_TAG] Checking rules for message: " . substr($messageBody, 0, 50));
+            
+            $rules = \App\Models\AutoTagRule::where('is_active', true)
+                ->orderBy('priority', 'desc')
+                ->get();
+            
+            foreach ($rules as $rule) {
+                if ($rule->matches($messageBody)) {
+                    // Check if contact already has this tag
+                    $hasTag = $contact->contactTags()->where('tag_id', $rule->tag_id)->exists();
+                    
+                    if (!$hasTag) {
+                        $contact->contactTags()->attach($rule->tag_id);
+                        $rule->incrementUsage();
+                        logger("[AUTO_TAG] ✅ Applied tag {$rule->tag_id} to contact {$contact->id}");
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            logger("[AUTO_TAG ERROR] " . $e->getMessage(), 'error');
+        }
+    }
+    
+    /**
+     * Trigger webhooks for an event
+     */
+    private function triggerWebhooks($event, $payload)
+    {
+        try {
+            $webhooks = \App\Models\Webhook::where('is_active', true)->get();
+            
+            foreach ($webhooks as $webhook) {
+                if ($webhook->listensTo($event)) {
+                    $webhook->trigger($event, $payload);
+                }
+            }
+        } catch (\Exception $e) {
+            logger("[WEBHOOK ERROR] " . $e->getMessage(), 'error');
         }
     }
 }
