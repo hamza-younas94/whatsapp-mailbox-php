@@ -324,6 +324,7 @@ class WhatsAppService
                 $mediaDetails = $this->fetchMediaDetails($mediaId);
                 $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
+                $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
                 $mediaFilename = $mediaDetails['filename'] ?? 'image_' . time() . '.jpg';
                 break;
 
@@ -334,6 +335,7 @@ class WhatsAppService
                 $mediaDetails = $this->fetchMediaDetails($mediaId);
                 $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
+                $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
                 $mediaFilename = $mediaDetails['filename'] ?? 'audio_' . time() . '.mp3';
                 break;
 
@@ -345,6 +347,7 @@ class WhatsAppService
                 $mediaDetails = $this->fetchMediaDetails($mediaId);
                 $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
+                $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
                 $mediaFilename = $mediaDetails['filename'] ?? 'video_' . time() . '.mp4';
                 break;
 
@@ -356,6 +359,7 @@ class WhatsAppService
                 $mediaDetails = $this->fetchMediaDetails($mediaId);
                 $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
+                $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
                 $mediaFilename = $mediaDetails['filename'] ?? $mediaCaption ?? 'document_' . time();
                 break;
 
@@ -681,33 +685,57 @@ class WhatsAppService
      */
     private function fetchMediaDetails($mediaId)
     {
+        // WhatsApp media details are fetched via Graph API (facebook domain, not instagram)
+        // Endpoint: GET https://graph.facebook.com/{version}/{media-id}?fields=url,file_size,mime_type,sha256
+        $url = "https://graph.facebook.com/{$this->apiVersion}/{$mediaId}/";
+
         try {
-            logger("[MEDIA] Fetching details for media ID: {$mediaId}");
-            
-            $url = "https://graph.instagram.com/{$this->apiVersion}/{$mediaId}/";
-            
+            logger("[MEDIA] Fetching details for media ID: {$mediaId} via {$url}");
+
             $response = $this->client->request('GET', $url, [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $this->accessToken,
                     'Accept' => 'application/json'
+                ],
+                'query' => [
+                    'fields' => 'url,file_size,mime_type,sha256,id'
                 ]
             ]);
-            
+
             $data = json_decode($response->getBody(), true);
             logger("[MEDIA] Response: " . json_encode($data));
-            
+
             return [
-                'media_url' => $data['url'] ?? null,
-                'media_size' => $data['file_size'] ?? null,
-                'filename' => $data['file_name'] ?? null
+                'media_url'   => $data['url'] ?? null,
+                'media_size'  => $data['file_size'] ?? null,
+                'filename'    => $data['id'] ? ($data['id'] . ($data['mime_type'] ? $this->inferExtension($data['mime_type']) : '')) : null,
+                'mime_type'   => $data['mime_type'] ?? null,
             ];
         } catch (\Exception $e) {
+            // Log and gracefully fall back to media_id so UI can still show placeholder/download path
             logger("[MEDIA ERROR] Failed to fetch media details: " . $e->getMessage(), 'error');
             return [
-                'media_url' => null,
+                'media_url'  => null,
                 'media_size' => null,
-                'filename' => null
+                'filename'   => null,
+                'mime_type'  => null,
             ];
         }
+    }
+
+    /**
+     * Infer file extension from mime type for fallback filenames
+     */
+    private function inferExtension($mime)
+    {
+        $map = [
+            'image/jpeg' => '.jpg',
+            'image/png' => '.png',
+            'image/gif' => '.gif',
+            'video/mp4' => '.mp4',
+            'audio/mpeg' => '.mp3',
+            'application/pdf' => '.pdf'
+        ];
+        return $map[$mime] ?? '';
     }
 }
