@@ -65,26 +65,14 @@ body {
 .page-header {
     margin-bottom: 32px;
     padding-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
 .page-header h1 {
-    font-size: 28px;
-    font-weight: 700;
-    margin: 0 0 8px 0;
-    color: #0f172a;
-}
-
-.page-header p {
-    margin: 0;
-    color: #5b6477;
-    font-size: 14px;
-}
-
-.content-header {
-    margin-bottom: 32px;
-}
-
-.content-header h1 {
     font-size: 28px;
     font-weight: 700;
     margin: 0 0 8px 0;
@@ -94,10 +82,19 @@ body {
     gap: 12px;
 }
 
-.content-header p {
+.page-header p {
     margin: 0;
     color: #5b6477;
     font-size: 14px;
+}
+
+/* Page Header Buttons - Action Buttons (Small) */
+.page-header .btn,
+.page-header button.btn {
+    padding: 9px 16px !important;
+    font-size: 13px !important;
+    height: auto !important;
+    min-height: auto !important;
 }
 
 /* Cards */
@@ -130,10 +127,10 @@ body {
 
 /* Buttons */
 .btn {
-    padding: 11px 20px !important;
+    padding: 9px 16px !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     border: none !important;
     transition: all 0.2s ease !important;
     cursor: pointer !important;
@@ -193,8 +190,8 @@ body {
 }
 
 .btn.btn-sm {
-    padding: 7px 14px !important;
-    font-size: 13px !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
 }
 
 .btn.btn-lg {
@@ -955,26 +952,28 @@ body {
 
 .search-input-group input {
     flex: 1;
-    padding: 11px 14px;
-    border: 1px solid rgba(15,23,42,0.12);
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
-    color: #0f172a;
-    background: white;
-    min-height: auto;
+    padding: 9px 14px !important;
+    border: 1px solid rgba(15,23,42,0.12) !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-family: inherit !important;
+    color: #0f172a !important;
+    background: white !important;
+    min-height: auto !important;
+    height: auto !important;
 }
 
 .search-input-group input:focus {
-    outline: none;
-    border-color: #0dd198;
-    box-shadow: 0 0 0 3px rgba(13,209,152,0.1);
+    outline: none !important;
+    border-color: #0dd198 !important;
+    box-shadow: 0 0 0 3px rgba(13,209,152,0.1) !important;
 }
 
 .search-input-group button {
-    padding: 11px 20px;
-    min-width: auto;
-    white-space: nowrap;
+    padding: 9px 16px !important;
+    min-width: auto !important;
+    white-space: nowrap !important;
+    font-size: 13px !important;
 }
 
 /* Filters Row */
@@ -987,31 +986,33 @@ body {
 /* CRM Inputs (from search page) */
 .crm-input,
 .crm-select {
-    padding: 11px 14px;
-    border: 1px solid rgba(15,23,42,0.12);
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
-    color: #0f172a;
-    background: white;
-    width: 100%;
-    transition: all 0.2s ease;
+    padding: 9px 14px !important;
+    border: 1px solid rgba(15,23,42,0.12) !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-family: inherit !important;
+    color: #0f172a !important;
+    background: white !important;
+    width: 100% !important;
+    transition: all 0.2s ease !important;
+    height: auto !important;
+    min-height: auto !important;
 }
 
 .crm-input:focus,
 .crm-select:focus {
-    outline: none;
-    border-color: #0dd198;
-    box-shadow: 0 0 0 3px rgba(13,209,152,0.1);
+    outline: none !important;
+    border-color: #0dd198 !important;
+    box-shadow: 0 0 0 3px rgba(13,209,152,0.1) !important;
 }
 
 .crm-select {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    padding-right: 36px;
+    cursor: pointer !important;
+    appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    padding-right: 36px !important;
 }
 
 /* Slider */
