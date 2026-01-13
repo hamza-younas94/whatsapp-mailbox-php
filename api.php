@@ -194,8 +194,20 @@ function getMessages() {
     
     $limit = intval($_GET['limit'] ?? 50);
     $offset = intval($_GET['offset'] ?? 0);
+    $afterId = intval($_GET['after_id'] ?? 0);
     
-    $messages = Message::where('contact_id', $contactId)
+    $query = Message::where('contact_id', $contactId);
+    
+    if ($afterId > 0) {
+        $messages = $query
+            ->where('id', '>', $afterId)
+            ->orderBy('id')
+            ->get();
+        response_json($messages);
+        return;
+    }
+    
+    $messages = $query
         ->orderBy('timestamp', 'desc')
         ->limit($limit)
         ->offset($offset)

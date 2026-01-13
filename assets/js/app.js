@@ -6,6 +6,9 @@ let currentContactId = null;
 let contacts = [];
 let messages = [];
 let messagePollingInterval = null;
+let lastMessageId = null;
+let newMessageIndicator = null;
+const NEW_MESSAGE_SCROLL_THRESHOLD = 120;
 
 /**
  * Show toast notification
@@ -39,6 +42,11 @@ function formatPakistanTime(dateString) {
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     loadContacts();
+    createNewMessageIndicator();
+    const messagesContainer = document.getElementById('messagesContainer');
+    if (messagesContainer) {
+        messagesContainer.addEventListener('scroll', handleMessageScroll);
+    }
     
     // Request notification permission
     requestNotificationPermission();
@@ -75,6 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(() => {
         loadContacts();
         checkForNewMessages();
+        pollNewMessages();
     }, 5000);
     
     // Load message limit on page load
@@ -205,6 +214,9 @@ function filterContacts(query) {
  */
 async function selectContact(contactId, name, phoneNumber) {
     currentContactId = contactId;
+    messages = [];
+    lastMessageId = null;
+    hideNewMessageIndicator();
     
     // Get full contact data
     const contact = contacts.find(c => c.id === contactId);
@@ -266,7 +278,9 @@ async function loadMessages(contactId) {
         }
         
         messages = await response.json();
-        renderMessages(messages);
+        renderMessages(messages, { replace: true });
+        lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
+        hideNewMessageIndicator();
         
     } catch (error) {
         console.error('Error loading messages:', error);
@@ -274,17 +288,48 @@ async function loadMessages(contactId) {
 }
 
 /**
- * Render messages
+ * Poll for new messages without reloading the thread
  */
-function renderMessages(messagesList) {
-    const container = document.getElementById('messagesContainer');
-    
-    if (messagesList.length === 0) {
-        container.innerHTML = '<div class="empty-state"><p>No messages yet. Start a conversation!</p></div>';
+async function pollNewMessages() {
+    if (!currentContactId || !lastMessageId) {
         return;
     }
     
-    container.innerHTML = messagesList.map(message => {
+    try {
+        const response = await fetch(`api.php/messages?contact_id=${currentContactId}&after_id=${lastMessageId}`);
+        if (!response.ok) {
+            return;
+        }
+        
+        const newMessages = await response.json();
+        if (!Array.isArray(newMessages) || newMessages.length === 0) {
+            return;
+        }
+        
+        messages = messages.concat(newMessages);
+        lastMessageId = newMessages[newMessages.length - 1].id;
+        renderMessages(newMessages, { replace: false });
+    } catch (error) {
+        console.error('Error polling new messages:', error);
+    }
+}
+
+/**
+ * Render messages
+ */
+function renderMessages(messagesList, options = {}) {
+    const { replace = true } = options;
+    const container = document.getElementById('messagesContainer');
+    if (!container) return;
+
+    if (replace && messagesList.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No messages yet. Start a conversation!</p></div>';
+        return;
+    }
+
+    const wasNearBottom = isNearBottom(container);
+    
+    const html = messagesList.map(message => {
         const direction = message.direction;
         const time = formatTime(message.timestamp);
         const status = direction === 'outgoing' ? getStatusIcon(message.status) : '';
@@ -398,21 +443,31 @@ async function sendMessage() {
     sendBtn.innerHTML = '<div style="width:20px;height:20px;border:2px solid white;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;"></div>';
     sendBtn.disabled = true;
     
-    try {
-        let response, result;
-        
-        // Send media if selected
-        if (selectedMediaFile) {
-            console.log('🎬 Sending media:', {
-                file: selectedMediaFile.name,
-                size: selectedMediaFile.size,
-                type: selectedMediaFile.type,
-                to: contact.phone_number,
-                contact_id: currentContactId
-            });
-            
-            const formData = new FormData();
-            formData.append('media', selectedMediaFile);
+        return `
+            <div class="message ${direction}">
+                <div class="message-bubble">
+                    ${content}
+                    <div class="message-time">
+                        ${time}
+                        ${status}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (replace) {
+        container.innerHTML = html;
+    } else if (html) {
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    if (replace || wasNearBottom) {
+        scrollToBottom(container);
+        hideNewMessageIndicator();
+    } else {
+        showNewMessageIndicator();
+    }
             formData.append('to', contact.phone_number);
             formData.append('contact_id', currentContactId);
             
@@ -1325,6 +1380,65 @@ function openImageModal(imageUrl) {
             modal.style.display = 'none';
         }
     };
+}
+
+function isNearBottom(container) {
+    return container.scrollHeight - container.scrollTop - container.clientHeight <= NEW_MESSAGE_SCROLL_THRESHOLD;
+}
+
+function scrollToBottom(container) {
+    container.scrollTop = container.scrollHeight;
+}
+
+function createNewMessageIndicator() {
+    if (newMessageIndicator) {
+        return;
+    }
+    newMessageIndicator = document.createElement('button');
+    newMessageIndicator.id = 'newMessageIndicator';
+    newMessageIndicator.textContent = 'New messages';
+    newMessageIndicator.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: #128C7E;
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 999px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        cursor: pointer;
+        display: none;
+        z-index: 1100;
+    `;
+    newMessageIndicator.onclick = () => {
+        const container = document.getElementById('messagesContainer');
+        if (container) {
+            scrollToBottom(container);
+        }
+        hideNewMessageIndicator();
+    };
+    document.body.appendChild(newMessageIndicator);
+}
+
+function showNewMessageIndicator() {
+    if (newMessageIndicator) {
+        newMessageIndicator.style.display = 'inline-flex';
+    }
+}
+
+function hideNewMessageIndicator() {
+    if (newMessageIndicator) {
+        newMessageIndicator.style.display = 'none';
+    }
+}
+
+function handleMessageScroll() {
+    const container = document.getElementById('messagesContainer');
+    if (!container) return;
+    if (isNearBottom(container)) {
+        hideNewMessageIndicator();
+    }
 }
 
 function truncateText(text, maxLength) {
