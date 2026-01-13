@@ -25,15 +25,24 @@
     <!-- Chat Area -->
     <div class="chat-area">
         <div class="chat-header" id="chatHeader">
-            <div class="empty-state">Select a contact to start messaging</div>
+            <div class="empty-state">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.3; margin-bottom: 16px;">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <h3 style="font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Select a contact</h3>
+                <p style="color: var(--text-secondary); font-size: 14px;">Choose a conversation from the list to start messaging</p>
+            </div>
         </div>
         
         <div class="messages-container" id="messagesContainer">
-            <div class="empty-state">
-                <svg width="100" height="100" viewBox="0 0 24 24" fill="#ccc">
-                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+            <div class="empty-state" style="padding: 80px 40px;">
+                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.2; margin-bottom: 24px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                    <path d="M9 9h.01"/>
+                    <path d="M15 9h.01"/>
                 </svg>
-                <p>No conversation selected</p>
+                <p style="font-size: 16px; color: var(--text-secondary);">No conversation selected</p>
             </div>
         </div>
         

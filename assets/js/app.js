@@ -498,9 +498,6 @@ async function sendMessage() {
             // Reload messages
             await loadMessages(currentContactId);
             
-            // Reload contacts
-            loadContacts();
-            
             // Update message limit display
             if (result.messages_remaining !== undefined) {
                 updateMessageLimitDisplay();
@@ -770,7 +767,6 @@ async function updateStage(contactId) {
         if (response.ok && result.success) {
             showToast('Stage updated successfully!', 'success');
             loadContacts();
-            selectContact(contactId, '', '');
         } else {
             showToast('Failed to update stage: ' + (result.error || 'Unknown error'), 'error');
         }
@@ -1117,7 +1113,6 @@ async function sendTemplate() {
             showToast('Template message sent successfully!', 'success');
             closeTemplateModal();
             await loadMessages(templateContactId);
-            loadContacts();
         } else {
             showToast('Failed to send template: ' + (result.error || 'Unknown error'), 'error');
         }
