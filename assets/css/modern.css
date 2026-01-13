@@ -1300,6 +1300,65 @@ body {
     color: #0f172a;
 }
 
+/* CRM Section Headers with Icons */
+.crm-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.crm-section-header svg {
+    width: 20px !important;
+    height: 20px !important;
+    color: var(--primary) !important;
+    flex-shrink: 0;
+}
+
+.crm-section-header h3 {
+    margin: 0 !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+}
+
+.crm-section {
+    margin-bottom: 24px !important;
+    padding: 16px !important;
+    background: white !important;
+    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.crm-section input,
+.crm-section select,
+.crm-section textarea {
+    margin-bottom: 12px !important;
+}
+
+.crm-section .btn-primary,
+.crm-section .btn-secondary {
+    margin-top: 8px !important;
+}
+
+/* Lead Score Display */
+.score-bar {
+    height: 8px !important;
+    background: #e2e8f0 !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+    margin: 12px 0 !important;
+}
+
+.score-fill {
+    height: 100% !important;
+    background: linear-gradient(90deg, #fbbf24 0%, #0dd198 100%) !important;
+    border-radius: 4px !important;
+    transition: width 0.3s ease !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container,

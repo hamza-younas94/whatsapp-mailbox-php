@@ -660,7 +660,13 @@ function openCrmModal(contactId) {
         </div>
         <div class="modal-body">
             <div class="crm-section">
-                <h3>Stage Management</h3>
+                <div class="crm-section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    <h3>Stage Management</h3>
+                </div>
                 <select id="crmStage" class="crm-select">
                     <option value="new" ${contact.stage === 'new' ? 'selected' : ''}>New</option>
                     <option value="contacted" ${contact.stage === 'contacted' ? 'selected' : ''}>Contacted</option>
@@ -674,14 +680,30 @@ function openCrmModal(contactId) {
             </div>
             
             <div class="crm-section">
-                <h3>Lead Score: <span id="currentScore">${contact.lead_score || 0}</span>/100</h3>
+                <div class="crm-section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                        <polyline points="13 2 13 9 20 9"/>
+                    </svg>
+                    <h3>Lead Score</h3>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <span id="currentScore" style="font-size: 28px; font-weight: 700; color: var(--primary);">${contact.lead_score || 0}</span>
+                    <span style="color: var(--text-secondary); font-size: 14px;">/100</span>
+                </div>
                 <div class="score-bar">
                     <div class="score-fill" style="width: ${contact.lead_score || 0}%"></div>
                 </div>
             </div>
             
             <div class="crm-section">
-                <h3>Company Information</h3>
+                <div class="crm-section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    <h3>Company Information</h3>
+                </div>
                 <input type="text" id="crmCompany" class="crm-input" placeholder="Company Name" value="${contact.company_name || ''}">
                 <input type="email" id="crmEmail" class="crm-input" placeholder="Email" value="${contact.email || ''}">
                 <input type="text" id="crmCity" class="crm-input" placeholder="City" value="${contact.city || ''}">
@@ -689,14 +711,25 @@ function openCrmModal(contactId) {
             </div>
             
             <div class="crm-section">
-                <h3>Deal Information</h3>
+                <div class="crm-section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    <h3>Deal Information</h3>
+                </div>
                 <input type="number" id="crmDealValue" class="crm-input" placeholder="Deal Value" value="${contact.deal_value || ''}">
                 <input type="date" id="crmExpectedClose" class="crm-input" value="${contact.expected_close_date || ''}">
                 <button onclick="updateDealInfo(${contactId})" class="btn-primary">Update Deal</button>
             </div>
             
             <div class="crm-section">
-                <h3>Add Note</h3>
+                <div class="crm-section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <h3>Add Note</h3>
+                </div>
                 <textarea id="crmNote" class="crm-textarea" placeholder="Type your note here..." rows="3"></textarea>
                 <select id="crmNoteType" class="crm-select">
                     <option value="general">General</option>
@@ -708,14 +741,28 @@ function openCrmModal(contactId) {
             </div>
             
             <div class="crm-section">
-                <h3>Recent Notes</h3>
+                <div class="crm-section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M3 21v-5h5"/>
+                    </svg>
+                    <h3>Recent Notes</h3>
+                </div>
                 <div id="notesList" class="notes-list">
                     <div class="loading">Loading notes...</div>
                 </div>
             </div>
             
             <div class="crm-section">
-                <h3>Deal History</h3>
+                <div class="crm-section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    <h3>Deal History</h3>
+                </div>
                 <div class="deal-summary" id="dealSummary">
                     <div class="loading">Loading deals...</div>
                 </div>
@@ -725,7 +772,14 @@ function openCrmModal(contactId) {
             </div>
             
             <div class="crm-section" id="addDealForm" style="display: none;">
-                <h3>Add New Deal</h3>
+                <div class="crm-section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"/>
+                        <circle cx="19" cy="12" r="1"/>
+                        <circle cx="5" cy="12" r="1"/>
+                    </svg>
+                    <h3>Add New Deal</h3>
+                </div>
                 <input type="text" id="dealName" class="crm-input" placeholder="Deal Name (e.g., Website Package)">
                 <input type="number" id="dealAmount" class="crm-input" placeholder="Amount" step="0.01">
                 <select id="dealStatus" class="crm-select">
