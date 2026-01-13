@@ -297,7 +297,8 @@ function renderMessages(messagesList) {
             const imageUrl = message.media_filename ? `/uploads/${escapeHtml(message.media_filename)}` : message.media_url;
             content = `
                 <div class="message-media">
-                    <img src="${imageUrl}" alt="Image" onclick="window.open('${imageUrl}', '_blank')" style="max-width: 300px; border-radius: 8px; cursor: pointer;">
+                    <img src="${imageUrl}" alt="Image" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" onclick="openImageModal('${imageUrl}')" style="max-width: 300px; border-radius: 8px; cursor: pointer;">
+                    <div style="display:none;padding:10px;background:#f0f0f0;border-radius:8px;color:#666;">📷 Image unavailable</div>
                     ${message.message_body && message.message_body !== '[IMAGE]' ? `<div class="message-text" style="margin-top: 8px;">${escapeHtml(message.message_body)}</div>` : ''}
                 </div>
             `;
@@ -360,8 +361,11 @@ function renderMessages(messagesList) {
         `;
     }).join('');
     
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
+    // Keep scroll position if already scrolled, otherwise scroll to bottom
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    if (isNearBottom || messagesList.length <= 1) {
+        container.scrollTop = container.scrollHeight;
+    }
 }
 
 /**
@@ -1244,6 +1248,83 @@ async function checkForNewMessages() {
     } catch (error) {
         console.error('Error checking for new messages:', error);
     }
+}
+
+/**
+ * Open image in lightbox modal
+ */
+function openImageModal(imageUrl) {
+    // Create modal if doesn't exist
+    let modal = document.getElementById('imageModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'imageModal';
+        modal.style.cssText = `
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            cursor: zoom-out;
+        `;
+        modal.onclick = function() {
+            modal.style.display = 'none';
+        };
+        
+        const img = document.createElement('img');
+        img.id = 'modalImage';
+        img.style.cssText = `
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        `;
+        
+        const closeBtn = document.createElement('span');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.style.cssText = `
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        `;
+        closeBtn.onclick = function(e) {
+            e.stopPropagation();
+            modal.style.display = 'none';
+        };
+        
+        modal.appendChild(img);
+        modal.appendChild(closeBtn);
+        document.body.appendChild(modal);
+    }
+    
+    // Show modal with image
+    const modalImage = document.getElementById('modalImage');
+    modalImage.src = imageUrl;
+    modalImage.onerror = function() {
+        modal.style.display = 'none';
+        showToast('Image failed to load', 'error');
+    };
+    modal.style.display = 'block';
+    
+    // ESC key to close
+    document.onkeydown = function(e) {
+        if (e.key === 'Escape') {
+            modal.style.display = 'none';
+        }
+    };
 }
 
 function truncateText(text, maxLength) {
