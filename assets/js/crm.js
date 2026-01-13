@@ -4,10 +4,13 @@
 
 let allContacts = [];
 let currentFilter = 'all';
+let selectedContacts = new Set();
+let allTags = [];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     loadCrmData();
+    loadTags();
     
     // Search
     document.getElementById('crmSearch').addEventListener('input', function(e) {
@@ -18,6 +21,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Refresh every 10 seconds
     setInterval(loadCrmData, 10000);
 });
+
+/**
+ * Load available tags for bulk actions
+ */
+async function loadTags() {
+    try {
+        const response = await fetch('api.php/tags');
+        if (response.ok) {
+            allTags = await response.json();
+            const select = document.getElementById('bulkTagSelect');
+            select.innerHTML = '<option value="">Select tag to add...</option>' +
+                allTags.map(tag => `<option value="${tag.id}">${tag.name}</option>`).join('');
+        }
+    } catch (error) {
+        console.error('Error loading tags:', error);
+    }
+}
 
 /**
  * Load CRM data
@@ -73,7 +93,7 @@ function renderCrmTable(contacts) {
     const tbody = document.getElementById('crmTableBody');
     
     if (contacts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No contacts found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No contacts found</td></tr>';
         return;
     }
     
@@ -99,8 +119,15 @@ function renderCrmTable(contacts) {
             ? formatTime(contact.last_activity_at)
             : '<span class="text-muted">Never</span>';
         
+        const isSelected = selectedContacts.has(contact.id);
+        
         return `
-            <tr>
+            <tr class="contact-row ${isSelected ? 'selected' : ''}">
+                <td style="width: 40px;">
+                    <input type="checkbox" class="contact-checkbox" value="${contact.id}" 
+                           ${isSelected ? 'checked' : ''} 
+                           onchange="toggleContactSelection(${contact.id})">
+                </td>
                 <td>
                     <div class="contact-cell">
                         <div class="contact-avatar-small">${getInitials(contact.name)}</div>
@@ -505,3 +532,208 @@ window.onclick = function(event) {
         closeCrmModal();
     }
 }
+/**
+ * Bulk Operations Functions
+ */
+function toggleContactSelection(contactId) {
+    if (selectedContacts.has(contactId)) {
+        selectedContacts.delete(contactId);
+    } else {
+        selectedContacts.add(contactId);
+    }
+    updateBulkActionsUI();
+}
+
+function toggleSelectAll() {
+    const checkbox = document.getElementById('selectAllCheckbox');
+    const tbody = document.getElementById('crmTableBody');
+    const checkboxes = tbody.querySelectorAll('.contact-checkbox');
+    
+    if (checkbox.checked) {
+        checkboxes.forEach(cb => {
+            const contactId = parseInt(cb.value);
+            selectedContacts.add(contactId);
+            cb.checked = true;
+        });
+    } else {
+        selectedContacts.clear();
+        checkboxes.forEach(cb => cb.checked = false);
+    }
+    
+    updateBulkActionsUI();
+}
+
+function updateBulkActionsUI() {
+    const toolbar = document.getElementById('bulkActionsToolbar');
+    const count = document.getElementById('bulkActionsCount');
+    
+    if (selectedContacts.size > 0) {
+        toolbar.style.display = 'flex';
+        count.textContent = `${selectedContacts.size} selected`;
+        
+        // Update select all checkbox state
+        const tbody = document.getElementById('crmTableBody');
+        const checkboxes = Array.from(tbody.querySelectorAll('.contact-checkbox'));
+        const allChecked = checkboxes.every(cb => cb.checked);
+        document.getElementById('selectAllCheckbox').checked = allChecked;
+        
+        // Update row highlighting
+        document.querySelectorAll('.contact-row').forEach(row => {
+            const checkbox = row.querySelector('.contact-checkbox');
+            if (checkbox.checked) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
+            }
+        });
+    } else {
+        toolbar.style.display = 'none';
+        document.getElementById('selectAllCheckbox').checked = false;
+        document.querySelectorAll('.contact-row').forEach(row => row.classList.remove('selected'));
+    }
+}
+
+function clearBulkSelection() {
+    selectedContacts.clear();
+    document.getElementById('selectAllCheckbox').checked = false;
+    document.querySelectorAll('.contact-checkbox').forEach(cb => cb.checked = false);
+    updateBulkActionsUI();
+}
+
+async function applyBulkTag() {
+    const tagId = document.getElementById('bulkTagSelect').value;
+    if (!tagId || selectedContacts.size === 0) {
+        document.getElementById('bulkTagSelect').value = '';
+        return;
+    }
+    
+    const tag = allTags.find(t => t.id == tagId);
+    if (!tag) return;
+    
+    try {
+        const contactIds = Array.from(selectedContacts);
+        const response = await fetch('api.php/bulk-tag', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                contact_ids: contactIds,
+                tag_id: tagId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            showToast(`Tagged ${selectedContacts.size} contacts with "${tag.name}"`, 'success');
+            clearBulkSelection();
+            loadCrmData();
+        } else {
+            showToast('Failed to apply tag', 'error');
+        }
+    } catch (error) {
+        console.error('Error applying bulk tag:', error);
+        showToast('Failed to apply tag', 'error');
+    }
+    
+    document.getElementById('bulkTagSelect').value = '';
+}
+
+async function applyBulkStage() {
+    const stage = document.getElementById('bulkStageSelect').value;
+    if (!stage || selectedContacts.size === 0) {
+        document.getElementById('bulkStageSelect').value = '';
+        return;
+    }
+    
+    try {
+        const contactIds = Array.from(selectedContacts);
+        const response = await fetch('api.php/bulk-stage', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                contact_ids: contactIds,
+                stage: stage
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            showToast(`Updated stage to "${stage.toUpperCase()}" for ${selectedContacts.size} contacts`, 'success');
+            clearBulkSelection();
+            loadCrmData();
+        } else {
+            showToast('Failed to update stage', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating bulk stage:', error);
+        showToast('Failed to update stage', 'error');
+    }
+    
+    document.getElementById('bulkStageSelect').value = '';
+}
+
+function openBulkDeleteModal() {
+    if (selectedContacts.size === 0) return;
+    document.getElementById('bulkDeleteCount').textContent = selectedContacts.size;
+    document.getElementById('bulkDeleteModal').style.display = 'flex';
+}
+
+function closeBulkDeleteModal() {
+    document.getElementById('bulkDeleteModal').style.display = 'none';
+}
+
+async function confirmBulkDelete() {
+    if (selectedContacts.size === 0) return;
+    
+    try {
+        const contactIds = Array.from(selectedContacts);
+        const response = await fetch('api.php/bulk-delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                contact_ids: contactIds
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            showToast(`Deleted ${selectedContacts.size} contacts`, 'success');
+            closeBulkDeleteModal();
+            clearBulkSelection();
+            loadCrmData();
+        } else {
+            showToast('Failed to delete contacts', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting contacts:', error);
+        showToast('Failed to delete contacts', 'error');
+    }
+}
+
+function showToast(message, type = 'info') {
+    // Create a simple toast if one doesn't exist
+    let toast = document.getElementById('crmToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'crmToast';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    
+    toast.textContent = message;
+    toast.className = `toast toast-${type} show`;
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// Close delete modal when clicking outside
+document.addEventListener('click', function(event) {
+    const deleteModal = document.getElementById('bulkDeleteModal');
+    if (event.target === deleteModal) {
+        closeBulkDeleteModal();
+    }
+});

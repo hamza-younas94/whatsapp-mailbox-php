@@ -100,6 +100,24 @@ try {
             }
             break;
             
+        case 'bulk-tag':
+            if ($method === 'POST') {
+                bulkAddTag();
+            }
+            break;
+            
+        case 'bulk-stage':
+            if ($method === 'POST') {
+                bulkUpdateStage();
+            }
+            break;
+            
+        case 'bulk-delete':
+            if ($method === 'POST') {
+                bulkDeleteContacts();
+            }
+            break;
+            
         default:
             response_error('Endpoint not found', 404);
     }
@@ -677,4 +695,85 @@ function getTags() {
         ->get();
     
     response_json($tags);
+}
+
+/**
+ * Bulk add tag to multiple contacts
+ */
+function bulkAddTag() {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    $contactIds = $input['contact_ids'] ?? [];
+    $tagId = $input['tag_id'] ?? null;
+    
+    if (empty($contactIds) || !$tagId) {
+        response_error('contact_ids and tag_id are required', 422);
+    }
+    
+    // Validate contacts exist
+    $contacts = Contact::whereIn('id', $contactIds)->get();
+    if ($contacts->isEmpty()) {
+        response_error('No contacts found', 404);
+    }
+    
+    // Sync tag for each contact (avoid duplicates)
+    foreach ($contacts as $contact) {
+        $contact->contactTags()->syncWithoutDetaching([$tagId]);
+    }
+    
+    response_json([
+        'success' => true,
+        'updated_count' => $contacts->count()
+    ]);
+}
+
+/**
+ * Bulk update stage for multiple contacts
+ */
+function bulkUpdateStage() {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    $contactIds = $input['contact_ids'] ?? [];
+    $stage = sanitize($input['stage'] ?? '');
+    
+    if (empty($contactIds) || !$stage) {
+        response_error('contact_ids and stage are required', 422);
+    }
+    
+    // Valid stages
+    $validStages = ['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'customer'];
+    if (!in_array($stage, $validStages)) {
+        response_error('Invalid stage value', 422);
+    }
+    
+    $updated = Contact::whereIn('id', $contactIds)->update([
+        'stage' => $stage,
+        'updated_at' => date('Y-m-d H:i:s')
+    ]);
+    
+    response_json([
+        'success' => true,
+        'updated_count' => $updated
+    ]);
+}
+
+/**
+ * Bulk delete contacts
+ */
+function bulkDeleteContacts() {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    $contactIds = $input['contact_ids'] ?? [];
+    
+    if (empty($contactIds)) {
+        response_error('contact_ids are required', 422);
+    }
+    
+    // Delete contacts (cascade will handle related records)
+    $deleted = Contact::whereIn('id', $contactIds)->delete();
+    
+    response_json([
+        'success' => true,
+        'deleted_count' => $deleted
+    ]);
 }

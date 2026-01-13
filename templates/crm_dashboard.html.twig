@@ -117,11 +117,43 @@
         </div>
     </div>
     
+    <!-- Bulk Actions Toolbar -->
+    <div id="bulkActionsToolbar" class="bulk-actions-toolbar" style="display: none;">
+        <div class="bulk-actions-left">
+            <span id="bulkActionsCount" class="bulk-actions-count">0 selected</span>
+            <button onclick="clearBulkSelection()" class="btn-secondary btn-sm">Clear</button>
+        </div>
+        <div class="bulk-actions-right">
+            <div class="bulk-actions-group">
+                <label>Add Tags:</label>
+                <select id="bulkTagSelect" class="crm-select crm-select-sm" onchange="applyBulkTag()">
+                    <option value="">Select tag to add...</option>
+                </select>
+            </div>
+            <div class="bulk-actions-group">
+                <label>Change Stage:</label>
+                <select id="bulkStageSelect" class="crm-select crm-select-sm" onchange="applyBulkStage()">
+                    <option value="">Select stage...</option>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="qualified">Qualified</option>
+                    <option value="proposal">Proposal</option>
+                    <option value="negotiation">Negotiation</option>
+                    <option value="customer">Customer</option>
+                </select>
+            </div>
+            <button onclick="openBulkDeleteModal()" class="btn-danger btn-sm">Delete Selected</button>
+        </div>
+    </div>
+    
     <!-- Contacts Table -->
     <div class="crm-table-container">
         <table class="crm-table">
             <thead>
                 <tr>
+                    <th style="width: 40px;">
+                        <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" title="Select all">
+                    </th>
                     <th>Name</th>
                     <th>Company</th>
                     <th>Phone</th>
@@ -134,10 +166,28 @@
             </thead>
             <tbody id="crmTableBody">
                 <tr>
-                    <td colspan="8" class="loading">Loading CRM data...</td>
+                    <td colspan="9" class="loading">Loading CRM data...</td>
                 </tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Bulk Delete Confirmation Modal -->
+<div id="bulkDeleteModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h2>Delete Selected Contacts</h2>
+            <button onclick="closeBulkDeleteModal()" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="bulkDeleteCount">0</strong> selected contacts?</p>
+            <p style="color: var(--text-secondary); font-size: 13px; margin-top: 10px;">This action cannot be undone.</p>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="confirmBulkDelete()" class="btn-danger" style="flex: 1;">Delete</button>
+                <button onclick="closeBulkDeleteModal()" class="btn-secondary" style="flex: 1;">Cancel</button>
+            </div>
+        </div>
     </div>
 </div>
 
