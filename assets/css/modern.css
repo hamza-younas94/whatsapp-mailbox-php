@@ -3,15 +3,44 @@
  * Clean, consistent design across all pages
  */
 
+/* ========================================
+   MASTER RESET - Override ALL Old Styles
+   ======================================== */
+
+/* Remove conflicting styles from style.css */
+.notes-page,
+.broadcasts-page,
+.quick-replies-page,
+.analytics-page,
+.segments-page,
+.deals-page {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+div[style*="padding-top: 20px"],
+div[style*="padding-top: 30px"],
+div[style*="padding-top: 40px"] {
+    padding-top: 0 !important;
+}
+
+/* Override inline padding styles on containers */
+.container[style*="padding-top"],
+.container-fluid[style*="padding-top"],
+.content-header[style*="padding-top"],
+div.search-form-card[style*="padding-top"] {
+    padding-top: 0 !important;
+}
+
 /* Global Resets & Base */
 * {
     box-sizing: border-box;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background: #f8f9fa;
-    color: #333;
+    color: #0f172a;
     line-height: 1.6;
     margin: 0;
     padding: 0;
@@ -19,15 +48,17 @@ body {
 
 /* Container Spacing */
 .container-fluid {
-    padding: 1.5rem;
+    padding: 24px !important;
     max-width: 1400px;
     margin: 0 auto;
+    padding-top: 24px !important;
 }
 
 .container {
-    padding: 1.5rem;
+    padding: 24px !important;
     max-width: 1200px;
     margin: 0 auto;
+    padding-top: 24px !important;
 }
 
 /* Page Headers */
@@ -99,102 +130,107 @@ body {
 
 /* Buttons */
 .btn {
-    padding: 11px 20px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    border: none;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
+    padding: 11px 20px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    border: none !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
+    height: auto !important;
+    line-height: 1 !important;
 }
 
-.btn-primary {
-    background: #0dd198;
-    color: white;
-    box-shadow: 0 1px 3px rgba(13,209,152,0.3);
+.btn.btn-primary {
+    background: #0dd198 !important;
+    color: white !important;
+    box-shadow: 0 1px 3px rgba(13,209,152,0.3) !important;
 }
 
-.btn-primary:hover {
-    background: #0ab080;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(13,209,152,0.35);
+.btn.btn-primary:hover {
+    background: #0ab080 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(13,209,152,0.35) !important;
 }
 
-.btn-success {
-    background: #10b981;
-    color: white;
-    box-shadow: 0 1px 3px rgba(16,185,129,0.3);
+.btn.btn-success {
+    background: #10b981 !important;
+    color: white !important;
+    box-shadow: 0 1px 3px rgba(16,185,129,0.3) !important;
 }
 
-.btn-success:hover {
-    background: #059669;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(16,185,129,0.35);
+.btn.btn-success:hover {
+    background: #059669 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(16,185,129,0.35) !important;
 }
 
-.btn-outline-primary {
-    background: transparent;
-    color: #0dd198;
-    border: 1.5px solid #0dd198;
+.btn.btn-outline-primary {
+    background: transparent !important;
+    color: #0dd198 !important;
+    border: 1.5px solid #0dd198 !important;
 }
 
-.btn-outline-primary:hover {
-    background: #0dd198;
-    color: white;
+.btn.btn-outline-primary:hover {
+    background: #0dd198 !important;
+    color: white !important;
 }
 
-.btn-secondary {
-    background: #f3f6fb;
-    color: #0f172a;
-    border: 1px solid rgba(15,23,42,0.1);
+.btn.btn-secondary {
+    background: #f3f6fb !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(15,23,42,0.1) !important;
 }
 
-.btn-secondary:hover {
-    background: #ffffff;
-    border-color: rgba(15,23,42,0.15);
+.btn.btn-secondary:hover {
+    background: #ffffff !important;
+    border-color: rgba(15,23,42,0.15) !important;
 }
 
-.btn-sm {
-    padding: 7px 14px;
-    font-size: 13px;
+.btn.btn-sm {
+    padding: 7px 14px !important;
+    font-size: 13px !important;
 }
 
-.btn-lg {
-    padding: 14px 28px;
-    font-size: 15px;
+.btn.btn-lg {
+    padding: 14px 28px !important;
+    font-size: 15px !important;
 }
 
 /* Forms */
 .form-control,
 .form-select {
-    padding: 11px 14px;
-    border-radius: 8px;
-    border: 1px solid rgba(15,23,42,0.12);
-    font-size: 14px;
-    transition: all 0.2s ease;
-    font-family: inherit;
-    color: #0f172a;
-    background: #ffffff;
+    padding: 11px 14px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(15,23,42,0.12) !important;
+    font-size: 14px !important;
+    transition: all 0.2s ease !important;
+    font-family: inherit !important;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    height: auto !important;
+    min-height: auto !important;
 }
 
 .form-control:focus,
 .form-select:focus {
-    border-color: #0dd198;
-    box-shadow: 0 0 0 3px rgba(13,209,152,0.1);
-    outline: none;
+    border-color: #0dd198 !important;
+    box-shadow: 0 0 0 3px rgba(13,209,152,0.1) !important;
+    outline: none !important;
 }
 
 .form-label {
-    font-weight: 600;
-    color: #5b6477;
-    margin-bottom: 6px;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
+    font-weight: 600 !important;
+    color: #5b6477 !important;
+    margin-bottom: 6px !important;
+    font-size: 13px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
 }
 
 /* Tables */
