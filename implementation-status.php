@@ -50,7 +50,7 @@
         
         <div class="stats">
             <div class="stat-card">
-                <div class="stat-value">4</div>
+                <div class="stat-value">7</div>
                 <div class="stat-label">✅ Completed</div>
             </div>
             <div class="stat-card">
@@ -58,11 +58,11 @@
                 <div class="stat-label">🔨 In Progress</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">13</div>
+                <div class="stat-value">10</div>
                 <div class="stat-label">📋 Planned</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">22%</div>
+                <div class="stat-value">39%</div>
                 <div class="stat-label">Overall Progress</div>
             </div>
         </div>
@@ -107,31 +107,31 @@
             </div>
             
             <div class="feature">
-                <div class="status in-progress">⏳</div>
+                <div class="status completed">✓</div>
                 <div class="feature-content">
                     <div class="feature-title">Media Upload UI</div>
-                    <div class="feature-desc">File upload button in mailbox, drag & drop, preview before sending, support for images/PDFs/videos/documents.</div>
+                    <div class="feature-desc">File upload button in mailbox, preview before sending, support for images/PDFs/videos/audio. Backend API complete with WhatsApp integration.</div>
                 </div>
             </div>
             
             <div class="feature">
-                <div class="status planned">📋</div>
+                <div class="status completed">✓</div>
                 <div class="feature-content">
                     <div class="feature-title">Desktop Notifications</div>
-                    <div class="feature-desc">Browser notification permission request, show notifications for new messages with contact info and preview.</div>
+                    <div class="feature-desc">Browser notification permission request, shows notifications for new messages with contact info and preview. Only notifies when tab is inactive.</div>
                 </div>
             </div>
             
             <div class="feature">
-                <div class="status planned">📋</div>
+                <div class="status completed">✓</div>
                 <div class="feature-content">
                     <div class="feature-title">Auto-Tag Rules Management</div>
-                    <div class="feature-desc">UI to create/edit/delete auto-tagging rules with keyword configuration and priority ordering.</div>
+                    <div class="feature-desc">Complete UI to create/edit/delete auto-tagging rules with keyword configuration, priority ordering, and match type selection (ANY/ALL/EXACT).</div>
                 </div>
             </div>
             
             <div class="feature">
-                <div class="status planned">📋</div>
+                <div class="status in-progress">⏳</div>
                 <div class="feature-content">
                     <div class="feature-title">Bulk Operations</div>
                     <div class="feature-desc">Multi-select contacts in CRM, bulk tag assignment, bulk stage updates, bulk actions toolbar.</div>
