@@ -90,11 +90,15 @@ body {
 
 /* Page Header Buttons - Action Buttons (Small) */
 .page-header .btn,
-.page-header button.btn {
+.page-header button.btn,
+.page-header .btn-primary,
+.page-header .btn-secondary,
+.page-header .btn-success {
     padding: 9px 16px !important;
     font-size: 13px !important;
     height: auto !important;
     min-height: auto !important;
+    line-height: 1 !important;
 }
 
 /* Cards */
@@ -192,20 +196,33 @@ body {
 .btn.btn-sm {
     padding: 6px 12px !important;
     font-size: 12px !important;
+    height: auto !important;
 }
 
 .btn.btn-lg {
-    padding: 14px 28px !important;
-    font-size: 15px !important;
+    padding: 12px 24px !important;
+    font-size: 14px !important;
+    height: auto !important;
+}
+
+/* Button reset for all variations */
+button.btn,
+input[type="button"].btn,
+input[type="submit"].btn,
+a.btn {
+    padding: 9px 16px !important;
+    font-size: 13px !important;
+    height: auto !important;
+    min-height: auto !important;
 }
 
 /* Forms */
 .form-control,
 .form-select {
-    padding: 11px 14px !important;
+    padding: 9px 14px !important;
     border-radius: 8px !important;
     border: 1px solid rgba(15,23,42,0.12) !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     transition: all 0.2s ease !important;
     font-family: inherit !important;
     color: #0f172a !important;
@@ -1300,11 +1317,85 @@ body {
     color: #0f172a;
 }
 
+/* ========================================
+   CRM PANEL & MODAL FIXES
+   ======================================== */
+
+/* CRM Side Panel - Proper Z-index and positioning */
+.crm-side-panel {
+    position: fixed !important;
+    right: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    width: 450px !important;
+    background: white !important;
+    z-index: 1050 !important;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.15) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    animation: slideInRight 0.3s ease !important;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.crm-panel-header {
+    background: var(--primary) !important;
+    color: white !important;
+    padding: 18px 20px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: none !important;
+    flex-shrink: 0 !important;
+}
+
+.crm-panel-header h3 {
+    margin: 0 !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: white !important;
+}
+
+.close-panel-btn {
+    background: rgba(255,255,255,0.2) !important;
+    border: none !important;
+    color: white !important;
+    font-size: 28px !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s !important;
+    padding: 0 !important;
+}
+
+.close-panel-btn:hover {
+    background: rgba(255,255,255,0.3) !important;
+}
+
+.crm-panel-content {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 20px !important;
+}
+
 /* CRM Section Headers with Icons */
 .crm-section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
     margin-bottom: 16px !important;
     padding-bottom: 12px !important;
     border-bottom: 1px solid #e2e8f0 !important;
@@ -1314,7 +1405,7 @@ body {
     width: 20px !important;
     height: 20px !important;
     color: var(--primary) !important;
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
 }
 
 .crm-section-header h3 {
@@ -1327,7 +1418,7 @@ body {
 .crm-section {
     margin-bottom: 24px !important;
     padding: 16px !important;
-    background: white !important;
+    background: #fafbfc !important;
     border-radius: 8px !important;
     border: 1px solid #e2e8f0 !important;
 }
@@ -1336,11 +1427,54 @@ body {
 .crm-section select,
 .crm-section textarea {
     margin-bottom: 12px !important;
+    width: 100% !important;
 }
 
+.crm-input,
+.crm-select,
+.crm-textarea {
+    padding: 9px 14px !important;
+    font-size: 13px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    font-family: inherit !important;
+}
+
+.crm-input:focus,
+.crm-select:focus,
+.crm-textarea:focus {
+    border-color: var(--primary) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(13,209,152,0.1) !important;
+}
+
+/* CRM Buttons */
 .crm-section .btn-primary,
 .crm-section .btn-secondary {
+    padding: 9px 16px !important;
+    font-size: 13px !important;
     margin-top: 8px !important;
+    width: 100% !important;
+}
+
+.crm-section .btn-primary {
+    background: var(--primary) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.crm-section .btn-primary:hover {
+    background: #0ab080 !important;
+}
+
+.crm-section .btn-secondary {
+    background: #f3f6fb !important;
+    color: #0f172a !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.crm-section .btn-secondary:hover {
+    background: #ffffff !important;
 }
 
 /* Lead Score Display */
