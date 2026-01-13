@@ -8,9 +8,12 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 // Add media columns to messages table if not exists
 $schema = Capsule::schema();
 
-if (!$schema->hasColumn('messages', 'media_id')) {
+if (!$schema->hasColumn('messages', 'media_url')) {
     $schema->table('messages', function ($table) {
-        $table->string('media_id')->nullable()->after('media_url');
+        $table->longText('media_url')->nullable()->after('message_body');
+        $table->string('media_mime_type')->nullable()->after('media_url');
+        $table->string('media_caption')->nullable()->after('media_mime_type');
+        $table->string('media_id')->nullable()->after('media_caption');
         $table->string('media_filename')->nullable()->after('media_id');
         $table->bigInteger('media_size')->nullable()->after('media_filename');
     });
