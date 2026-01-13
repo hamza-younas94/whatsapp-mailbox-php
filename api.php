@@ -362,7 +362,10 @@ function sendMediaMessage() {
         mkdir($uploadDir, 0755, true);
     }
     
-    $filename = uniqid() . '_' . basename($file['name']);
+    // Sanitize filename to avoid spaces and unsafe characters for public URL access
+    $originalName = basename($file['name']);
+    $safeName = preg_replace('/[^A-Za-z0-9._-]/', '_', $originalName);
+    $filename = uniqid() . '_' . $safeName;
     $uploadPath = $uploadDir . $filename;
     
     if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
@@ -408,8 +411,10 @@ function sendMediaMessage() {
         'message_type' => $mediaType,
         'direction' => 'outgoing',
         'message_body' => $caption ?: '[' . strtoupper($mediaType) . ']',
+        'media_url' => $mediaUrl,
         'media_id' => $result['media_id'] ?? null,
         'media_filename' => $filename,
+        'media_mime_type' => $mimeType,
         'media_size' => $file['size'],
         'timestamp' => now(),
         'is_read' => true,

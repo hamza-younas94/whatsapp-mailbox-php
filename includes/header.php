@@ -187,41 +187,56 @@
     </style>
 </head>
 <body>
+    <?php
+    $currentPage = basename($_SERVER['PHP_SELF']);
+    $morePages = [
+        'tags.php',
+        'auto-tag-rules.php',
+        'search.php',
+        'segments.php',
+        'scheduled-messages.php',
+        'notes.php',
+        'deals.php',
+        'ip-commands.php'
+    ];
+    ?>
     <!-- Top Navigation -->
     <div class="top-nav">
         <div class="nav-links">
-            <a href="index.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">
+            <a href="index.php" class="nav-link <?php echo $currentPage === 'index.php' ? 'active' : ''; ?>">
                 <i class="fas fa-inbox"></i>
                 Mailbox
             </a>
-            <a href="crm_dashboard.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'crm_dashboard.php' ? 'active' : ''; ?>">
+            <a href="crm_dashboard.php" class="nav-link <?php echo $currentPage === 'crm_dashboard.php' ? 'active' : ''; ?>">
                 <i class="fas fa-clipboard"></i>
                 CRM
             </a>
-            <a href="broadcasts.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'broadcasts.php' ? 'active' : ''; ?>">
+            <a href="broadcasts.php" class="nav-link <?php echo $currentPage === 'broadcasts.php' ? 'active' : ''; ?>">
                 <i class="fas fa-broadcast-tower"></i>
                 Broadcasts
             </a>
-            <a href="quick-replies.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'quick-replies.php' ? 'active' : ''; ?>">
+            <a href="quick-replies.php" class="nav-link <?php echo $currentPage === 'quick-replies.php' ? 'active' : ''; ?>">
                 <i class="fas fa-bolt"></i>
                 Quick Replies
             </a>
-            <a href="analytics.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'analytics.php' ? 'active' : ''; ?>">
+            <a href="analytics.php" class="nav-link <?php echo $currentPage === 'analytics.php' ? 'active' : ''; ?>">
                 <i class="fas fa-chart-bar"></i>
                 Analytics
             </a>
             <div class="dropdown">
-                <a href="#" class="nav-link">
+                <a href="#" class="nav-link <?php echo in_array($currentPage, $morePages, true) ? 'active' : ''; ?>">
                     <i class="fas fa-ellipsis-h"></i>
                     More ▾
                 </a>
                 <div class="dropdown-menu">
-                    <a href="tags.php">🏷️ Tags</a>
-                    <a href="segments.php">📊 Segments</a>
-                    <a href="scheduled-messages.php">⏰ Scheduled</a>
-                    <a href="notes.php">📝 Notes</a>
-                    <a href="deals.php">💰 Deals</a>
-                    <a href="ip-commands.php">🧠 IP Commands</a>
+                    <a href="tags.php" class="<?php echo $currentPage === 'tags.php' ? 'active' : ''; ?>">🏷️ Tags</a>
+                    <a href="auto-tag-rules.php" class="<?php echo $currentPage === 'auto-tag-rules.php' ? 'active' : ''; ?>">🤖 Auto-Tag Rules</a>
+                    <a href="search.php" class="<?php echo $currentPage === 'search.php' ? 'active' : ''; ?>">🔍 Advanced Search</a>
+                    <a href="segments.php" class="<?php echo $currentPage === 'segments.php' ? 'active' : ''; ?>">📊 Segments</a>
+                    <a href="scheduled-messages.php" class="<?php echo $currentPage === 'scheduled-messages.php' ? 'active' : ''; ?>">⏰ Scheduled</a>
+                    <a href="notes.php" class="<?php echo $currentPage === 'notes.php' ? 'active' : ''; ?>">📝 Notes</a>
+                    <a href="deals.php" class="<?php echo $currentPage === 'deals.php' ? 'active' : ''; ?>">💰 Deals</a>
+                    <a href="ip-commands.php" class="<?php echo $currentPage === 'ip-commands.php' ? 'active' : ''; ?>">💻 IP Commands</a>
                 </div>
             </div>
         </div>
