@@ -291,44 +291,59 @@ function renderMessages(messagesList) {
         
         // Render media messages
         let content = '';
-        if (message.message_type === 'image' && message.media_filename) {
+        
+        // For images - support both uploaded files and WhatsApp media URLs
+        if (message.message_type === 'image' && (message.media_filename || message.media_url)) {
+            const imageUrl = message.media_filename ? `/uploads/${escapeHtml(message.media_filename)}` : message.media_url;
             content = `
                 <div class="message-media">
-                    <img src="/uploads/${escapeHtml(message.media_filename)}" alt="Image" onclick="window.open(this.src, '_blank')" style="max-width: 300px; border-radius: 8px; cursor: pointer;">
+                    <img src="${imageUrl}" alt="Image" onclick="window.open('${imageUrl}', '_blank')" style="max-width: 300px; border-radius: 8px; cursor: pointer;">
                     ${message.message_body && message.message_body !== '[IMAGE]' ? `<div class="message-text" style="margin-top: 8px;">${escapeHtml(message.message_body)}</div>` : ''}
                 </div>
             `;
-        } else if (message.message_type === 'video' && message.media_filename) {
+        } 
+        // For videos
+        else if (message.message_type === 'video' && (message.media_filename || message.media_url)) {
+            const videoUrl = message.media_filename ? `/uploads/${escapeHtml(message.media_filename)}` : message.media_url;
             content = `
                 <div class="message-media">
                     <video controls style="max-width: 300px; border-radius: 8px;">
-                        <source src="/uploads/${escapeHtml(message.media_filename)}" type="video/mp4">
+                        <source src="${videoUrl}" type="video/mp4">
                     </video>
                     ${message.message_body && message.message_body !== '[VIDEO]' ? `<div class="message-text" style="margin-top: 8px;">${escapeHtml(message.message_body)}</div>` : ''}
                 </div>
             `;
-        } else if (message.message_type === 'audio' && message.media_filename) {
+        } 
+        // For audio
+        else if (message.message_type === 'audio' && (message.media_filename || message.media_url)) {
+            const audioUrl = message.media_filename ? `/uploads/${escapeHtml(message.media_filename)}` : message.media_url;
             content = `
                 <div class="message-media">
                     <audio controls style="max-width: 300px;">
-                        <source src="/uploads/${escapeHtml(message.media_filename)}" type="audio/mpeg">
+                        <source src="${audioUrl}" type="audio/mpeg">
                     </audio>
                     ${message.message_body && message.message_body !== '[AUDIO]' ? `<div class="message-text" style="margin-top: 8px;">${escapeHtml(message.message_body)}</div>` : ''}
                 </div>
             `;
-        } else if (message.message_type === 'document' && message.media_filename) {
+        } 
+        // For documents
+        else if (message.message_type === 'document' && (message.media_filename || message.media_url)) {
+            const docUrl = message.media_filename ? `/uploads/${escapeHtml(message.media_filename)}` : message.media_url;
+            const displayName = message.media_filename || message.media_caption || 'Document';
             content = `
                 <div class="message-media">
-                    <a href="/uploads/${escapeHtml(message.media_filename)}" target="_blank" class="document-link">
+                    <a href="${docUrl}" target="_blank" class="document-link">
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                         </svg>
-                        <span>${escapeHtml(message.media_filename)}</span>
+                        <span>${escapeHtml(displayName)}</span>
                     </a>
                     ${message.message_body && message.message_body !== '[DOCUMENT]' ? `<div class="message-text" style="margin-top: 8px;">${escapeHtml(message.message_body)}</div>` : ''}
                 </div>
             `;
-        } else {
+        } 
+        // For text messages
+        else {
             content = `<div class="message-text">${escapeHtml(message.message_body)}</div>`;
         }
         
@@ -384,6 +399,14 @@ async function sendMessage() {
         
         // Send media if selected
         if (selectedMediaFile) {
+            console.log('🎬 Sending media:', {
+                file: selectedMediaFile.name,
+                size: selectedMediaFile.size,
+                type: selectedMediaFile.type,
+                to: contact.phone_number,
+                contact_id: currentContactId
+            });
+            
             const formData = new FormData();
             formData.append('media', selectedMediaFile);
             formData.append('to', contact.phone_number);
@@ -400,6 +423,7 @@ async function sendMessage() {
             });
             
             result = await response.json();
+            console.log('📤 Media upload response:', response.status, result);
         } else {
             // Send text message
             response = await fetch('api.php/send', {
