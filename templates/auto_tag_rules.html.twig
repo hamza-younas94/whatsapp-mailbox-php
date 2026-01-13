@@ -1,0 +1,157 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Auto-Tag Rules - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Top Navigation -->
+<div class="top-nav">
+    <div class="nav-links">
+        <a href="index.php" class="nav-link">
+            <i class="fas fa-inbox"></i>
+            Mailbox
+        </a>
+        <a href="crm_dashboard.php" class="nav-link">
+            <i class="fas fa-clipboard"></i>
+            CRM
+        </a>
+        <a href="broadcasts.php" class="nav-link">
+            <i class="fas fa-broadcast-tower"></i>
+            Broadcasts
+        </a>
+        <a href="quick-replies.php" class="nav-link">
+            <i class="fas fa-bolt"></i>
+            Quick Replies
+        </a>
+        <a href="analytics.php" class="nav-link">
+            <i class="fas fa-chart-bar"></i>
+            Analytics
+        </a>
+        <div class="dropdown">
+            <a href="#" class="nav-link active">
+                <i class="fas fa-ellipsis-h"></i>
+                More ▾
+            </a>
+            <div class="dropdown-menu">
+                <a href="tags.php">🏷️ Tags</a>
+                <a href="auto-tag-rules.php" style="background: var(--primary-light);">🤖 Auto-Tag Rules</a>
+                <a href="segments.php">📊 Segments</a>
+                <a href="scheduled-messages.php">⏰ Scheduled</a>
+                <a href="notes.php">📝 Notes</a>
+                <a href="deals.php">💰 Deals</a>
+                <a href="ip-commands.php">💻 IP Commands</a>
+            </div>
+        </div>
+    </div>
+    <div class="user-info ms-auto">
+        <span><i class="fas fa-user-circle"></i> {{ user.username }}</span>
+        <a href="logout.php" class="logout-btn" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
+</div>
+
+<div class="container" style="padding-top: 20px;">
+    <div class="content-header">
+        <div>
+            <h1><i class="fas fa-robot"></i> Auto-Tag Rules</h1>
+            <p class="text-muted">Automatically apply tags to contacts based on message keywords</p>
+        </div>
+        <button onclick="openRuleModal()" class="btn-primary">
+            <i class="fas fa-plus"></i> Add Rule
+        </button>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="alert alert-info" style="margin-bottom: 20px;">
+        <i class="fas fa-info-circle"></i>
+        <div>
+            <strong>How Auto-Tagging Works:</strong>
+            <p style="margin: 8px 0 0 0;">When a contact sends a message containing specified keywords, the system automatically applies the associated tag. Rules with higher priority are checked first.</p>
+        </div>
+    </div>
+
+    <!-- Rules List -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Active Rules</h3>
+            <div class="search-box" style="max-width: 300px;">
+                <input type="text" id="searchRules" placeholder="Search rules..." style="width: 100%;">
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="rulesList" class="loading">
+                Loading rules...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<!-- Auto-Tag Rule Modal -->
+<div id="ruleModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2 id="ruleModalTitle">Add Auto-Tag Rule</h2>
+            <button onclick="closeRuleModal()" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="ruleId">
+            
+            <div class="form-group">
+                <label>Rule Name</label>
+                <input type="text" id="ruleName" class="crm-input" placeholder="e.g., Tag interested customers">
+            </div>
+
+            <div class="form-group">
+                <label>Select Tag</label>
+                <select id="ruleTagId" class="crm-select">
+                    <option value="">Loading tags...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Keywords <small class="text-muted">(one per line)</small></label>
+                <textarea id="ruleKeywords" class="crm-input" rows="4" placeholder="interested&#10;buy&#10;pricing&#10;quote"></textarea>
+                <small class="text-muted">Enter keywords that will trigger this rule. Case-insensitive.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Match Type</label>
+                <select id="ruleMatchType" class="crm-select">
+                    <option value="any">Match ANY keyword (OR logic)</option>
+                    <option value="all">Match ALL keywords (AND logic)</option>
+                    <option value="exact">Exact phrase match</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Priority</label>
+                <input type="number" id="rulePriority" class="crm-input" value="1" min="1" max="100">
+                <small class="text-muted">Higher priority rules are checked first (1-100)</small>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="ruleEnabled" checked>
+                    <span>Rule is active</span>
+                </label>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="saveRule()" class="btn-primary" style="flex: 1;">
+                    <i class="fas fa-save"></i> Save Rule
+                </button>
+                <button onclick="closeRuleModal()" class="btn-secondary" style="flex: 1;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="assets/js/auto-tag-rules.js?v={{ "now"|date("U") }}"></script>
+{% endblock %}

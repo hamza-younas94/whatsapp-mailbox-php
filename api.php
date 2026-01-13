@@ -82,6 +82,24 @@ try {
             }
             break;
             
+        case 'auto-tag-rules':
+            if ($method === 'GET' && !isset($request[1])) {
+                getAutoTagRules();
+            } elseif ($method === 'POST') {
+                createAutoTagRule();
+            } elseif ($method === 'PUT' && isset($request[1])) {
+                updateAutoTagRule($request[1]);
+            } elseif ($method === 'DELETE' && isset($request[1])) {
+                deleteAutoTagRule($request[1]);
+            }
+            break;
+            
+        case 'tags':
+            if ($method === 'GET') {
+                getTags();
+            }
+            break;
+            
         default:
             response_error('Endpoint not found', 404);
     }
@@ -563,4 +581,100 @@ function getMessageLimit() {
         logger('Message limit error: ' . $e->getMessage(), 'error');
         response_error('Failed to get message limit: ' . $e->getMessage(), 500);
     }
+}
+/**
+ * Get all auto-tag rules
+ */
+function getAutoTagRules() {
+    $rules = Capsule::table('auto_tag_rules as r')
+        ->leftJoin('tags as t', 'r.tag_id', '=', 't.id')
+        ->select('r.*', 't.name as tag_name', 't.color as tag_color')
+        ->orderBy('r.priority', 'desc')
+        ->get();
+    
+    response_json($rules);
+}
+
+/**
+ * Create new auto-tag rule
+ */
+function createAutoTagRule() {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    $ruleName = sanitize($input['rule_name'] ?? '');
+    $tagId = $input['tag_id'] ?? null;
+    $keywords = $input['keywords'] ?? '[]';
+    $matchType = $input['match_type'] ?? 'any';
+    $priority = $input['priority'] ?? 1;
+    $enabled = $input['enabled'] ?? true;
+    
+    if (!$ruleName || !$tagId) {
+        response_error('Rule name and tag ID are required', 422);
+    }
+    
+    $ruleId = Capsule::table('auto_tag_rules')->insertGetId([
+        'rule_name' => $ruleName,
+        'tag_id' => $tagId,
+        'keywords' => $keywords,
+        'match_type' => $matchType,
+        'priority' => $priority,
+        'enabled' => $enabled ? 1 : 0,
+        'created_at' => now(),
+        'updated_at' => now()
+    ]);
+    
+    response_json(['success' => true, 'rule_id' => $ruleId]);
+}
+
+/**
+ * Update auto-tag rule
+ */
+function updateAutoTagRule($ruleId) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    $updateData = ['updated_at' => now()];
+    
+    if (isset($input['rule_name'])) {
+        $updateData['rule_name'] = sanitize($input['rule_name']);
+    }
+    if (isset($input['tag_id'])) {
+        $updateData['tag_id'] = $input['tag_id'];
+    }
+    if (isset($input['keywords'])) {
+        $updateData['keywords'] = $input['keywords'];
+    }
+    if (isset($input['match_type'])) {
+        $updateData['match_type'] = $input['match_type'];
+    }
+    if (isset($input['priority'])) {
+        $updateData['priority'] = $input['priority'];
+    }
+    if (isset($input['enabled'])) {
+        $updateData['enabled'] = $input['enabled'] ? 1 : 0;
+    }
+    
+    Capsule::table('auto_tag_rules')
+        ->where('id', $ruleId)
+        ->update($updateData);
+    
+    response_json(['success' => true]);
+}
+
+/**
+ * Delete auto-tag rule
+ */
+function deleteAutoTagRule($ruleId) {
+    Capsule::table('auto_tag_rules')->where('id', $ruleId)->delete();
+    response_json(['success' => true]);
+}
+
+/**
+ * Get all tags
+ */
+function getTags() {
+    $tags = Capsule::table('tags')
+        ->orderBy('name')
+        ->get();
+    
+    response_json($tags);
 }
