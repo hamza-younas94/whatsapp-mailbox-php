@@ -8,7 +8,8 @@ RewriteEngine On
 # API Routing for clean URLs
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^api\.php/(.*)$ api.php [L,QSA]
+RewriteRule ^api\.php/(.*)$ api.php/$1 [L,QSA]
+AcceptPathInfo On
 
 # Security: Hide sensitive files
 <FilesMatch "^(config\.php|database\.sql|\.htaccess)$">

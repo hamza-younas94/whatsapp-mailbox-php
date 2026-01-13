@@ -10,6 +10,11 @@ let lastMessageId = null;
 let newMessageIndicator = null;
 const NEW_MESSAGE_SCROLL_THRESHOLD = 120;
 
+// Polling debounce flags
+let contactsLoadingInProgress = false;
+let lastContactsLoadTime = 0;
+const CONTACTS_LOAD_DEBOUNCE = 8000; // 8 seconds minimum between loads
+
 /**
  * Show toast notification
  */
@@ -79,12 +84,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Poll for new messages every 5 seconds and check for notifications
+    // Poll for new messages every 8 seconds with debounce
     setInterval(() => {
-        loadContacts();
+        const now = Date.now();
+        
+        // Only load contacts every 8+ seconds, not every interval
+        if (now - lastContactsLoadTime >= CONTACTS_LOAD_DEBOUNCE && !contactsLoadingInProgress) {
+            contactsLoadingInProgress = true;
+            lastContactsLoadTime = now;
+            
+            loadContacts().finally(() => {
+                contactsLoadingInProgress = false;
+            });
+        }
+        
         checkForNewMessages();
         pollNewMessages();
-    }, 5000);
+    }, 8000);
     
     // Load message limit on page load
     updateMessageLimitDisplay();
@@ -119,7 +135,7 @@ async function updateMessageLimitDisplay() {
 }
 
 /**
- * Load all contacts
+ * Load all contacts (with debounce)
  */
 async function loadContacts() {
     try {
@@ -132,10 +148,7 @@ async function loadContacts() {
         contacts = await response.json();
         renderContacts(contacts);
         
-        // Reload messages for current contact
-        if (currentContactId) {
-            loadMessages(currentContactId);
-        }
+        // Don't reload messages - that causes the loop
         
     } catch (error) {
         console.error('Error loading contacts:', error);
