@@ -320,66 +320,59 @@ body {
 .contacts-list {
     flex: 1;
     overflow-y: auto;
-    padding: 4px 0 18px;
-    background: var(--surface-2);
+    padding: 0;
+    background: var(--surface-1);
 }
 
 .contacts-list::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 .contacts-list::-webkit-scrollbar-track {
     background: transparent;
-    margin: 8px 0;
 }
 
 .contacts-list::-webkit-scrollbar-thumb {
-    background: rgba(15,23,42,0.12);
-    border-radius: 999px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
+    background: rgba(15,23,42,0.1);
+    border-radius: 3px;
 }
 
 .contacts-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(15,23,42,0.2);
-    background-clip: padding-box;
+    background: rgba(15,23,42,0.18);
 }
 
 .contact-item {
-    padding: 14px 18px;
-    border-bottom: none;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(15,23,42,0.04);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     display: flex;
-    align-items: center;
-    gap: 12px;
+    align-items: flex-start;
+    gap: 14px;
     position: relative;
-    margin: 6px 18px;
-    border-radius: var(--radius-md);
-    background: var(--surface-1);
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+    margin: 0;
+    border-radius: 0;
+    background: transparent;
 }
 
 .contact-item::before {
     content: '';
     position: absolute;
-    left: 12px;
-    top: 14px;
-    bottom: 14px;
-    width: 6px;
-    border-radius: 999px;
-    background: linear-gradient(180deg, var(--primary-color), #2dd4bf);
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--primary-color);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.2s ease;
 }
 
 .contact-item:hover {
-    transform: translateX(4px);
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+    background: rgba(13,209,152,0.04);
 }
 
 .contact-item.active {
-    background: #ecfdf5;
+    background: rgba(13,209,152,0.08);
 }
 
 .contact-item.active::before {
@@ -387,17 +380,18 @@ body {
 }
 
 .contact-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--primary-color);
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary-color), #2dd4bf);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 600;
     flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(13,209,152,0.25);
 }
 
 .contact-info {
@@ -407,10 +401,11 @@ body {
 
 .contact-name {
     font-weight: 600;
-    font-size: 15px;
-    margin-bottom: 4px;
+    font-size: 14px;
+    margin-bottom: 0;
     color: var(--text-primary);
-    letter-spacing: -0.3px;
+    letter-spacing: -0.2px;
+    line-height: 1.3;
 }
 
 .contact-last-message {
@@ -419,21 +414,21 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-top: 2px;
+    margin-top: 4px;
+    line-height: 1.4;
 }
 
 .contact-meta {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    justify-content: space-between;
-    gap: 8px;
-    min-width: 50px;
+    gap: 6px;
+    min-width: 60px;
 }
 
 .contact-time {
-    font-size: 12px;
-    color: var(--text-muted);
+    font-size: 11px;
+    color: rgba(15,23,42,0.45);
     font-weight: 500;
     white-space: nowrap;
 }
@@ -441,12 +436,13 @@ body {
 .unread-badge {
     background: var(--primary-color);
     color: white;
-    border-radius: 10px;
-    padding: 2px 6px;
+    border-radius: 12px;
+    padding: 2px 8px;
     font-size: 11px;
-    font-weight: 600;
-    min-width: 18px;
+    font-weight: 700;
+    min-width: 20px;
     text-align: center;
+    box-shadow: 0 2px 8px rgba(13,209,152,0.35);
 }
 
 /* Chat Area */
@@ -904,72 +900,72 @@ body {
 .contact-name-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 6px;
-    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 5px;
 }
 
 .contact-company {
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
-    font-weight: 500;
+    font-size: 11px;
+    color: rgba(15,23,42,0.5);
+    margin-bottom: 0;
+    font-weight: 400;
+    margin-top: 2px;
 }
 
 /* Contact Tags & Badges */
 .contact-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin: 6px 0;
+    gap: 5px;
+    margin: 7px 0 0 0;
     align-items: center;
 }
 
 .tag-badge {
     display: inline-flex;
     align-items: center;
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 9px;
     font-weight: 600;
     color: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: all 0.2s ease;
-    letter-spacing: 0.2px;
-    border: 1px solid rgba(255,255,255,0.3);
-    text-transform: capitalize;
+    box-shadow: none;
+    transition: opacity 0.2s ease;
+    letter-spacing: 0.1px;
+    border: none;
+    text-transform: uppercase;
     white-space: nowrap;
+    opacity: 0.9;
 }
 
 .tag-badge:hover {
-    transform: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.14);
+    opacity: 1;
 }
 
 /* Stage Badge */
 .stage-badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 9px;
-    border-radius: 6px;
-    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 9px;
     font-weight: 600;
-    letter-spacing: 0.2px;
-    text-transform: capitalize;
-    border: 1.2px solid rgba(15,23,42,0.08);
-    background: var(--surface-2);
-    color: var(--text-secondary);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    border: none;
+    background: rgba(15,23,42,0.06);
+    color: rgba(15,23,42,0.6);
     transition: all 0.2s ease;
     white-space: nowrap;
 }
 
-.stage-badge.stage-new { background: #ecfdf5; color: #047857; border-color: #d1fae5; }
-.stage-badge.stage-contacted { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
-.stage-badge.stage-qualified { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
-.stage-badge.stage-proposal { background: #fed7aa; color: #92400e; border-color: #fdba74; }
-.stage-badge.stage-negotiation { background: #fecaca; color: #991b1b; border-color: #fca5a5; }
-.stage-badge.stage-customer { background: #e9d5ff; color: #6b21a8; border-color: #d8b4fe; }
-.stage-badge.stage-lost { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.stage-badge.stage-new { background: rgba(16,185,129,0.12); color: #059669; }
+.stage-badge.stage-contacted { background: rgba(251,191,36,0.12); color: #d97706; }
+.stage-badge.stage-qualified { background: rgba(59,130,246,0.12); color: #2563eb; }
+.stage-badge.stage-proposal { background: rgba(249,115,22,0.12); color: #ea580c; }
+.stage-badge.stage-negotiation { background: rgba(239,68,68,0.12); color: #dc2626; }
+.stage-badge.stage-customer { background: rgba(168,85,247,0.12); color: #9333ea; }
+.stage-badge.stage-lost { background: rgba(107,114,128,0.12); color: #6b7280; }
 
 .chat-tags {
     display: inline-flex;
