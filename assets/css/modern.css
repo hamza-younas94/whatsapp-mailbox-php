@@ -147,6 +147,14 @@ body {
     line-height: 1 !important;
 }
 
+.btn svg {
+    width: 18px !important;
+    height: 18px !important;
+    flex-shrink: 0;
+    fill: currentColor !important;
+    stroke: currentColor !important;
+}
+
 .btn.btn-primary {
     background: #0dd198 !important;
     color: white !important;
