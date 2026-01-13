@@ -328,7 +328,7 @@ function renderMessages(messagesList, options = {}) {
     }
 
     const wasNearBottom = isNearBottom(container);
-    
+
     const html = messagesList.map(message => {
         const direction = message.direction;
         const time = formatTime(message.timestamp);
@@ -405,11 +405,18 @@ function renderMessages(messagesList, options = {}) {
             </div>
         `;
     }).join('');
-    
-    // Keep scroll position if already scrolled, otherwise scroll to bottom
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-    if (isNearBottom || messagesList.length <= 1) {
-        container.scrollTop = container.scrollHeight;
+
+    if (replace) {
+        container.innerHTML = html;
+    } else if (html) {
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    if (replace || wasNearBottom) {
+        scrollToBottom(container);
+        hideNewMessageIndicator();
+    } else {
+        showNewMessageIndicator();
     }
 }
 
@@ -443,31 +450,14 @@ async function sendMessage() {
     sendBtn.innerHTML = '<div style="width:20px;height:20px;border:2px solid white;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;"></div>';
     sendBtn.disabled = true;
     
-        return `
-            <div class="message ${direction}">
-                <div class="message-bubble">
-                    ${content}
-                    <div class="message-time">
-                        ${time}
-                        ${status}
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    if (replace) {
-        container.innerHTML = html;
-    } else if (html) {
-        container.insertAdjacentHTML('beforeend', html);
-    }
-
-    if (replace || wasNearBottom) {
-        scrollToBottom(container);
-        hideNewMessageIndicator();
-    } else {
-        showNewMessageIndicator();
-    }
+    let response;
+    let result;
+    
+    try {
+        if (selectedMediaFile) {
+            const formData = new FormData();
+            formData.append('media', selectedMediaFile);
+            formData.append('media_type', selectedMediaType);
             formData.append('to', contact.phone_number);
             formData.append('contact_id', currentContactId);
             
