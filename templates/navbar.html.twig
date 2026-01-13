@@ -1,0 +1,48 @@
+{% set currentPage = currentPage|default('') %}
+<!-- Top Navigation -->
+<div class="top-nav">
+    <div class="nav-links">
+        <a href="index.php" class="nav-link {% if currentPage == 'mailbox' %}active{% endif %}">
+            <i class="fas fa-inbox"></i>
+            Mailbox
+        </a>
+        <a href="crm_dashboard.php" class="nav-link {% if currentPage == 'crm' %}active{% endif %}">
+            <i class="fas fa-clipboard"></i>
+            CRM
+        </a>
+        <a href="broadcasts.php" class="nav-link {% if currentPage == 'broadcasts' %}active{% endif %}">
+            <i class="fas fa-broadcast-tower"></i>
+            Broadcasts
+        </a>
+        <a href="quick-replies.php" class="nav-link {% if currentPage == 'quick-replies' %}active{% endif %}">
+            <i class="fas fa-bolt"></i>
+            Quick Replies
+        </a>
+        <a href="analytics.php" class="nav-link {% if currentPage == 'analytics' %}active{% endif %}">
+            <i class="fas fa-chart-bar"></i>
+            Analytics
+        </a>
+        <div class="dropdown">
+            <a href="#" class="nav-link {% if currentPage in ['tags', 'auto-tag-rules', 'search', 'segments', 'scheduled', 'notes', 'deals', 'ip-commands'] %}active{% endif %}">
+                <i class="fas fa-ellipsis-h"></i>
+                More ▾
+            </a>
+            <div class="dropdown-menu">
+                <a href="tags.php" class="{% if currentPage == 'tags' %}active{% endif %}">🏷️ Tags</a>
+                <a href="auto-tag-rules.php" class="{% if currentPage == 'auto-tag-rules' %}active{% endif %}">🤖 Auto-Tag Rules</a>
+                <a href="search.php" class="{% if currentPage == 'search' %}active{% endif %}">🔍 Advanced Search</a>
+                <a href="segments.php" class="{% if currentPage == 'segments' %}active{% endif %}">📊 Segments</a>
+                <a href="scheduled-messages.php" class="{% if currentPage == 'scheduled' %}active{% endif %}">⏰ Scheduled</a>
+                <a href="notes.php" class="{% if currentPage == 'notes' %}active{% endif %}">📝 Notes</a>
+                <a href="deals.php" class="{% if currentPage == 'deals' %}active{% endif %}">💰 Deals</a>
+                <a href="ip-commands.php" class="{% if currentPage == 'ip-commands' %}active{% endif %}">💻 IP Commands</a>
+            </div>
+        </div>
+    </div>
+    <div class="user-info ms-auto">
+        <span><i class="fas fa-user-circle"></i> {{ user.username|default(username|default('Admin')) }}</span>
+        <a href="logout.php" class="logout-btn" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
+</div>

@@ -305,6 +305,8 @@ class WhatsAppService
         $mediaUrl = null;
         $mediaMimeType = null;
         $mediaCaption = null;
+        $mediaFilename = null;
+        $mediaSize = null;
         
         logger("[SAVE] Message type: {$messageType}");
 
@@ -314,26 +316,47 @@ class WhatsAppService
                 break;
 
             case 'image':
-                $mediaUrl = $messageData['image']['id'] ?? '';
-                $mediaMimeType = $messageData['image']['mime_type'] ?? '';
+                $mediaId = $messageData['image']['id'] ?? '';
+                $mediaMimeType = $messageData['image']['mime_type'] ?? 'image/jpeg';
                 $mediaCaption = $messageData['image']['caption'] ?? '';
+                
+                // Fetch detailed media info from WhatsApp API
+                $mediaDetails = $this->fetchMediaDetails($mediaId);
+                $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
+                $mediaSize = $mediaDetails['media_size'] ?? null;
+                $mediaFilename = $mediaDetails['filename'] ?? 'image_' . time() . '.jpg';
                 break;
 
             case 'audio':
-                $mediaUrl = $messageData['audio']['id'] ?? '';
-                $mediaMimeType = $messageData['audio']['mime_type'] ?? '';
+                $mediaId = $messageData['audio']['id'] ?? '';
+                $mediaMimeType = $messageData['audio']['mime_type'] ?? 'audio/mpeg';
+                
+                $mediaDetails = $this->fetchMediaDetails($mediaId);
+                $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
+                $mediaSize = $mediaDetails['media_size'] ?? null;
+                $mediaFilename = $mediaDetails['filename'] ?? 'audio_' . time() . '.mp3';
                 break;
 
             case 'video':
-                $mediaUrl = $messageData['video']['id'] ?? '';
-                $mediaMimeType = $messageData['video']['mime_type'] ?? '';
+                $mediaId = $messageData['video']['id'] ?? '';
+                $mediaMimeType = $messageData['video']['mime_type'] ?? 'video/mp4';
                 $mediaCaption = $messageData['video']['caption'] ?? '';
+                
+                $mediaDetails = $this->fetchMediaDetails($mediaId);
+                $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
+                $mediaSize = $mediaDetails['media_size'] ?? null;
+                $mediaFilename = $mediaDetails['filename'] ?? 'video_' . time() . '.mp4';
                 break;
 
             case 'document':
-                $mediaUrl = $messageData['document']['id'] ?? '';
-                $mediaMimeType = $messageData['document']['mime_type'] ?? '';
+                $mediaId = $messageData['document']['id'] ?? '';
+                $mediaMimeType = $messageData['document']['mime_type'] ?? 'application/octet-stream';
                 $mediaCaption = $messageData['document']['filename'] ?? '';
+                
+                $mediaDetails = $this->fetchMediaDetails($mediaId);
+                $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
+                $mediaSize = $mediaDetails['media_size'] ?? null;
+                $mediaFilename = $mediaDetails['filename'] ?? $mediaCaption ?? 'document_' . time();
                 break;
 
             case 'location':
@@ -357,6 +380,8 @@ class WhatsAppService
                 'media_url' => $mediaUrl,
                 'media_mime_type' => $mediaMimeType,
                 'media_caption' => $mediaCaption,
+                'media_filename' => $mediaFilename,
+                'media_size' => $mediaSize,
                 'timestamp' => $timestamp,
                 'is_read' => false
             ]
@@ -648,6 +673,41 @@ class WhatsAppService
             }
         } catch (\Exception $e) {
             logger("[WEBHOOK ERROR] " . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Fetch media details from WhatsApp API (URL, size, etc.)
+     */
+    private function fetchMediaDetails($mediaId)
+    {
+        try {
+            logger("[MEDIA] Fetching details for media ID: {$mediaId}");
+            
+            $url = "https://graph.instagram.com/{$this->apiVersion}/{$mediaId}/";
+            
+            $response = $this->client->request('GET', $url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->accessToken,
+                    'Accept' => 'application/json'
+                ]
+            ]);
+            
+            $data = json_decode($response->getBody(), true);
+            logger("[MEDIA] Response: " . json_encode($data));
+            
+            return [
+                'media_url' => $data['url'] ?? null,
+                'media_size' => $data['file_size'] ?? null,
+                'filename' => $data['file_name'] ?? null
+            ];
+        } catch (\Exception $e) {
+            logger("[MEDIA ERROR] Failed to fetch media details: " . $e->getMessage(), 'error');
+            return [
+                'media_url' => null,
+                'media_size' => null,
+                'filename' => null
+            ];
         }
     }
 }

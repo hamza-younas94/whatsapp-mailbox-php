@@ -3,51 +3,7 @@
 {% block title %}DCMB IP Commands - {{ app_name }}{% endblock %}
 
 {% block content %}
-<!-- Top Navigation -->
-<div class="top-nav">
-    <div class="nav-links">
-        <a href="index.php" class="nav-link">
-            <i class="fas fa-inbox"></i>
-            Mailbox
-        </a>
-        <a href="crm_dashboard.php" class="nav-link">
-            <i class="fas fa-clipboard"></i>
-            CRM
-        </a>
-        <a href="broadcasts.php" class="nav-link">
-            <i class="fas fa-broadcast-tower"></i>
-            Broadcasts
-        </a>
-        <a href="quick-replies.php" class="nav-link">
-            <i class="fas fa-bolt"></i>
-            Quick Replies
-        </a>
-        <a href="analytics.php" class="nav-link">
-            <i class="fas fa-chart-bar"></i>
-            Analytics
-        </a>
-        <div class="dropdown">
-            <a href="#" class="nav-link">
-                <i class="fas fa-ellipsis-h"></i>
-                More ▾
-            </a>
-            <div class="dropdown-menu">
-                <a href="tags.php">🏷️ Tags</a>
-                <a href="segments.php">📊 Segments</a>
-                <a href="scheduled-messages.php">⏰ Scheduled</a>
-                <a href="notes.php">📝 Notes</a>
-                <a href="deals.php">💰 Deals</a>
-                <a href="ip-commands.php" class="active">🌐 IP Commands</a>
-            </div>
-        </div>
-    </div>
-    <div class="user-info ms-auto">
-        <span><i class="fas fa-user-circle"></i> {{ username }}</span>
-        <a href="logout.php" class="logout-btn" title="Logout">
-            <i class="fas fa-sign-out-alt"></i>
-        </a>
-    </div>
-</div>
+{% include "navbar.html.twig" with {'currentPage': 'ip-commands'} %}
 
 <div class="container-fluid" style="padding-top: 2rem;">
     <div class="page-header mb-4">
