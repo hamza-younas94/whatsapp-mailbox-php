@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://lookaside.fbsbx.com https://*.fbsbx.com data:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' https://graph.facebook.com https://api.whatsapp.com; media-src 'self' https://lookaside.fbsbx.com https://*.fbsbx.com;">
     <title><?php echo htmlspecialchars($pageTitle ?? 'WhatsApp CRM'); ?></title>
     
     <!-- Bootstrap CSS -->
