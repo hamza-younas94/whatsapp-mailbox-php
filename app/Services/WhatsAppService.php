@@ -322,10 +322,10 @@ class WhatsAppService
                 
                 // Fetch detailed media info from WhatsApp API
                 $mediaDetails = $this->fetchMediaDetails($mediaId);
-                $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
+                $mediaUrl = $mediaDetails['media_url'] ?? null;
+                $mediaFilename = $mediaDetails['media_filename'] ?? null;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
-                // Don't set media_filename for incoming WhatsApp media (not downloaded locally)
                 break;
 
             case 'audio':
@@ -333,10 +333,10 @@ class WhatsAppService
                 $mediaMimeType = $messageData['audio']['mime_type'] ?? 'audio/mpeg';
                 
                 $mediaDetails = $this->fetchMediaDetails($mediaId);
-                $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
+                $mediaUrl = $mediaDetails['media_url'] ?? null;
+                $mediaFilename = $mediaDetails['media_filename'] ?? null;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
-                // Don't set media_filename for incoming WhatsApp media (not downloaded locally)
                 break;
 
             case 'video':
@@ -345,10 +345,10 @@ class WhatsAppService
                 $mediaCaption = $messageData['video']['caption'] ?? '';
                 
                 $mediaDetails = $this->fetchMediaDetails($mediaId);
-                $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
+                $mediaUrl = $mediaDetails['media_url'] ?? null;
+                $mediaFilename = $mediaDetails['media_filename'] ?? null;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
-                // Don't set media_filename for incoming WhatsApp media (not downloaded locally)
                 break;
 
             case 'document':
@@ -357,10 +357,10 @@ class WhatsAppService
                 $mediaCaption = $messageData['document']['filename'] ?? '';
                 
                 $mediaDetails = $this->fetchMediaDetails($mediaId);
-                $mediaUrl = $mediaDetails['media_url'] ?? $mediaId;
+                $mediaUrl = $mediaDetails['media_url'] ?? null;
+                $mediaFilename = $mediaDetails['media_filename'] ?? null;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
-                // Use caption as display name for documents, but don't set media_filename (not local)
                 $mediaCaption = $mediaCaption ?: 'document_' . time();
                 break;
 
@@ -682,7 +682,7 @@ class WhatsAppService
     }
 
     /**
-     * Fetch media details from WhatsApp API (URL, size, etc.)
+     * Fetch media details from WhatsApp API and download to local storage
      */
     private function fetchMediaDetails($mediaId)
     {
@@ -706,21 +706,74 @@ class WhatsAppService
             $data = json_decode($response->getBody(), true);
             logger("[MEDIA] Response: " . json_encode($data));
 
+            $mediaUrl = $data['url'] ?? null;
+            $mediaSize = $data['file_size'] ?? null;
+            $mimeType = $data['mime_type'] ?? null;
+            $extension = $mimeType ? $this->inferExtension($mimeType) : '';
+            $filename = $mediaId . $extension;
+
+            // Download media to local storage (URLs expire, so cache locally)
+            $localFilename = null;
+            if ($mediaUrl) {
+                try {
+                    $localFilename = $this->downloadMedia($mediaUrl, $filename, $mimeType);
+                    logger("[MEDIA] Downloaded to local file: {$localFilename}");
+                } catch (\Exception $e) {
+                    logger("[MEDIA] Failed to download media: " . $e->getMessage(), 'warning');
+                    // Fall back to media_url if download fails
+                    $localFilename = null;
+                }
+            }
+
             return [
-                'media_url'   => $data['url'] ?? null,
-                'media_size'  => $data['file_size'] ?? null,
-                'filename'    => $data['id'] ? ($data['id'] . ($data['mime_type'] ? $this->inferExtension($data['mime_type']) : '')) : null,
-                'mime_type'   => $data['mime_type'] ?? null,
+                'media_url'   => $localFilename ? null : $mediaUrl,  // Use local file if available
+                'media_filename' => $localFilename,
+                'media_size'  => $mediaSize,
+                'filename'    => $filename,
+                'mime_type'   => $mimeType,
             ];
         } catch (\Exception $e) {
-            // Log and gracefully fall back to media_id so UI can still show placeholder/download path
             logger("[MEDIA ERROR] Failed to fetch media details: " . $e->getMessage(), 'error');
             return [
                 'media_url'  => null,
+                'media_filename' => null,
                 'media_size' => null,
                 'filename'   => null,
                 'mime_type'  => null,
             ];
+        }
+    }
+
+    /**
+     * Download media from WhatsApp URL and save locally
+     */
+    private function downloadMedia($mediaUrl, $filename, $mimeType)
+    {
+        $uploadDir = base_path('uploads');
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        // Use timestamp + random to avoid collisions
+        $safeName = preg_replace('/[^A-Za-z0-9._-]/', '_', $filename);
+        $localPath = $uploadDir . '/' . time() . '_' . $safeName;
+
+        logger("[MEDIA DOWNLOAD] Downloading from {$mediaUrl} to {$localPath}");
+
+        try {
+            $response = $this->client->request('GET', $mediaUrl, [
+                'timeout' => 30,
+                'verify' => true
+            ]);
+
+            $content = $response->getBody();
+            file_put_contents($localPath, $content);
+
+            // Return just the filename for relative URL construction
+            return basename($localPath);
+        } catch (\Exception $e) {
+            logger("[MEDIA DOWNLOAD ERROR] " . $e->getMessage(), 'error');
+            throw $e;
         }
     }
 
