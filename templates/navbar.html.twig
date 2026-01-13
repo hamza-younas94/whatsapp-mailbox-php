@@ -2,29 +2,41 @@
 <!-- Top Navigation -->
 <div class="top-nav">
     <div class="nav-links">
-        <a href="index.php" class="nav-link {% if currentPage == 'mailbox' %}active{% endif %}">
-            <i class="fas fa-inbox"></i>
+        <a href="index.php" class="nav-link {% if currentPage == 'mailbox' %}active{% endif %}" title="Mailbox">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+                <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/>
+            </svg>
             Mailbox
         </a>
-        <a href="crm_dashboard.php" class="nav-link {% if currentPage == 'crm' %}active{% endif %}">
-            <i class="fas fa-clipboard"></i>
+        <a href="crm_dashboard.php" class="nav-link {% if currentPage == 'crm' %}active{% endif %}" title="CRM">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
             CRM
         </a>
-        <a href="broadcasts.php" class="nav-link {% if currentPage == 'broadcasts' %}active{% endif %}">
-            <i class="fas fa-broadcast-tower"></i>
+        <a href="broadcasts.php" class="nav-link {% if currentPage == 'broadcasts' %}active{% endif %}" title="Broadcasts">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+            </svg>
             Broadcasts
         </a>
-        <a href="quick-replies.php" class="nav-link {% if currentPage == 'quick-replies' %}active{% endif %}">
-            <i class="fas fa-bolt"></i>
+        <a href="quick-replies.php" class="nav-link {% if currentPage == 'quick-replies' %}active{% endif %}" title="Quick Replies">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+                <path d="M3 13h2v8H3zm4-8h2v16H7zm4-2h2v18h-2zm4-2h2v20h-2zm4 4h2v16h-2zm4 6h2v10h-2z"/>
+            </svg>
             Quick Replies
         </a>
-        <a href="analytics.php" class="nav-link {% if currentPage == 'analytics' %}active{% endif %}">
-            <i class="fas fa-chart-bar"></i>
+        <a href="analytics.php" class="nav-link {% if currentPage == 'analytics' %}active{% endif %}" title="Analytics">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+                <rect x="3" y="13" width="4" height="8"/><rect x="10" y="3" width="4" height="18"/><rect x="17" y="8" width="4" height="13"/>
+            </svg>
             Analytics
         </a>
         <div class="dropdown">
-            <a href="#" class="nav-link {% if currentPage in ['tags', 'auto-tag-rules', 'search', 'segments', 'scheduled', 'notes', 'deals', 'ip-commands'] %}active{% endif %}">
-                <i class="fas fa-ellipsis-h"></i>
+            <a href="#" class="nav-link {% if currentPage in ['tags', 'auto-tag-rules', 'search', 'segments', 'scheduled', 'notes', 'deals', 'ip-commands'] %}active{% endif %}" title="More Options">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/>
+                </svg>
                 More ▾
             </a>
             <div class="dropdown-menu">
@@ -41,9 +53,14 @@
         </div>
     </div>
     <div class="user-info ms-auto">
-        <span><i class="fas fa-user-circle"></i> {{ user.username|default(username|default('Admin')) }}</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span>{{ user.username|default(username|default('Admin')) }}</span>
         <a href="logout.php" class="logout-btn" title="Logout">
-            <i class="fas fa-sign-out-alt"></i>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5m0 0l-5-5m5 5H9"/>
+            </svg>
         </a>
     </div>
 </div>
