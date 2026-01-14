@@ -66,7 +66,7 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container-fluid scheduled-messages-page">
-    <div class="page-header d-flex justify-content-between align-items-center">
+    <div class="page-header">
         <div>
             <h1>⏰ Scheduled Messages</h1>
             <p>Schedule messages to be sent later</p>

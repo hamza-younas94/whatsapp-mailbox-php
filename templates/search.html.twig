@@ -6,10 +6,10 @@
 {% include "navbar.html.twig" with {'currentPage': 'search'} %}
 
 <div class="container-fluid">
-    <div class="content-header">
+    <div class="page-header">
         <div>
             <h1><i class="fas fa-search"></i> Advanced Search</h1>
-            <p class="text-muted">Search across messages, contacts, and conversations with filters</p>
+            <p>Search across messages, contacts, and conversations with filters</p>
         </div>
     </div>
 
@@ -95,11 +95,11 @@
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button onclick="performSearch()" class="btn-primary">
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button onclick="performSearch()" class="btn btn-primary">
                         <i class="fas fa-search"></i> Search with Filters
                     </button>
-                    <button onclick="resetFilters()" class="btn-secondary">
+                    <button onclick="resetFilters()" class="btn btn-secondary">
                         <i class="fas fa-redo"></i> Reset Filters
                     </button>
                 </div>

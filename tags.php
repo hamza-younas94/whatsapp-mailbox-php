@@ -110,10 +110,10 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="page-header">
         <div>
-            <h1 class="h3 mb-0">🏷️ Tags Management</h1>
-            <p class="text-muted">Organize and categorize your contacts</p>
+            <h1>🏷️ Tags Management</h1>
+            <p>Organize and categorize your contacts</p>
         </div>
         <button class="btn btn-primary" onclick="openTagModal()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>

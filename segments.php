@@ -73,7 +73,7 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container-fluid segments-page">
-    <div class="page-header d-flex justify-content-between align-items-center">
+    <div class="page-header">
         <div>
             <h1>📊 Contact Segments</h1>
             <p>Smart grouping for targeted campaigns</p>

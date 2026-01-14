@@ -5,11 +5,11 @@
 {% block content %}
 {% include "navbar.html.twig" with {'currentPage': 'notes'} %}
 
-<div class="notes-page">
-    <div class="page-header mb-4">
+<div class="container-fluid notes-page">
+    <div class="page-header">
         <div>
-            <h1><i class="fas fa-sticky-note" style="color: #128C7E;"></i> Activity Notes</h1>
-            <p style="color: #6c757d; font-size: 0.95rem; margin-top: 0.5rem;">Track conversations, calls, meetings and important information</p>
+            <h1><i class="fas fa-sticky-note"></i> Activity Notes</h1>
+            <p>Track conversations, calls, meetings and important information</p>
         </div>
     </div>
 
@@ -55,41 +55,47 @@
 
     <!-- Filters -->
     <div class="card mb-4">
-        <div class="card-body" style="padding: 1rem;">
+        <div class="card-body">
             <form method="GET" class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: #6c757d; text-transform: uppercase;">Search</label>
-                    <input type="text" name="search" class="form-control" placeholder="Search notes or contacts..." value="{{ searchQuery }}" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" name="search" class="crm-input" placeholder="Search notes or contacts..." value="{{ searchQuery }}">
+                    </div>
                 </div>
                 
                 <div class="col-md-3">
-                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: #6c757d; text-transform: uppercase;">Contact</label>
-                    <select name="contact_id" class="form-select" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
-                        <option value="">All Contacts</option>
-                        {% for contact in contacts %}
-                            <option value="{{ contact.id }}" {% if currentContactId == contact.id %}selected{% endif %}>
-                                {{ contact.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                    <div class="form-group">
+                        <label>Contact</label>
+                        <select name="contact_id" class="crm-select">
+                            <option value="">All Contacts</option>
+                            {% for contact in contacts %}
+                                <option value="{{ contact.id }}" {% if currentContactId == contact.id %}selected{% endif %}>
+                                    {{ contact.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
                 
                 <div class="col-md-3">
-                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: #6c757d; text-transform: uppercase;">Note Type</label>
-                    <select name="type" class="form-select" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
-                        <option value="all" {% if currentType == 'all' %}selected{% endif %}>All Types</option>
-                        <option value="general" {% if currentType == 'general' %}selected{% endif %}>📝 General</option>
-                        <option value="call" {% if currentType == 'call' %}selected{% endif %}>📞 Call</option>
-                        <option value="meeting" {% if currentType == 'meeting' %}selected{% endif %}>🤝 Meeting</option>
-                        <option value="email" {% if currentType == 'email' %}selected{% endif %}>📧 Email</option>
-                    </select>
+                    <div class="form-group">
+                        <label>Note Type</label>
+                        <select name="type" class="crm-select">
+                            <option value="all" {% if currentType == 'all' %}selected{% endif %}>All Types</option>
+                            <option value="general" {% if currentType == 'general' %}selected{% endif %}>📝 General</option>
+                            <option value="call" {% if currentType == 'call' %}selected{% endif %}>📞 Call</option>
+                            <option value="meeting" {% if currentType == 'meeting' %}selected{% endif %}>🤝 Meeting</option>
+                            <option value="email" {% if currentType == 'email' %}selected{% endif %}>📧 Email</option>
+                        </select>
+                    </div>
                 </div>
                 
-                <div class="col-md-2" style="display: flex; align-items: flex-end; gap: 0.5rem;">
-                    <button type="submit" class="btn btn-primary" style="flex: 1; font-size: 0.875rem; padding: 0.5rem;">
+                <div class="col-md-2" style="display: flex; align-items: flex-end; gap: 12px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
                         <i class="fas fa-filter"></i> Filter
                     </button>
-                    <a href="notes.php" class="btn btn-outline-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+                    <a href="notes.php" class="btn btn-secondary">
                         <i class="fas fa-redo"></i>
                     </a>
                 </div>
