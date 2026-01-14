@@ -1172,10 +1172,23 @@ a.btn-secondary,
     display: flex !important;
 }
 
+.modal-dialog {
+    max-width: 600px !important;
+    margin: 1.75rem auto !important;
+}
+
+.modal-dialog.modal-lg {
+    max-width: 800px !important;
+}
+
+.modal-dialog.modal-xl {
+    max-width: 1200px !important;
+}
+
 .modal-content {
     background: white;
     border-radius: 12px;
-    max-width: 600px;
+    width: 100% !important;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
 }
 
