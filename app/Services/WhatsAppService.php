@@ -353,11 +353,30 @@ class WhatsAppService
                     
                     // Error 100 = Invalid parameter
                     if ($errorCode == 100) {
+                        // Try to get available templates to help diagnose
+                        $templatesResult = $this->getTemplates();
+                        $availableTemplates = [];
+                        
+                        if ($templatesResult['success'] && isset($templatesResult['templates'])) {
+                            foreach ($templatesResult['templates'] as $template) {
+                                $availableTemplates[] = [
+                                    'name' => $template['name'] ?? 'N/A',
+                                    'language' => $template['language'] ?? 'N/A',
+                                    'status' => $template['status'] ?? 'N/A'
+                                ];
+                            }
+                        }
+                        
                         $errorMessage = 'Invalid template parameters. Please check: ' . 
                                        '1) Template name matches exactly (case-sensitive), ' .
                                        '2) Language code is valid (e.g., "en", "en_US"), ' .
                                        '3) Template is approved and active in WhatsApp Business Manager. ' .
+                                       '4) Template exists for this phone number ID. ' .
                                        'Error details: ' . ($errorData['error']['message'] ?? 'Invalid parameter');
+                        
+                        if (!empty($availableTemplates)) {
+                            $errorMessage .= '. Available templates: ' . json_encode($availableTemplates);
+                        }
                     }
                 }
             }
@@ -365,12 +384,16 @@ class WhatsAppService
             logger('WhatsApp Template API Error: ' . $errorMessage, 'error');
             logger('Template Payload: ' . json_encode($payload), 'error');
             logger('Response: ' . ($responseBody ?? 'No response'), 'error');
+            logger('Phone Number ID: ' . $this->phoneNumberId, 'error');
+            logger('API Version: ' . $this->apiVersion, 'error');
             
             return [
                 'success' => false,
                 'error' => $errorMessage,
                 'response' => $responseBody,
-                'payload' => $payload
+                'payload' => $payload,
+                'phone_number_id' => $this->phoneNumberId,
+                'api_version' => $this->apiVersion
             ];
         }
     }

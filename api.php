@@ -558,6 +558,24 @@ function sendTemplateMessage() {
 }
 
 /**
+ * Get available message templates
+ */
+function getTemplates() {
+    $whatsappService = new WhatsAppService();
+    $result = $whatsappService->getTemplates();
+    
+    if ($result['success']) {
+        response_json([
+            'success' => true,
+            'templates' => $result['templates'] ?? [],
+            'data' => $result['data'] ?? []
+        ]);
+    } else {
+        response_error('Failed to fetch templates: ' . ($result['error'] ?? 'Unknown error'), 500, $result);
+    }
+}
+
+/**
  * Mark messages as read
  */
 function markAsRead() {
