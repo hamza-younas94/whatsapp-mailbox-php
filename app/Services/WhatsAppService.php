@@ -270,12 +270,42 @@ class WhatsAppService
             ];
 
         } catch (RequestException $e) {
-            logger('WhatsApp Template API Error: ' . $e->getMessage(), 'error');
+            $errorMessage = $e->getMessage();
+            $responseBody = null;
+            
+            if ($e->hasResponse()) {
+                $responseBody = $e->getResponse()->getBody()->getContents();
+                $errorData = json_decode($responseBody, true);
+                
+                // Extract more detailed error message
+                if (isset($errorData['error']['message'])) {
+                    $errorMessage = $errorData['error']['message'];
+                }
+                
+                // Check for specific error codes
+                if (isset($errorData['error']['code'])) {
+                    $errorCode = $errorData['error']['code'];
+                    
+                    // Error 100 = Invalid parameter
+                    if ($errorCode == 100) {
+                        $errorMessage = 'Invalid template parameters. Please check: ' . 
+                                       '1) Template name matches exactly (case-sensitive), ' .
+                                       '2) Language code is valid (e.g., "en", "en_US"), ' .
+                                       '3) Template is approved and active in WhatsApp Business Manager. ' .
+                                       'Error details: ' . ($errorData['error']['message'] ?? 'Invalid parameter');
+                    }
+                }
+            }
+            
+            logger('WhatsApp Template API Error: ' . $errorMessage, 'error');
+            logger('Template Payload: ' . json_encode($payload), 'error');
+            logger('Response: ' . ($responseBody ?? 'No response'), 'error');
             
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
-                'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null
+                'error' => $errorMessage,
+                'response' => $responseBody,
+                'payload' => $payload
             ];
         }
     }
