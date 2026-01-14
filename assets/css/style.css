@@ -607,6 +607,17 @@ body {
     color: #e74c3c !important;
 }
 
+.message-status-double {
+    display: inline-flex;
+    align-items: center;
+    gap: -4px;
+    margin-left: 2px;
+}
+
+.message-status-double svg:first-child {
+    margin-right: -6px;
+}
+
 .message-time {
     display: flex;
     align-items: center;
