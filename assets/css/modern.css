@@ -1479,15 +1479,16 @@ a.btn {
 }
 
 .crm-section .btn-primary {
-    background: var(--primary) !important;
+    background: #0dd198 !important;
     color: white !important;
     border: none !important;
+    font-weight: 600 !important;
 }
 
 .crm-section .btn-primary:hover {
-    background: #0ab080 !important;
+    background: #0bb885 !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(13,209,152,0.25) !important;
+    box-shadow: 0 4px 12px rgba(13,209,152,0.3) !important;
 }
 
 .crm-section .btn-secondary {

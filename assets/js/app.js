@@ -254,13 +254,13 @@ async function selectContact(contactId, name, phoneNumber) {
         </div>
         <div class="crm-actions">
             <button onclick="openTemplateModal(${contactId}, '${phoneNumber}')" class="btn-crm" title="Send Template Message">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M7 8h10M7 12h10M7 16h6"/>
                     <rect x="3" y="4" width="18" height="16" rx="2"/>
                 </svg>
             </button>
             <button onclick="openCrmModal(${contactId})" class="btn-crm" title="CRM Actions">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                     <circle cx="8.5" cy="7" r="4"/>
                     <path d="M20 8v6M23 11h-6"/>
