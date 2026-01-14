@@ -115,6 +115,10 @@ if (!function_exists('validate')) {
                         $errors[$field][] = "The {$field} must not exceed {$max} characters.";
                     }
                 }
+                
+                if ($rule === 'number' && $value && !is_numeric($value)) {
+                    $errors[$field][] = "The {$field} must be a number.";
+                }
             }
         }
         
