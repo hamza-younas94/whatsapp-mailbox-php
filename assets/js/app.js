@@ -651,13 +651,12 @@ function openCrmModal(contactId) {
     const contact = contacts.find(c => c.id === contactId);
     if (!contact) return;
     
-    const panel = document.getElementById('crmSidePanel');
-    const content = document.getElementById('crmPanelContent');
-    const container = document.querySelector('.mailbox-container');
-    const panelHeader = panel.querySelector('.crm-panel-header h3');
+    const modal = document.getElementById('crmModal');
+    const content = document.getElementById('crmModalContent');
+    const modalTitle = document.getElementById('crmModalTitle');
     
     // Update header title
-    panelHeader.textContent = escapeHtml(contact.name);
+    modalTitle.textContent = escapeHtml(contact.name);
     
     content.innerHTML = `
         <div class="crm-section">
@@ -784,24 +783,37 @@ function openCrmModal(contactId) {
             </div>
     `;
     
-    panel.style.display = 'block';
-    container.classList.add('panel-open');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
     loadNotes(contactId);
     loadDeals(contactId);
 }
 
 /**
- * Close CRM side panel
+ * Close CRM modal
  */
-function closeCrmPanel() {
-    document.getElementById('crmSidePanel').style.display = 'none';
-    document.querySelector('.mailbox-container').classList.remove('panel-open');
+function closeCrmModal() {
+    const modal = document.getElementById('crmModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+        // Hide add deal form if open
+        hideAddDealForm();
+    }
 }
 
-// Keep old function for backward compatibility
-function closeCrmModal() {
-    closeCrmPanel();
-}
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const crmModal = document.getElementById('crmModal');
+    if (crmModal) {
+        crmModal.addEventListener('click', function(e) {
+            if (e.target === crmModal) {
+                closeCrmModal();
+            }
+        });
+    }
+});
+
 
 /**
  * Update contact stage
@@ -1055,8 +1067,39 @@ async function loadDeals(contactId) {
  */
 function showAddDealForm(contactId) {
     const form = document.getElementById('addDealForm');
+    if (!form) {
+        console.error('addDealForm element not found');
+        showToast('Error: Form not found. Please refresh the page.', 'error');
+        return;
+    }
+    
     form.style.display = 'block';
-    document.getElementById('dealDate').valueAsDate = new Date();
+    
+    // Set default date
+    const dealDateInput = document.getElementById('dealDate');
+    if (dealDateInput) {
+        dealDateInput.valueAsDate = new Date();
+    }
+    
+    // Scroll form into view - scroll the modal body to show the form
+    const modalContent = document.getElementById('crmModalContent');
+    if (modalContent) {
+        setTimeout(() => {
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Also scroll the modal content container
+            const formTop = form.offsetTop;
+            modalContent.scrollTo({
+                top: formTop - 20,
+                behavior: 'smooth'
+            });
+        }, 100);
+    }
+    
+    // Focus on first input
+    const dealNameInput = document.getElementById('dealName');
+    if (dealNameInput) {
+        setTimeout(() => dealNameInput.focus(), 200);
+    }
 }
 
 /**
@@ -1064,13 +1107,22 @@ function showAddDealForm(contactId) {
  */
 function hideAddDealForm() {
     const form = document.getElementById('addDealForm');
+    if (!form) return;
+    
     form.style.display = 'none';
-    // Clear form
-    document.getElementById('dealName').value = '';
-    document.getElementById('dealAmount').value = '';
-    document.getElementById('dealStatus').value = 'pending';
-    document.getElementById('dealDate').valueAsDate = new Date();
-    document.getElementById('dealNotes').value = '';
+    
+    // Clear form fields
+    const dealName = document.getElementById('dealName');
+    const dealAmount = document.getElementById('dealAmount');
+    const dealStatus = document.getElementById('dealStatus');
+    const dealDate = document.getElementById('dealDate');
+    const dealNotes = document.getElementById('dealNotes');
+    
+    if (dealName) dealName.value = '';
+    if (dealAmount) dealAmount.value = '';
+    if (dealStatus) dealStatus.value = 'pending';
+    if (dealDate) dealDate.valueAsDate = new Date();
+    if (dealNotes) dealNotes.value = '';
 }
 
 /**
@@ -1195,17 +1247,11 @@ async function sendTemplate() {
     }
 }
 
-// Close panel when clicking outside (on backdrop only)
+// Close template modal when clicking outside (on backdrop only)
 window.onclick = function(event) {
-    const panel = document.getElementById('crmSidePanel');
-    const modal = document.getElementById('templateModal');
+    const templateModal = document.getElementById('templateModal');
     
-    // Only close if clicking the backdrop itself, not panel content
-    if (event.target === panel && event.target.classList.contains('crm-side-panel')) {
-        closeCrmPanel();
-    }
-    
-    if (event.target === modal) {
+    if (event.target === templateModal) {
         closeTemplateModal();
     }
 }

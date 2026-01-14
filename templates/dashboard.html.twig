@@ -75,14 +75,16 @@
         </div>
     </div>
     
-    <!-- CRM Side Panel -->
-    <div class="crm-side-panel" id="crmSidePanel" style="display: none;">
-        <div class="crm-panel-header">
-            <h3>CRM Details</h3>
-            <button onclick="closeCrmPanel()" class="close-panel-btn">&times;</button>
-        </div>
-        <div class="crm-panel-content" id="crmPanelContent">
-            <!-- Content loaded by JavaScript -->
+    <!-- CRM Modal -->
+    <div id="crmModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="crmModalTitle">CRM Details</h2>
+                <button onclick="closeCrmModal()" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="crmModalContent">
+                <!-- Content loaded by JavaScript -->
+            </div>
         </div>
     </div>
 </div>

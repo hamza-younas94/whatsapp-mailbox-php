@@ -293,15 +293,15 @@ async function updateStage(contactId) {
         const result = await response.json();
         
         if (response.ok && result.success) {
-            alert('Stage updated successfully!');
+            showToast('Stage updated successfully!', 'success');
             loadCrmData();
             closeCrmModal();
         } else {
-            alert('Failed to update stage: ' + (result.error || 'Unknown error'));
+            showToast('Failed to update stage: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error updating stage:', error);
-        alert('Failed to update stage');
+        showToast('Failed to update stage', 'error');
     }
 }
 
@@ -320,14 +320,14 @@ async function updateCompanyInfo(contactId) {
         const result = await response.json();
         
         if (response.ok && result.success) {
-            alert('Company info updated!');
+            showToast('Company info updated!', 'success');
             loadCrmData();
         } else {
-            alert('Failed to update: ' + (result.error || 'Unknown error'));
+            showToast('Failed to update: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error updating company info:', error);
-        alert('Failed to update');
+        showToast('Failed to update', 'error');
     }
 }
 
@@ -336,7 +336,7 @@ async function addNote(contactId) {
     const type = document.getElementById('crmNoteType').value;
     
     if (!content) {
-        alert('Please enter a note');
+        showToast('Please enter a note', 'error');
         return;
     }
     
@@ -352,13 +352,13 @@ async function addNote(contactId) {
         if (response.ok && result.success) {
             document.getElementById('crmNote').value = '';
             loadNotes(contactId);
-            alert('Note added!');
+            showToast('Note added successfully!', 'success');
         } else {
-            alert('Failed to add note: ' + (result.error || 'Unknown error'));
+            showToast('Failed to add note: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error adding note:', error);
-        alert('Failed to add note');
+        showToast('Failed to add note', 'error');
     }
 }
 
