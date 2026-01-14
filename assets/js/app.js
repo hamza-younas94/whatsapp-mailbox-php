@@ -1253,11 +1253,21 @@ let templatePhoneNumber = null;
 function openTemplateModal(contactId, phoneNumber) {
     templateContactId = contactId;
     templatePhoneNumber = phoneNumber;
-    document.getElementById('templateModal').style.display = 'flex';
+    const templateModal = document.getElementById('templateModal');
+    if (templateModal) {
+        templateModal.style.display = 'flex';
+        templateModal.classList.add('show');
+        document.body.classList.add('modal-open');
+    }
 }
 
 function closeTemplateModal() {
-    document.getElementById('templateModal').style.display = 'none';
+    const templateModal = document.getElementById('templateModal');
+    if (templateModal) {
+        templateModal.style.display = 'none';
+        templateModal.classList.remove('show');
+        document.body.classList.remove('modal-open');
+    }
     templateContactId = null;
     templatePhoneNumber = null;
 }
