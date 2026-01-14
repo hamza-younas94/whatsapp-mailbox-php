@@ -393,6 +393,29 @@ class WhatsAppService
                         }
                     }
                     
+                    // Error 132001 = Template doesn't exist in language
+                    if ($errorCode == 132001) {
+                        $errorDetails = $errorData['error']['error_data']['details'] ?? '';
+                        $errorMessage = 'Template not found in this language. ' .
+                                       'The template "' . $templateName . '" does not exist in language "' . $languageCode . '". ' .
+                                       'Please check WhatsApp Business Manager to see which languages are available for this template. ' .
+                                       'You may need to use a different language code (e.g., "en" instead of "en_US"). ' .
+                                       'Error details: ' . ($errorData['error']['message'] ?? 'Template not found');
+                        
+                        if ($errorDetails) {
+                            $errorMessage .= ' (' . $errorDetails . ')';
+                        }
+                    }
+                    
+                    // Error 131042 = Business eligibility payment issue
+                    if ($errorCode == 131042) {
+                        $errorMessage = 'Business eligibility payment issue. ' .
+                                       'Your WhatsApp Business account has a payment or billing issue. ' .
+                                       'Please check your WhatsApp Business Manager billing settings and ensure your payment method is valid. ' .
+                                       'You may need to add a payment method or resolve billing issues before sending messages. ' .
+                                       'Error details: ' . ($errorData['error']['message'] ?? 'Payment issue');
+                    }
+                    
                     // Error 132000 = Parameter count mismatch
                     if ($errorCode == 132000) {
                         $errorDetails = $errorData['error']['error_data']['details'] ?? '';
