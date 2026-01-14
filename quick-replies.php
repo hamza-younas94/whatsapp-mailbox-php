@@ -301,11 +301,15 @@ function editReply(id) {
 let replyValidator;
 
 document.addEventListener('DOMContentLoaded', function() {
-    replyValidator = new FormValidator('replyForm', {
-        shortcut: ['required', 'min:1', 'max:50'],
-        title: ['required', 'min:2', 'max:100'],
-        message: ['required', 'min:1', 'max:4096']
-    });
+    if (typeof FormValidator !== 'undefined') {
+        replyValidator = new FormValidator('replyForm', {
+            shortcut: ['required', 'min:1', 'max:50'],
+            title: ['required', 'min:2', 'max:100'],
+            message: ['required', 'min:1', 'max:4096']
+        });
+    } else {
+        console.error('FormValidator is not defined. Make sure validation.js is loaded.');
+    }
 });
 
 function saveReply() {

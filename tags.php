@@ -301,10 +301,14 @@ function editTag(id) {
 let tagValidator;
 
 document.addEventListener('DOMContentLoaded', function() {
-    tagValidator = new FormValidator('tagForm', {
-        name: ['required', 'min:2', 'max:50'],
-        description: ['max:255']
-    });
+    if (typeof FormValidator !== 'undefined') {
+        tagValidator = new FormValidator('tagForm', {
+            name: ['required', 'min:2', 'max:50'],
+            description: ['max:255']
+        });
+    } else {
+        console.error('FormValidator is not defined. Make sure validation.js is loaded.');
+    }
 });
 
 function saveTag() {

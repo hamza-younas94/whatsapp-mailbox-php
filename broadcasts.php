@@ -28,20 +28,106 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     try {
         switch ($action) {
             case 'create':
-                $broadcast = Broadcast::create([
-                    'name' => $_POST['name'],
-                    'message' => $_POST['message'],
-                    'message_type' => $_POST['message_type'] ?? 'text',
-                    'template_name' => $_POST['template_name'] ?? null,
-                    'scheduled_at' => !empty($_POST['scheduled_at']) ? $_POST['scheduled_at'] : null,
-                    'status' => !empty($_POST['scheduled_at']) ? 'scheduled' : 'draft',
-                    'created_by' => $user->id
+            case 'update':
+                // Validate input
+                $validation = validate([
+                    'name' => sanitize($_POST['name'] ?? ''),
+                    'recipient_filter' => sanitize($_POST['recipient_filter'] ?? ''),
+                    'message' => sanitize($_POST['message'] ?? '')
+                ], [
+                    'name' => 'required|min:2|max:100',
+                    'recipient_filter' => 'required',
+                    'message' => 'required|min:1|max:4096'
                 ]);
                 
-                // Add recipients based on filters
-                $recipients = [];
-                if (!empty($_POST['recipient_filter'])) {
-                    $filter = $_POST['recipient_filter'];
+                if ($validation !== true) {
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Validation failed',
+                        'errors' => $validation
+                    ]);
+                    exit;
+                }
+                
+                // Check if recipients exist
+                $recipientFilter = sanitize($_POST['recipient_filter']);
+                $recipientCount = 0;
+                
+                if ($recipientFilter === 'all') {
+                    $recipientCount = Contact::count();
+                } elseif (str_starts_with($recipientFilter, 'tag_')) {
+                    $tagId = str_replace('tag_', '', $recipientFilter);
+                    $tag = Tag::find($tagId);
+                    if (!$tag) {
+                        echo json_encode([
+                            'success' => false,
+                            'error' => 'Selected tag not found',
+                            'errors' => ['recipient_filter' => ['Selected tag not found']]
+                        ]);
+                        exit;
+                    }
+                    $recipientCount = $tag->contacts()->count();
+                } elseif (str_starts_with($recipientFilter, 'segment_')) {
+                    $segmentId = str_replace('segment_', '', $recipientFilter);
+                    $segment = Segment::find($segmentId);
+                    if (!$segment) {
+                        echo json_encode([
+                            'success' => false,
+                            'error' => 'Selected segment not found',
+                            'errors' => ['recipient_filter' => ['Selected segment not found']]
+                        ]);
+                        exit;
+                    }
+                    $recipientCount = $segment->getContacts()->count();
+                } elseif (str_starts_with($recipientFilter, 'stage_')) {
+                    $stage = str_replace('stage_', '', $recipientFilter);
+                    $recipientCount = Contact::where('stage', $stage)->count();
+                }
+                
+                if ($recipientCount === 0) {
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'No recipients found for selected filter',
+                        'errors' => ['recipient_filter' => ['No recipients found for selected filter']]
+                    ]);
+                    exit;
+                }
+                
+                if ($action === 'create') {
+                    $broadcast = Broadcast::create([
+                        'name' => sanitize($_POST['name']),
+                        'message' => sanitize($_POST['message']),
+                        'message_type' => $_POST['message_type'] ?? 'text',
+                        'template_name' => !empty($_POST['template_name']) ? sanitize($_POST['template_name']) : null,
+                        'scheduled_at' => !empty($_POST['scheduled_at']) ? $_POST['scheduled_at'] : null,
+                        'status' => !empty($_POST['scheduled_at']) ? 'scheduled' : 'draft',
+                        'created_by' => $user->id,
+                        'total_recipients' => $recipientCount
+                    ]);
+                } else {
+                    $broadcast = Broadcast::findOrFail($_POST['id']);
+                    
+                    if ($broadcast->status !== 'draft' && $broadcast->status !== 'scheduled') {
+                        echo json_encode([
+                            'success' => false,
+                            'error' => 'Cannot edit a broadcast that has been sent'
+                        ]);
+                        exit;
+                    }
+                    
+                    $broadcast->update([
+                        'name' => sanitize($_POST['name']),
+                        'message' => sanitize($_POST['message']),
+                        'scheduled_at' => !empty($_POST['scheduled_at']) ? $_POST['scheduled_at'] : null,
+                        'status' => !empty($_POST['scheduled_at']) ? 'scheduled' : 'draft',
+                        'total_recipients' => $recipientCount
+                    ]);
+                }
+                
+                // Add recipients based on filters (only for new broadcasts)
+                if ($action === 'create') {
+                    $recipients = [];
+                    $filter = $recipientFilter;
                     
                     if ($filter === 'all') {
                         $contacts = Contact::all();
@@ -65,26 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                             'status' => 'pending'
                         ]);
                     }
-                    
-                    $broadcast->update(['total_recipients' => $contacts->count()]);
                 }
-                
-                echo json_encode(['success' => true, 'broadcast' => $broadcast]);
-                break;
-            
-            case 'update':
-                $broadcast = Broadcast::findOrFail($_POST['id']);
-                
-                if ($broadcast->status !== 'draft' && $broadcast->status !== 'scheduled') {
-                    throw new Exception('Cannot edit a broadcast that has been sent');
-                }
-                
-                $broadcast->update([
-                    'name' => $_POST['name'],
-                    'message' => $_POST['message'],
-                    'scheduled_at' => !empty($_POST['scheduled_at']) ? $_POST['scheduled_at'] : null,
-                    'status' => !empty($_POST['scheduled_at']) ? 'scheduled' : 'draft'
-                ]);
                 
                 echo json_encode(['success' => true, 'broadcast' => $broadcast]);
                 break;
@@ -295,13 +362,13 @@ require_once __DIR__ . '/includes/header.php';
             <div class="modal-body">
                 <form id="broadcastForm">
                     <div class="mb-3">
-                        <label for="broadcast_name" class="form-label">Broadcast Name</label>
-                        <input type="text" class="form-control" id="broadcast_name" name="name" required placeholder="e.g., Monthly Newsletter">
+                        <label for="broadcast_name" class="form-label">Broadcast Name *</label>
+                        <input type="text" class="form-control crm-input" id="broadcast_name" name="name" placeholder="e.g., Monthly Newsletter">
                     </div>
                     
                     <div class="mb-3">
-                        <label for="recipient_filter" class="form-label">Recipients</label>
-                        <select class="form-select" id="recipient_filter" name="recipient_filter" required>
+                        <label for="recipient_filter" class="form-label">Recipients *</label>
+                        <select class="form-select crm-select" id="recipient_filter" name="recipient_filter">
                             <option value="">Select recipients...</option>
                             <option value="all">All Contacts</option>
                             <optgroup label="Tags">
@@ -329,13 +396,13 @@ require_once __DIR__ . '/includes/header.php';
                     </div>
                     
                     <div class="mb-3">
-                        <label for="broadcast_message" class="form-label">Message</label>
-                        <textarea class="form-control" id="broadcast_message" name="message" rows="5" required placeholder="Enter your message here..."></textarea>
+                        <label for="broadcast_message" class="form-label">Message *</label>
+                        <textarea class="form-control crm-textarea" id="broadcast_message" name="message" rows="5" placeholder="Enter your message here..."></textarea>
                     </div>
                     
                     <div class="mb-3">
                         <label for="scheduled_at" class="form-label">Schedule (Optional)</label>
-                        <input type="datetime-local" class="form-control" id="scheduled_at" name="scheduled_at">
+                        <input type="datetime-local" class="form-control crm-input" id="scheduled_at" name="scheduled_at">
                         <small class="text-muted">Leave empty to save as draft</small>
                     </div>
                 </form>
@@ -410,7 +477,44 @@ function editBroadcast(id) {
     });
 }
 
+// Initialize broadcast form validator
+let broadcastValidator;
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof FormValidator !== 'undefined') {
+        broadcastValidator = new FormValidator('broadcastForm', {
+            name: ['required', 'min:2', 'max:100'],
+            recipient_filter: ['required'],
+            message: ['required', 'min:1', 'max:4096']
+        });
+    } else {
+        console.error('FormValidator is not defined. Make sure validation.js is loaded.');
+    }
+});
+
 function saveBroadcast() {
+    if (!broadcastValidator) {
+        // Fallback validation if FormValidator not loaded
+        const name = document.getElementById('broadcast_name').value.trim();
+        const recipient = document.getElementById('recipient_filter').value;
+        const message = document.getElementById('broadcast_message').value.trim();
+        
+        if (!name) {
+            showToast('Broadcast name is required', 'error');
+            return;
+        }
+        if (!recipient) {
+            showToast('Please select recipients', 'error');
+            return;
+        }
+        if (!message) {
+            showToast('Message is required', 'error');
+            return;
+        }
+    } else if (!broadcastValidator.validate()) {
+        return;
+    }
+    
     const formData = new FormData(document.getElementById('broadcastForm'));
     formData.append('action', currentBroadcastId ? 'update' : 'create');
     if (currentBroadcastId) {
@@ -429,8 +533,17 @@ function saveBroadcast() {
             broadcastModal.hide();
             location.reload();
         } else {
-            showToast('Error: ' + data.error, 'error');
+            // Handle validation errors from backend
+            if (data.errors && broadcastValidator) {
+                broadcastValidator.setErrors(data.errors);
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+            }
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to save broadcast', 'error');
     });
 }
 
