@@ -23,27 +23,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         
         switch ($action) {
             case 'create':
-                $segment = Segment::create([
-                    'name' => $_POST['name'],
-                    'description' => $_POST['description'] ?? null,
-                    'conditions' => json_decode($_POST['conditions'], true),
-                    'is_dynamic' => isset($_POST['is_dynamic']) && $_POST['is_dynamic'] == '1',
-                    'created_by' => $user->id
-                ]);
-                $segment->updateContactCount();
-                echo json_encode(['success' => true, 'segment' => $segment]);
-                break;
-            
             case 'update':
-                $segment = Segment::findOrFail($_POST['id']);
-                $segment->update([
-                    'name' => $_POST['name'],
-                    'description' => $_POST['description'] ?? null,
-                    'conditions' => json_decode($_POST['conditions'], true),
-                    'is_dynamic' => isset($_POST['is_dynamic']) && $_POST['is_dynamic'] == '1'
+                // Validate input
+                $validation = validate([
+                    'name' => sanitize($_POST['name'] ?? ''),
+                    'description' => sanitize($_POST['description'] ?? ''),
+                    'conditions' => $_POST['conditions'] ?? '{}'
+                ], [
+                    'name' => 'required|min:2|max:100',
+                    'description' => 'max:500',
+                    'conditions' => 'required'
                 ]);
-                $segment->updateContactCount();
-                echo json_encode(['success' => true, 'segment' => $segment]);
+                
+                if ($validation !== true) {
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Validation failed',
+                        'errors' => $validation
+                    ]);
+                    exit;
+                }
+                
+                // Validate conditions JSON
+                $conditions = json_decode($_POST['conditions'], true);
+                if (json_last_error() !== JSON_ERROR_NONE || empty($conditions)) {
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Invalid conditions format',
+                        'errors' => ['conditions' => ['Please provide valid conditions']]
+                    ]);
+                    exit;
+                }
+                
+                $data = [
+                    'name' => sanitize($_POST['name']),
+                    'description' => !empty($_POST['description']) ? sanitize($_POST['description']) : null,
+                    'conditions' => $conditions,
+                    'is_dynamic' => isset($_POST['is_dynamic']) && $_POST['is_dynamic'] == '1'
+                ];
+                
+                if ($action === 'create') {
+                    $data['created_by'] = $user->id;
+                    $segment = Segment::create($data);
+                    $segment->updateContactCount();
+                    echo json_encode(['success' => true, 'segment' => $segment]);
+                } else {
+                    $segment = Segment::findOrFail($_POST['id']);
+                    $segment->update($data);
+                    $segment->updateContactCount();
+                    echo json_encode(['success' => true, 'segment' => $segment]);
+                }
                 break;
             
             case 'delete':
@@ -127,17 +156,19 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="segmentForm">
+                <form id="segmentForm" class="needs-validation" novalidate>
                     <input type="hidden" id="segment_id" name="id">
                     
                     <div class="mb-3">
-                        <label for="name" class="form-label">Segment Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
+                        <label for="name" class="form-label">Segment Name *</label>
+                        <input type="text" class="form-control crm-input" id="name" name="name">
+                        <div class="invalid-feedback">Please enter a segment name</div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                        <textarea class="form-control crm-textarea" id="description" name="description" rows="2"></textarea>
+                        <div class="invalid-feedback"></div>
                     </div>
                     
                     <div class="mb-3">
@@ -234,7 +265,36 @@ function editSegment(id) {
     }
 }
 
+// Initialize segment form validator
+let segmentValidator;
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof FormValidator !== 'undefined') {
+        segmentValidator = new FormValidator('segmentForm', {
+            name: ['required', 'min:2', 'max:100'],
+            description: ['max:500']
+        });
+    } else {
+        console.error('FormValidator is not defined. Make sure validation.js is loaded.');
+    }
+});
+
 function saveSegment() {
+    // Validate form
+    if (segmentValidator && !segmentValidator.validate()) {
+        return;
+    }
+    
+    // Fallback validation
+    const name = document.getElementById('name').value.trim();
+    if (!name) {
+        const nameField = document.getElementById('name');
+        nameField.classList.add('is-invalid');
+        nameField.nextElementSibling.textContent = 'Please enter a segment name';
+        showToast('Please enter a segment name', 'error');
+        return;
+    }
+    
     // Build conditions object from form
     const conditionBuilder = document.getElementById('conditions-builder');
     const fieldSelect = conditionBuilder.querySelector('select[name="field"]');
@@ -243,7 +303,16 @@ function saveSegment() {
     
     const field = fieldSelect ? fieldSelect.value : 'stage';
     const operator = operatorSelect ? operatorSelect.value : '=';
-    const value = valueInput ? valueInput.value : '';
+    const value = valueInput ? valueInput.value.trim() : '';
+    
+    // Validate condition value
+    if (!value) {
+        if (valueInput) {
+            valueInput.classList.add('is-invalid');
+            showToast('Please enter a condition value', 'error');
+            return;
+        }
+    }
     
     const conditions = {};
     conditions[field] = {operator: operator, value: value};
@@ -266,8 +335,17 @@ function saveSegment() {
             segmentModal.hide();
             location.reload();
         } else {
-            showToast('Error: ' + data.error, 'error');
+            // Handle validation errors from backend
+            if (data.errors && segmentValidator) {
+                segmentValidator.setErrors(data.errors);
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+            }
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to save segment', 'error');
     });
 }
 

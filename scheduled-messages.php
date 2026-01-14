@@ -24,10 +24,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     try {
         switch ($action) {
             case 'create':
+                // Validate input
+                $validation = validate([
+                    'contact_id' => $_POST['contact_id'] ?? '',
+                    'message' => sanitize($_POST['message'] ?? ''),
+                    'scheduled_at' => $_POST['scheduled_at'] ?? ''
+                ], [
+                    'contact_id' => 'required',
+                    'message' => 'required|min:1|max:4096',
+                    'scheduled_at' => 'required'
+                ]);
+                
+                if ($validation !== true) {
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Validation failed',
+                        'errors' => $validation
+                    ]);
+                    exit;
+                }
+                
+                // Validate contact exists
+                $contactId = intval($_POST['contact_id']);
+                $contact = Contact::find($contactId);
+                if (!$contact) {
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Contact not found',
+                        'errors' => ['contact_id' => ['Selected contact not found']]
+                    ]);
+                    exit;
+                }
+                
+                // Validate scheduled date is in the future
+                $scheduledAt = $_POST['scheduled_at'];
+                $scheduledDateTime = new DateTime($scheduledAt);
+                $now = new DateTime();
+                
+                if ($scheduledDateTime <= $now) {
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Scheduled time must be in the future',
+                        'errors' => ['scheduled_at' => ['Scheduled time must be in the future']]
+                    ]);
+                    exit;
+                }
+                
                 $scheduled = ScheduledMessage::create([
-                    'contact_id' => $_POST['contact_id'],
-                    'message' => $_POST['message'],
-                    'scheduled_at' => $_POST['scheduled_at'],
+                    'contact_id' => $contactId,
+                    'message' => sanitize($_POST['message']),
+                    'scheduled_at' => $scheduledAt,
                     'created_by' => $user->id
                 ]);
                 echo json_encode(['success' => true, 'scheduled' => $scheduled]);
@@ -142,10 +188,10 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="scheduleForm">
+                <form id="scheduleForm" class="needs-validation" novalidate>
                     <div class="mb-3">
-                        <label for="contact_id" class="form-label">Contact</label>
-                        <select class="form-select" id="contact_id" name="contact_id" required>
+                        <label for="contact_id" class="form-label">Contact *</label>
+                        <select class="form-select crm-select" id="contact_id" name="contact_id">
                             <option value="">Select contact...</option>
                             <?php foreach ($contacts as $contact): ?>
                             <option value="<?php echo $contact->id; ?>">
@@ -153,19 +199,22 @@ require_once __DIR__ . '/includes/header.php';
                             </option>
                             <?php endforeach; ?>
                         </select>
+                        <div class="invalid-feedback">Please select a contact</div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="message" class="form-label">Message</label>
-                        <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                        <label for="message" class="form-label">Message *</label>
+                        <textarea class="form-control crm-textarea" id="message" name="message" rows="4"></textarea>
+                        <div class="invalid-feedback">Please enter a message</div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="scheduled_at" class="form-label">
-                            Schedule For (Pakistan Time - PKT)
+                            Schedule For (Pakistan Time - PKT) *
                             <small class="text-muted">Current time: <span id="currentTime"></span></small>
                         </label>
-                        <input type="datetime-local" class="form-control" id="scheduled_at" name="scheduled_at" required>
+                        <input type="datetime-local" class="form-control crm-input" id="scheduled_at" name="scheduled_at">
+                        <div class="invalid-feedback">Please select a date and time</div>
                         <small class="form-text text-muted">Message will be sent at the scheduled Pakistan time</small>
                     </div>
                 </form>
@@ -205,7 +254,70 @@ function openScheduleModal() {
     scheduleModal.show();
 }
 
+// Initialize schedule form validator
+let scheduleValidator;
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof FormValidator !== 'undefined') {
+        scheduleValidator = new FormValidator('scheduleForm', {
+            contact_id: ['required'],
+            message: ['required', 'min:1', 'max:4096'],
+            scheduled_at: ['required']
+        });
+    } else {
+        console.error('FormValidator is not defined. Make sure validation.js is loaded.');
+    }
+});
+
 function saveScheduled() {
+    // Validate form
+    if (scheduleValidator && !scheduleValidator.validate()) {
+        return;
+    }
+    
+    // Fallback validation
+    const contactId = document.getElementById('contact_id').value;
+    const message = document.getElementById('message').value.trim();
+    const scheduledAt = document.getElementById('scheduled_at').value;
+    
+    let hasError = false;
+    
+    if (!contactId) {
+        const contactField = document.getElementById('contact_id');
+        contactField.classList.add('is-invalid');
+        contactField.nextElementSibling.textContent = 'Please select a contact';
+        hasError = true;
+    }
+    
+    if (!message) {
+        const messageField = document.getElementById('message');
+        messageField.classList.add('is-invalid');
+        messageField.nextElementSibling.textContent = 'Please enter a message';
+        hasError = true;
+    }
+    
+    if (!scheduledAt) {
+        const dateField = document.getElementById('scheduled_at');
+        dateField.classList.add('is-invalid');
+        dateField.nextElementSibling.textContent = 'Please select a date and time';
+        hasError = true;
+    } else {
+        // Validate date is in the future
+        const scheduledDate = new Date(scheduledAt);
+        const now = new Date();
+        if (scheduledDate <= now) {
+            const dateField = document.getElementById('scheduled_at');
+            dateField.classList.add('is-invalid');
+            dateField.nextElementSibling.textContent = 'Scheduled time must be in the future';
+            hasError = true;
+        }
+    }
+    
+    if (hasError) {
+        showToast('Please fill in all required fields correctly', 'error');
+        return;
+    }
+    
     const formData = new FormData(document.getElementById('scheduleForm'));
     formData.append('action', 'create');
     
@@ -217,12 +329,31 @@ function saveScheduled() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Clear form and validation
+            document.getElementById('scheduleForm').reset();
+            const form = document.getElementById('scheduleForm');
+            form.classList.remove('was-validated');
+            ['contact_id', 'message', 'scheduled_at'].forEach(id => {
+                const field = document.getElementById(id);
+                if (field) {
+                    field.classList.remove('is-invalid', 'is-valid');
+                }
+            });
             showToast('Message scheduled successfully!', 'success');
             scheduleModal.hide();
             location.reload();
         } else {
-            showToast('Error: ' + data.error, 'error');
+            // Handle validation errors from backend
+            if (data.errors && scheduleValidator) {
+                scheduleValidator.setErrors(data.errors);
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+            }
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to schedule message', 'error');
     });
 }
 
