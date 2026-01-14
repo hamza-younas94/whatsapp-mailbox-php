@@ -1189,12 +1189,13 @@ async function sendTemplate() {
     }
 }
 
-// Close panel when clicking outside
+// Close panel when clicking outside (on backdrop only)
 window.onclick = function(event) {
     const panel = document.getElementById('crmSidePanel');
     const modal = document.getElementById('templateModal');
     
-    if (event.target === panel) {
+    // Only close if clicking the backdrop itself, not panel content
+    if (event.target === panel && event.target.classList.contains('crm-side-panel')) {
         closeCrmPanel();
     }
     
