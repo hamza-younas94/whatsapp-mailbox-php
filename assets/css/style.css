@@ -578,6 +578,14 @@ body {
 
 .time-text {
     margin-right: 2px;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    user-select: none;
+}
+
+.time-text:hover {
+    opacity: 0.8;
+    text-decoration: underline;
 }
 
 .message-status-icon {
@@ -607,20 +615,21 @@ body {
     color: #e74c3c !important;
 }
 
-.message-status-double {
+/* Double checkmark - properly positioned side by side */
+.status-double-check {
     display: inline-flex;
     align-items: center;
     margin-left: 2px;
     position: relative;
 }
 
-.message-status-double svg:first-child {
+.status-double-check svg:first-child {
     position: relative;
     z-index: 1;
 }
 
-.message-status-double svg:last-child {
-    margin-left: -6px;
+.status-double-check svg:last-child {
+    margin-left: -5px;
     position: relative;
     z-index: 0;
 }

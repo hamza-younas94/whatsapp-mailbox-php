@@ -423,12 +423,21 @@ function renderMessages(messagesList, options = {}) {
             content = `<div class="message-text">${escapeHtml(message.message_body)}</div>`;
         }
         
+        // Get full timestamp for tooltip
+        const fullTime = new Date(message.timestamp).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
         return `
             <div class="message ${direction}">
                 <div class="message-bubble">
                     ${content}
                     <div class="message-time">
-                        ${time}
+                        <span class="time-text" title="${fullTime}" onclick="showFullTime(this, '${message.timestamp}')">${time}</span>
                         ${status}
                     </div>
                 </div>
@@ -696,23 +705,15 @@ function getStatusIcon(status) {
                 <polyline points="20 6 9 17 4 12"></polyline>
             </svg>`;
         case 'delivered':
-            return `<span class="message-status-double">
-                <svg class="message-status-icon delivered" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <svg class="message-status-icon delivered" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </span>`;
+            return `<svg class="message-status-icon delivered" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+                <polyline points="20 6 9 17 4 12" transform="translate(-2, 0)"></polyline>
+            </svg>`;
         case 'read':
-            return `<span class="message-status-double">
-                <svg class="message-status-icon read" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <svg class="message-status-icon read" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </span>`;
+            return `<svg class="message-status-icon read" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+                <polyline points="20 6 9 17 4 12" transform="translate(-2, 0)"></polyline>
+            </svg>`;
         case 'failed':
             return `<svg class="message-status-icon failed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <circle cx="12" cy="12" r="10"></circle>
