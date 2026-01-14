@@ -1473,6 +1473,25 @@ function closeTemplateModal() {
         templateModal.style.display = 'none';
         templateModal.classList.remove('show');
         document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        
+        // Reset form
+        const templateNameInput = document.getElementById('templateName');
+        const templateLanguageSelect = document.getElementById('templateLanguage');
+        if (templateNameInput) templateNameInput.value = 'hello_world';
+        if (templateLanguageSelect) templateLanguageSelect.value = 'en_US';
+        
+        // Clear parameters (keep first one, remove others)
+        const paramContainer = document.getElementById('templateParameters');
+        if (paramContainer) {
+            while (paramContainer.children.length > 1) {
+                paramContainer.removeChild(paramContainer.lastChild);
+            }
+            if (paramContainer.children.length > 0) {
+                const firstInput = paramContainer.children[0].querySelector('.template-param-input');
+                if (firstInput) firstInput.value = '';
+            }
+        }
     }
     templateContactId = null;
     templatePhoneNumber = null;
