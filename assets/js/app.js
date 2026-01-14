@@ -254,13 +254,16 @@ async function selectContact(contactId, name, phoneNumber) {
         </div>
         <div class="crm-actions">
             <button onclick="openTemplateModal(${contactId}, '${phoneNumber}')" class="btn-crm" title="Send Template Message">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20,2H4A2,2 0 0,0 2,4V22L6,18H20A2,2 0 0,0 22,16V4A2,2 0 0,0 20,2M6,9H18V11H6M14,14H6V12H14M18,8H6V6H18"/>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M7 8h10M7 12h10M7 16h6"/>
+                    <rect x="3" y="4" width="18" height="16" rx="2"/>
                 </svg>
             </button>
             <button onclick="openCrmModal(${contactId})" class="btn-crm" title="CRM Actions">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3Z"/>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <path d="M20 8v6M23 11h-6"/>
                 </svg>
             </button>
         </div>
@@ -652,22 +655,21 @@ function openCrmModal(contactId) {
     const panel = document.getElementById('crmSidePanel');
     const content = document.getElementById('crmPanelContent');
     const container = document.querySelector('.mailbox-container');
+    const panelHeader = panel.querySelector('.crm-panel-header h3');
+    
+    // Update header title
+    panelHeader.textContent = escapeHtml(contact.name);
     
     content.innerHTML = `
-        <div class="modal-header">
-            <h2>CRM: ${escapeHtml(contact.name)}</h2>
-            <button onclick="closeCrmModal()" class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="crm-section">
-                <div class="crm-section-header">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                    <h3>Stage Management</h3>
-                </div>
-                <select id="crmStage" class="crm-select">
+        <div class="crm-section">
+            <div class="crm-section-header">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <h3>Stage Management</h3>
+            </div>
+            <select id="crmStage" class="crm-select">
                     <option value="new" ${contact.stage === 'new' ? 'selected' : ''}>New</option>
                     <option value="contacted" ${contact.stage === 'contacted' ? 'selected' : ''}>Contacted</option>
                     <option value="qualified" ${contact.stage === 'qualified' ? 'selected' : ''}>Qualified</option>
@@ -681,7 +683,7 @@ function openCrmModal(contactId) {
             
             <div class="crm-section">
                 <div class="crm-section-header">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
                         <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
                         <polyline points="13 2 13 9 20 9"/>
                     </svg>
@@ -698,7 +700,7 @@ function openCrmModal(contactId) {
             
             <div class="crm-section">
                 <div class="crm-section-header">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                         <polyline points="9 22 9 12 15 12 15 22"/>
                     </svg>
@@ -712,7 +714,7 @@ function openCrmModal(contactId) {
             
             <div class="crm-section">
                 <div class="crm-section-header">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"/>
                         <line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
@@ -725,7 +727,7 @@ function openCrmModal(contactId) {
             
             <div class="crm-section">
                 <div class="crm-section-header">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                     </svg>
                     <h3>Add Note</h3>
@@ -742,7 +744,7 @@ function openCrmModal(contactId) {
             
             <div class="crm-section">
                 <div class="crm-section-header">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                         <path d="M21 3v5h-5"/>
                         <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
@@ -757,7 +759,7 @@ function openCrmModal(contactId) {
             
             <div class="crm-section">
                 <div class="crm-section-header">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"/>
                         <line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
@@ -773,7 +775,7 @@ function openCrmModal(contactId) {
             
             <div class="crm-section" id="addDealForm" style="display: none;">
                 <div class="crm-section-header">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="1"/>
                         <circle cx="19" cy="12" r="1"/>
                         <circle cx="5" cy="12" r="1"/>
@@ -794,7 +796,6 @@ function openCrmModal(contactId) {
                     <button onclick="hideAddDealForm()" class="btn-secondary" style="flex: 1;">Cancel</button>
                 </div>
             </div>
-        </div>
     `;
     
     panel.style.display = 'block';
