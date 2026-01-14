@@ -8,6 +8,9 @@
     <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Validation System -->
+    <script src="assets/js/validation.js"></script>
+    
     <script>
     // Toast notification function
     function showToast(message, type = 'info') {
