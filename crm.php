@@ -20,8 +20,18 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$path = str_replace('/crm.php', '', $path);
+// Use PATH_INFO if available (works with URLs like crm.php/contact/1/deal)
+$path = $_SERVER['PATH_INFO'] ?? '';
+// Fallback to REQUEST_URI parsing if PATH_INFO is not available
+if (empty($path)) {
+    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    // Remove /crm.php from the path
+    $path = preg_replace('#^/?crm\.php#', '', $path);
+}
+// Ensure path starts with /
+if ($path === '' || $path[0] !== '/') {
+    $path = '/' . $path;
+}
 
 try {
     // Update contact CRM fields

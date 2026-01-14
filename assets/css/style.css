@@ -1004,10 +1004,23 @@ body {
     justify-content: center;
     cursor: pointer;
     transition: background 0.3s;
+    padding: 0;
+}
+
+.btn-crm svg {
+    width: 20px;
+    height: 20px;
+    stroke: white;
+    fill: none;
+    display: block;
 }
 
 .btn-crm:hover {
     background: var(--secondary-color);
+}
+
+.btn-crm:hover svg {
+    stroke: white;
 }
 
 /* CRM Modal */
