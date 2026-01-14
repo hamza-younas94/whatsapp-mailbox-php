@@ -560,9 +560,65 @@ body {
     gap: 4px;
 }
 
-.message-status {
-    font-size: 13px;
+/* Modern Message Status Icons */
+.message-time {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.75);
+    margin-top: 4px;
+    font-weight: 400;
+    letter-spacing: 0.2px;
+}
+
+.message.incoming .message-time {
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.time-text {
+    margin-right: 2px;
+}
+
+.message-status-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.message.incoming .message-status-icon {
+    display: none; /* Only show status for outgoing messages */
+}
+
+.message-status-icon.delivered {
     opacity: 0.8;
+}
+
+.message-status-icon.read {
+    opacity: 1;
+    color: #4fc3f7 !important;
+}
+
+.message-status-icon.failed {
+    opacity: 1;
+    color: #e74c3c !important;
+}
+
+.message-time {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 4px;
+    font-weight: 400;
+}
+
+.message.incoming .message-time {
+    color: rgba(0, 0, 0, 0.5);
 }
 
 /* Message Input */

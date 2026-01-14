@@ -635,40 +635,82 @@ function getInitials(name) {
 }
 
 /**
- * Format timestamp
+ * Format timestamp - Modern relative time
  */
 function formatTime(timestamp) {
     const date = new Date(timestamp);
     const now = new Date();
     const diff = now - date;
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
     
-    // Less than 24 hours - show time
-    if (diff < 86400000) {
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    // Just now (less than 1 minute)
+    if (seconds < 60) {
+        return 'Just now';
     }
     
-    // Less than 7 days - show day name
-    if (diff < 604800000) {
-        return date.toLocaleDateString('en-US', { weekday: 'short' });
+    // Minutes ago (less than 1 hour)
+    if (minutes < 60) {
+        return `${minutes}m ago`;
     }
     
-    // Older - show date
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    // Hours ago (less than 24 hours)
+    if (hours < 24) {
+        return `${hours}h ago`;
+    }
+    
+    // Yesterday
+    if (days === 1) {
+        return 'Yesterday';
+    }
+    
+    // Days ago (less than 7 days)
+    if (days < 7) {
+        return `${days}d ago`;
+    }
+    
+    // Weeks ago (less than 4 weeks)
+    if (days < 28) {
+        const weeks = Math.floor(days / 7);
+        return `${weeks}w ago`;
+    }
+    
+    // Show date for older messages
+    const isThisYear = date.getFullYear() === now.getFullYear();
+    if (isThisYear) {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 /**
- * Get status icon
+ * Get status icon - Modern SVG icons
  */
 function getStatusIcon(status) {
     switch (status) {
         case 'sent':
-            return '<span class="message-status">✓</span>';
+            return `<svg class="message-status-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>`;
         case 'delivered':
-            return '<span class="message-status">✓✓</span>';
+            return `<svg class="message-status-icon delivered" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>`;
         case 'read':
-            return '<span class="message-status" style="color: #4fc3f7;">✓✓</span>';
+            return `<svg class="message-status-icon read" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>`;
         case 'failed':
-            return '<span class="message-status" style="color: #e74c3c;">✗</span>';
+            return `<svg class="message-status-icon failed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>`;
         default:
             return '';
     }
