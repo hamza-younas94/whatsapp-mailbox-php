@@ -589,10 +589,124 @@ body {
     background: transparent;
     font-size: 15px;
     padding: 6px 4px;
+    transition: all 0.3s ease;
 }
 
 #messageInput:focus {
     outline: none;
+}
+
+/* Validation States */
+#messageForm.error {
+    border: 2px solid #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    animation: shake 0.3s ease;
+}
+
+#messageForm.success {
+    border: 2px solid #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+#messageForm.warning {
+    border: 2px solid #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Validation Message */
+.validation-message {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    margin-bottom: 8px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    display: none;
+    animation: slideDown 0.3s ease;
+    z-index: 10;
+}
+
+.validation-message.show {
+    display: block;
+}
+
+.validation-message.error {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+.validation-message.success {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.validation-message.warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.validation-message.info {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Character Counter */
+.character-counter {
+    position: absolute;
+    bottom: -24px;
+    right: 0;
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.character-counter.warning {
+    color: #f59e0b;
+}
+
+.character-counter.error {
+    color: #ef4444;
+}
+
+/* Disabled State */
+.send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+#messageInput:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .attach-btn {

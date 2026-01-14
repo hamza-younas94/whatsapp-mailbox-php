@@ -77,11 +77,26 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Message form submission
     const messageForm = document.getElementById('messageForm');
+    const messageInput = document.getElementById('messageInput');
     if (messageForm) {
         messageForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            sendMessage();
+            if (validateMessageInput()) {
+                sendMessage();
+            }
         });
+        
+        // Real-time validation
+        if (messageInput) {
+            messageInput.addEventListener('input', function() {
+                validateMessageInputRealTime();
+                updateCharacterCounter();
+            });
+            
+            messageInput.addEventListener('blur', function() {
+                validateMessageInputRealTime();
+            });
+        }
     }
     
     // Poll for new messages every 8 seconds with debounce
@@ -506,9 +521,27 @@ async function sendMessage() {
         }
         
         if (response.ok && result.success) {
-            // Clear input
+            // Clear input and validation
             input.value = '';
             clearMediaSelection();
+            updateCharacterCounter();
+            
+            // Show success state
+            const form = document.getElementById('messageForm');
+            const validationMsg = document.getElementById('validationMessage');
+            if (form) {
+                form.classList.add('success');
+                form.classList.remove('error', 'warning');
+            }
+            if (validationMsg) {
+                validationMsg.classList.remove('show', 'error', 'warning');
+                validationMsg.classList.add('show', 'success');
+                validationMsg.textContent = selectedMediaFile ? 'Media sent successfully!' : 'Message sent!';
+                setTimeout(() => {
+                    validationMsg.classList.remove('show');
+                    if (form) form.classList.remove('success');
+                }, 2000);
+            }
             
             // Reload messages
             await loadMessages(currentContactId);
@@ -524,19 +557,36 @@ async function sendMessage() {
             showToast(selectedMediaFile ? 'Media sent successfully!' : 'Message sent!', 'success');
         } else {
             const errorMsg = result.error || 'Unknown error';
+            const validationErrors = result.errors || {};
+            
+            // Clear success state
+            const form = document.getElementById('messageForm');
+            if (form) {
+                form.classList.remove('success');
+            }
             
             // Check if it's message limit
             if (response.status === 429) {
+                showValidationError('Message limit reached! Please upgrade to continue.', {});
                 showToast('Message limit reached! Please upgrade to continue.', 'error');
                 document.getElementById('messageInput').disabled = true;
                 updateMessageLimitDisplay();
                 return;
             }
             
+            // Check if it's validation error
+            if (response.status === 422) {
+                showValidationError(errorMsg, validationErrors);
+                showToast(errorMsg, 'error');
+                return;
+            }
+            
             // Check if it's a 24-hour window issue
             if (response.status === 403 && errorMsg.includes('not messaged you recently')) {
+                showValidationError('Cannot send: Contact must message you first (24-hour window). Use a template message instead.', {});
                 showToast('Cannot send: Contact must message you first (24-hour window)', 'error');
             } else {
+                showValidationError(errorMsg, validationErrors);
                 showToast('Failed to send: ' + errorMsg, 'error');
             }
         }
@@ -1264,15 +1314,59 @@ function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    selectedMediaFile = file;
+    const validationMsg = document.getElementById('validationMessage');
+    const form = document.getElementById('messageForm');
     
     // Validate file size (max 16MB for WhatsApp)
     const maxSize = 16 * 1024 * 1024; // 16MB
     if (file.size > maxSize) {
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        const errorMsg = `File size (${fileSizeMB}MB) exceeds the maximum limit of 16MB`;
+        
+        if (form) {
+            form.classList.add('error');
+            form.classList.remove('success', 'warning');
+        }
+        if (validationMsg) {
+            validationMsg.textContent = errorMsg;
+            validationMsg.classList.add('show', 'error');
+            validationMsg.classList.remove('success', 'warning', 'info');
+        }
         showToast('File size must be less than 16MB', 'error');
         clearMediaSelection();
         return;
     }
+    
+    // Validate file type
+    const allowedTypes = ['image/', 'video/', 'audio/', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const isValidType = allowedTypes.some(type => file.type.startsWith(type) || file.type === type);
+    
+    if (!isValidType) {
+        const errorMsg = `File type "${file.type}" is not supported. Please use images, videos, audio, or PDF files.`;
+        if (form) {
+            form.classList.add('error');
+            form.classList.remove('success', 'warning');
+        }
+        if (validationMsg) {
+            validationMsg.textContent = errorMsg;
+            validationMsg.classList.add('show', 'error');
+            validationMsg.classList.remove('success', 'warning', 'info');
+        }
+        showToast('File type not supported', 'error');
+        clearMediaSelection();
+        return;
+    }
+    
+    // Clear any previous errors
+    if (form) {
+        form.classList.remove('error');
+        form.classList.add('success');
+    }
+    if (validationMsg) {
+        validationMsg.classList.remove('show', 'error');
+    }
+    
+    selectedMediaFile = file;
     
     // Show preview
     const preview = document.getElementById('mediaPreview');
