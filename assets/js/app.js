@@ -797,7 +797,7 @@ function openCrmModal(contactId) {
         </div>
     `;
     
-    panel.style.display = 'flex';
+    panel.style.display = 'block';
     container.classList.add('panel-open');
     loadNotes(contactId);
     loadDeals(contactId);
