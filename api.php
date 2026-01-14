@@ -64,6 +64,12 @@ try {
             }
             break;
             
+        case 'templates':
+            if ($method === 'GET') {
+                getTemplates();
+            }
+            break;
+            
         case 'message-limit':
             if ($method === 'GET') {
                 getMessageLimit();

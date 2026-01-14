@@ -168,6 +168,59 @@ class WhatsAppService
     }
 
     /**
+     * Get available message templates
+     */
+    public function getTemplates()
+    {
+        $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/message_templates";
+        
+        try {
+            $response = $this->client->get($url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->accessToken,
+                    'Content-Type' => 'application/json'
+                ]
+            ]);
+            
+            $result = json_decode($response->getBody()->getContents(), true);
+            
+            if (isset($result['data'])) {
+                return [
+                    'success' => true,
+                    'templates' => $result['data'],
+                    'data' => $result
+                ];
+            }
+            
+            return [
+                'success' => false,
+                'error' => 'Failed to fetch templates',
+                'data' => $result
+            ];
+            
+        } catch (RequestException $e) {
+            $errorMessage = $e->getMessage();
+            $responseBody = null;
+            
+            if ($e->hasResponse()) {
+                $responseBody = $e->getResponse()->getBody()->getContents();
+                $errorData = json_decode($responseBody, true);
+                if (isset($errorData['error']['message'])) {
+                    $errorMessage = $errorData['error']['message'];
+                }
+            }
+            
+            logger('WhatsApp Get Templates API Error: ' . $errorMessage, 'error');
+            
+            return [
+                'success' => false,
+                'error' => $errorMessage,
+                'response' => $responseBody
+            ];
+        }
+    }
+
+    /**
      * Send a template message (for starting conversations)
      */
     public function sendTemplateMessage($to, $templateName, $languageCode = 'en', $parameters = [])
