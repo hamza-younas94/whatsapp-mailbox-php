@@ -474,6 +474,7 @@ function sendTemplateMessage() {
     $to = sanitize($input['to'] ?? '');
     $templateName = sanitize($input['template_name'] ?? '');
     $languageCode = sanitize($input['language_code'] ?? 'en');
+    $parameters = $input['parameters'] ?? [];
     $contactId = $input['contact_id'] ?? null;
     
     // Validate input
@@ -500,9 +501,19 @@ function sendTemplateMessage() {
         $languageCode = 'en';
     }
     
+    // Sanitize parameters
+    $sanitizedParams = [];
+    if (is_array($parameters)) {
+        foreach ($parameters as $param) {
+            if (!empty($param)) {
+                $sanitizedParams[] = sanitize($param);
+            }
+        }
+    }
+    
     // Send via WhatsApp API
     $whatsappService = new WhatsAppService();
-    $result = $whatsappService->sendTemplateMessage($to, $templateName, $languageCode);
+    $result = $whatsappService->sendTemplateMessage($to, $templateName, $languageCode, $sanitizedParams);
     
     if (!$result['success']) {
         // Provide more helpful error message

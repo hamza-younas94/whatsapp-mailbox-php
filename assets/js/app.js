@@ -1478,6 +1478,39 @@ function closeTemplateModal() {
     templatePhoneNumber = null;
 }
 
+function addTemplateParam() {
+    const container = document.getElementById('templateParameters');
+    const paramCount = container.children.length + 1;
+    
+    const row = document.createElement('div');
+    row.className = 'template-param-row';
+    row.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px;';
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'crm-input template-param-input';
+    input.placeholder = `Parameter ${paramCount} (e.g., order number, name)`;
+    input.style.cssText = 'flex: 1;';
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-secondary';
+    removeBtn.textContent = 'Remove';
+    removeBtn.style.cssText = 'padding: 8px 12px; min-width: auto;';
+    removeBtn.onclick = function() { removeTemplateParam(this); };
+    
+    row.appendChild(input);
+    row.appendChild(removeBtn);
+    container.appendChild(row);
+}
+
+function removeTemplateParam(button) {
+    const row = button.closest('.template-param-row');
+    if (row) {
+        row.remove();
+    }
+}
+
 async function sendTemplate() {
     const templateName = document.getElementById('templateName').value.trim();
     const languageCode = document.getElementById('templateLanguage').value;
@@ -1492,6 +1525,16 @@ async function sendTemplate() {
         return;
     }
     
+    // Collect template parameters
+    const paramInputs = document.querySelectorAll('.template-param-input');
+    const parameters = [];
+    paramInputs.forEach(input => {
+        const value = input.value.trim();
+        if (value) {
+            parameters.push(value);
+        }
+    });
+    
     try {
         const response = await fetch('api.php/send-template', {
             method: 'POST',
@@ -1500,6 +1543,7 @@ async function sendTemplate() {
                 to: templatePhoneNumber,
                 template_name: templateName,
                 language_code: languageCode,
+                parameters: parameters,
                 contact_id: templateContactId
             })
         });
@@ -1511,7 +1555,9 @@ async function sendTemplate() {
             closeTemplateModal();
             await loadMessages(templateContactId);
         } else {
-            showToast('Failed to send template: ' + (result.error || 'Unknown error'), 'error');
+            const errorMsg = result.error || result.errors?.details?.error || 'Unknown error';
+            showToast('Failed to send template: ' + errorMsg, 'error');
+            console.error('Template error:', result);
         }
     } catch (error) {
         console.error('Error sending template:', error);

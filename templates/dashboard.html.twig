@@ -121,6 +121,17 @@
                 </select>
                 <small style="color: #6b7280; font-size: 12px;">Match the language shown in WhatsApp Business Manager (format: en_US)</small>
             </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>Template Parameters (Optional)</label>
+                <div id="templateParameters">
+                    <div class="template-param-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" class="crm-input template-param-input" placeholder="Parameter 1 (e.g., order number, name)" style="flex: 1;">
+                        <button type="button" onclick="removeTemplateParam(this)" class="btn-secondary" style="padding: 8px 12px; min-width: auto;">Remove</button>
+                    </div>
+                </div>
+                <button type="button" onclick="addTemplateParam()" class="btn-secondary" style="margin-top: 10px; width: 100%;">Add Parameter</button>
+                <small style="color: #6b7280; font-size: 12px;">Add parameters if your template has placeholders like {{1}}, {{2}}, etc.</small>
+            </div>
             <div style="margin-top: 20px; display: flex; gap: 10px;">
                 <button onclick="sendTemplate()" class="btn-primary" style="flex: 1;">Send Template</button>
                 <button onclick="closeTemplateModal()" class="btn-secondary" style="flex: 1;">Cancel</button>
