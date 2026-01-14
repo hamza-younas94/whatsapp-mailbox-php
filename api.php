@@ -470,9 +470,28 @@ function sendTemplateMessage() {
     $languageCode = sanitize($input['language_code'] ?? 'en');
     $contactId = $input['contact_id'] ?? null;
     
-    // Validate
-    if (!$to || !$templateName) {
-        response_error('Phone number and template name are required', 422);
+    // Validate input
+    $validation = validate([
+        'to' => $to,
+        'template_name' => $templateName,
+        'language_code' => $languageCode
+    ], [
+        'to' => 'required',
+        'template_name' => 'required|min:1|max:100',
+        'language_code' => 'max:10'
+    ]);
+    
+    if ($validation !== true) {
+        response_error('Validation failed', 422, ['errors' => $validation]);
+    }
+    
+    // Normalize template name (remove spaces, convert to lowercase for matching)
+    $templateName = trim($templateName);
+    
+    // Normalize language code
+    $languageCode = trim($languageCode);
+    if (empty($languageCode)) {
+        $languageCode = 'en';
     }
     
     // Send via WhatsApp API
@@ -480,7 +499,24 @@ function sendTemplateMessage() {
     $result = $whatsappService->sendTemplateMessage($to, $templateName, $languageCode);
     
     if (!$result['success']) {
-        response_error('Failed to send template message', 500, ['details' => $result]);
+        // Provide more helpful error message
+        $errorMsg = $result['error'] ?? 'Failed to send template message';
+        $errorDetails = $result['response'] ?? '';
+        
+        // Try to extract more details from response
+        if ($errorDetails) {
+            $errorData = json_decode($errorDetails, true);
+            if (isset($errorData['error']['message'])) {
+                $errorMsg = $errorData['error']['message'];
+            }
+        }
+        
+        response_error('Failed to send template message: ' . $errorMsg, 500, [
+            'details' => $result,
+            'template_name' => $templateName,
+            'language_code' => $languageCode,
+            'phone' => $to
+        ]);
     }
     
     // Get or create contact

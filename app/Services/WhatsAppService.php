@@ -175,9 +175,35 @@ class WhatsAppService
         // Format phone number
         $to = $this->formatPhoneNumber($to);
         
+        // Validate phone number format (must be digits only, 10-15 digits)
+        if (!preg_match('/^\d{10,15}$/', $to)) {
+            return [
+                'success' => false,
+                'error' => 'Invalid phone number format. Must be 10-15 digits.',
+                'phone' => $to
+            ];
+        }
+        
+        // Normalize language code (convert "en_US" to "en" or keep as is)
+        $languageCode = strtolower(trim($languageCode));
+        // If language code has underscore, take first part (e.g., "en_US" -> "en")
+        if (strpos($languageCode, '_') !== false) {
+            $languageCode = explode('_', $languageCode)[0];
+        }
+        
+        // Validate template name (no spaces, alphanumeric and underscores only)
+        $templateName = trim($templateName);
+        if (empty($templateName) || !preg_match('/^[a-zA-Z0-9_]+$/', $templateName)) {
+            return [
+                'success' => false,
+                'error' => 'Invalid template name. Must contain only letters, numbers, and underscores.',
+                'template_name' => $templateName
+            ];
+        }
+        
         $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
 
-        // Build template payload
+        // Build template payload - WhatsApp API requires specific format
         $template = [
             'name' => $templateName,
             'language' => [
@@ -186,23 +212,37 @@ class WhatsAppService
         ];
 
         // Add parameters if provided
-        if (!empty($parameters)) {
-            $template['components'] = [
-                [
+        if (!empty($parameters) && is_array($parameters)) {
+            $template['components'] = [];
+            
+            // Body parameters
+            $bodyParams = [];
+            foreach ($parameters as $param) {
+                if (is_string($param) && !empty($param)) {
+                    $bodyParams[] = [
+                        'type' => 'text',
+                        'text' => $param
+                    ];
+                }
+            }
+            
+            if (!empty($bodyParams)) {
+                $template['components'][] = [
                     'type' => 'body',
-                    'parameters' => array_map(function($param) {
-                        return ['type' => 'text', 'text' => $param];
-                    }, $parameters)
-                ]
-            ];
+                    'parameters' => $bodyParams
+                ];
+            }
         }
 
         $payload = [
             'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
             'to' => $to,
             'type' => 'template',
             'template' => $template
         ];
+        
+        logger('[TEMPLATE] Sending template: ' . json_encode($payload));
 
         try {
             $response = $this->client->post($url, [
