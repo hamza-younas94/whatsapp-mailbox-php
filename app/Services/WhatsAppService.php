@@ -295,7 +295,7 @@ class WhatsAppService
                 $template['components'][] = [
                     'type' => 'body',
                     'parameters' => $bodyParams
-                ];
+            ];
             }
         }
 
@@ -640,9 +640,44 @@ class WhatsAppService
     {
         $messageId = $status['id'];
         $newStatus = $status['status'];
+        $errors = $status['errors'] ?? [];
 
-        Message::where('message_id', $messageId)
-            ->update(['status' => $newStatus]);
+        $updateData = ['status' => $newStatus];
+        
+        // Store error information if message failed
+        if ($newStatus === 'failed' && !empty($errors)) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorCode = $error['code'] ?? '';
+                $errorMessage = $error['message'] ?? '';
+                $errorTitle = $error['title'] ?? '';
+                
+                $errorMessages[] = [
+                    'code' => $errorCode,
+                    'title' => $errorTitle,
+                    'message' => $errorMessage
+                ];
+                
+                // Log specific error codes
+                if ($errorCode == 131042) {
+                    logger("[STATUS] Message failed due to payment issue (131042): {$messageId}", 'error');
+                }
+            }
+            
+            // Store error info in a JSON field if available, or in message_body as note
+            if (!empty($errorMessages)) {
+                $updateData['error_info'] = json_encode($errorMessages);
+            }
+        }
+
+        $updated = Message::where('message_id', $messageId)
+            ->update($updateData);
+            
+        if ($updated) {
+            logger("[STATUS] Updated message {$messageId} to status: {$newStatus}");
+        } else {
+            logger("[STATUS] Message {$messageId} not found in database", 'warning');
+        }
     }
 
     /**

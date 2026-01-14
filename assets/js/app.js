@@ -1570,9 +1570,18 @@ async function sendTemplate() {
             showToast('Template message sent successfully!', 'success');
             closeTemplateModal();
             await loadMessages(templateContactId);
+            
+            // Note: Message may fail later due to payment issues - check status updates
+            // The webhook will update the status if delivery fails
         } else {
             const errorMsg = result.error || result.errors?.details?.error || 'Unknown error';
-            showToast('Failed to send template: ' + errorMsg, 'error');
+            
+            // Check for payment issue
+            if (errorMsg.includes('131042') || errorMsg.includes('payment issue') || errorMsg.includes('Business eligibility')) {
+                showToast('Payment issue: Please check WhatsApp Business Manager billing settings. Message could not be sent.', 'error');
+            } else {
+                showToast('Failed to send template: ' + errorMsg, 'error');
+            }
             console.error('Template error:', result);
         }
     } catch (error) {
