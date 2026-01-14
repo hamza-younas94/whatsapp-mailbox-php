@@ -24,25 +24,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     try {
         switch ($action) {
             case 'create':
-                $reply = QuickReply::create([
-                    'shortcut' => $_POST['shortcut'],
-                    'title' => $_POST['title'],
-                    'message' => $_POST['message'],
-                    'is_active' => isset($_POST['is_active']) && $_POST['is_active'] == '1',
-                    'created_by' => $user->id
-                ]);
-                echo json_encode(['success' => true, 'reply' => $reply]);
-                break;
-            
             case 'update':
-                $reply = QuickReply::findOrFail($_POST['id']);
-                $reply->update([
-                    'shortcut' => $_POST['shortcut'],
-                    'title' => $_POST['title'],
-                    'message' => $_POST['message'],
-                    'is_active' => isset($_POST['is_active']) && $_POST['is_active'] == '1'
+                // Validate input
+                $validation = validate([
+                    'shortcut' => sanitize($_POST['shortcut'] ?? ''),
+                    'title' => sanitize($_POST['title'] ?? ''),
+                    'message' => sanitize($_POST['message'] ?? '')
+                ], [
+                    'shortcut' => 'required|min:1|max:50',
+                    'title' => 'required|min:2|max:100',
+                    'message' => 'required|min:1|max:4096'
                 ]);
-                echo json_encode(['success' => true, 'reply' => $reply]);
+                
+                if ($validation !== true) {
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Validation failed',
+                        'errors' => $validation
+                    ]);
+                    exit;
+                }
+                
+                $data = [
+                    'shortcut' => sanitize($_POST['shortcut']),
+                    'title' => sanitize($_POST['title']),
+                    'message' => sanitize($_POST['message']),
+                    'is_active' => isset($_POST['is_active']) && $_POST['is_active'] == '1'
+                ];
+                
+                if ($action === 'create') {
+                    $data['created_by'] = $user->id;
+                    $reply = QuickReply::create($data);
+                    echo json_encode(['success' => true, 'reply' => $reply]);
+                } else {
+                    $reply = QuickReply::findOrFail($_POST['id']);
+                    $reply->update($data);
+                    echo json_encode(['success' => true, 'reply' => $reply]);
+                }
                 break;
             
             case 'delete':
@@ -198,10 +216,10 @@ require_once __DIR__ . '/includes/header.php';
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="reply_shortcut" class="form-label">
-                                <i class="fas fa-bolt"></i> Shortcut 
+                                <i class="fas fa-bolt"></i> Shortcut *
                                 <small class="text-muted">(keyword to trigger)</small>
                             </label>
-                            <input type="text" class="form-control" id="reply_shortcut" name="shortcut" required placeholder="/hello">
+                            <input type="text" class="form-control crm-input" id="reply_shortcut" name="shortcut" placeholder="/hello">
                             <small class="text-muted">
                                 <i class="fas fa-magic"></i> <strong>Fuzzy Match:</strong> Triggers when this word appears anywhere in message
                                 <br><span class="text-success">✓ Example: "/price" matches "what's the price?", "pricing", "show me price"</span>
@@ -210,16 +228,16 @@ require_once __DIR__ . '/includes/header.php';
                         
                         <div class="col-md-6 mb-3">
                             <label for="reply_title" class="form-label">
-                                <i class="fas fa-tag"></i> Title
+                                <i class="fas fa-tag"></i> Title *
                             </label>
-                            <input type="text" class="form-control" id="reply_title" name="title" required placeholder="Welcome Message">
+                            <input type="text" class="form-control crm-input" id="reply_title" name="title" placeholder="Welcome Message">
                             <small class="text-muted">Display name for this quick reply</small>
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="reply_message" class="form-label">Message</label>
-                        <textarea class="form-control" id="reply_message" name="message" rows="5" required placeholder="Enter your message here..."></textarea>
+                        <label for="reply_message" class="form-label">Message *</label>
+                        <textarea class="form-control crm-textarea" id="reply_message" name="message" rows="5" placeholder="Enter your message here..."></textarea>
                         <small class="text-muted">Tip: Use line breaks for better formatting</small>
                     </div>
                     
@@ -279,7 +297,22 @@ function editReply(id) {
     }
 }
 
+// Initialize reply form validator
+let replyValidator;
+
+document.addEventListener('DOMContentLoaded', function() {
+    replyValidator = new FormValidator('replyForm', {
+        shortcut: ['required', 'min:1', 'max:50'],
+        title: ['required', 'min:2', 'max:100'],
+        message: ['required', 'min:1', 'max:4096']
+    });
+});
+
 function saveReply() {
+    if (!replyValidator || !replyValidator.validate()) {
+        return;
+    }
+    
     const formData = new FormData(document.getElementById('replyForm'));
     const replyId = document.getElementById('reply_id').value;
     
@@ -297,8 +330,17 @@ function saveReply() {
             replyModal.hide();
             location.reload();
         } else {
-            showToast('Error: ' + data.error, 'error');
+            // Handle validation errors from backend
+            if (data.errors && replyValidator) {
+                replyValidator.setErrors(data.errors);
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+            }
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to save quick reply', 'error');
     });
 }
 

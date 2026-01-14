@@ -55,22 +55,39 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     try {
         switch ($action) {
             case 'create':
-                $tag = Tag::create([
-                    'name' => $_POST['name'],
-                    'color' => $_POST['color'] ?? '#25D366',
-                    'description' => $_POST['description'] ?? null
-                ]);
-                echo json_encode(['success' => true, 'tag' => $tag]);
-                break;
-            
             case 'update':
-                $tag = Tag::findOrFail($_POST['id']);
-                $tag->update([
-                    'name' => $_POST['name'],
-                    'color' => $_POST['color'],
-                    'description' => $_POST['description'] ?? null
+                // Validate input
+                $validation = validate([
+                    'name' => sanitize($_POST['name'] ?? ''),
+                    'description' => sanitize($_POST['description'] ?? '')
+                ], [
+                    'name' => 'required|min:2|max:50',
+                    'description' => 'max:255'
                 ]);
-                echo json_encode(['success' => true, 'tag' => $tag]);
+                
+                if ($validation !== true) {
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Validation failed',
+                        'errors' => $validation
+                    ]);
+                    exit;
+                }
+                
+                $data = [
+                    'name' => sanitize($_POST['name']),
+                    'color' => sanitize($_POST['color'] ?? '#25D366'),
+                    'description' => !empty($_POST['description']) ? sanitize($_POST['description']) : null
+                ];
+                
+                if ($action === 'create') {
+                    $tag = Tag::create($data);
+                    echo json_encode(['success' => true, 'tag' => $tag]);
+                } else {
+                    $tag = Tag::findOrFail($_POST['id']);
+                    $tag->update($data);
+                    echo json_encode(['success' => true, 'tag' => $tag]);
+                }
                 break;
             
             case 'delete':
@@ -88,6 +105,17 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
             
             default:
                 echo json_encode(['success' => false, 'error' => 'Invalid action']);
+        }
+    } catch (\Illuminate\Database\QueryException $e) {
+        // Handle duplicate entry or database errors
+        if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+            echo json_encode([
+                'success' => false,
+                'error' => 'A tag with this name already exists',
+                'errors' => ['name' => ['A tag with this name already exists']]
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
         }
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
@@ -197,8 +225,8 @@ require_once __DIR__ . '/includes/header.php';
                     <input type="hidden" id="tag_id" name="id">
                     
                     <div class="mb-3">
-                        <label for="tag_name" class="form-label">Tag Name</label>
-                        <input type="text" class="form-control" id="tag_name" name="name" required>
+                        <label for="tag_name" class="form-label">Tag Name *</label>
+                        <input type="text" class="form-control crm-input" id="tag_name" name="name">
                     </div>
                     
                     <div class="mb-3">
@@ -208,7 +236,7 @@ require_once __DIR__ . '/includes/header.php';
                     
                     <div class="mb-3">
                         <label for="tag_description" class="form-label">Description (Optional)</label>
-                        <textarea class="form-control" id="tag_description" name="description" rows="2"></textarea>
+                        <textarea class="form-control crm-textarea" id="tag_description" name="description" rows="2"></textarea>
                     </div>
                 </form>
             </div>
@@ -269,7 +297,21 @@ function editTag(id) {
         });
 }
 
+// Initialize tag form validator
+let tagValidator;
+
+document.addEventListener('DOMContentLoaded', function() {
+    tagValidator = new FormValidator('tagForm', {
+        name: ['required', 'min:2', 'max:50'],
+        description: ['max:255']
+    });
+});
+
 function saveTag() {
+    if (!tagValidator || !tagValidator.validate()) {
+        return;
+    }
+    
     const formData = new FormData(document.getElementById('tagForm'));
     const tagId = document.getElementById('tag_id').value;
     
@@ -287,8 +329,17 @@ function saveTag() {
             tagModal.hide();
             location.reload();
         } else {
-            showToast('Error: ' + data.error, 'error');
+            // Handle validation errors from backend
+            if (data.errors && tagValidator) {
+                tagValidator.setErrors(data.errors);
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+            }
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to save tag', 'error');
     });
 }
 
