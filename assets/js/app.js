@@ -1854,6 +1854,43 @@ function handleMessageScroll() {
     }
 }
 
+/**
+ * Show full time when clicking on time
+ */
+function showFullTime(element, timestamp) {
+    const date = new Date(timestamp);
+    const fullTime = date.toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    
+    // Toggle between relative and full time
+    if (element.dataset.showingFull === 'true') {
+        // Switch back to relative time
+        element.dataset.showingFull = 'false';
+        const relativeTime = formatTime(timestamp);
+        element.textContent = relativeTime;
+    } else {
+        // Show full time
+        element.dataset.showingFull = 'true';
+        element.textContent = fullTime;
+        
+        // Auto-switch back after 3 seconds
+        setTimeout(() => {
+            if (element.dataset.showingFull === 'true') {
+                element.dataset.showingFull = 'false';
+                const relativeTime = formatTime(timestamp);
+                element.textContent = relativeTime;
+            }
+        }, 3000);
+    }
+}
+
 function truncateText(text, maxLength) {
     if (!text) return '';
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
