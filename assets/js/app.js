@@ -254,20 +254,15 @@ async function selectContact(contactId, name, phoneNumber) {
         </div>
         <div class="crm-actions">
             <button onclick="openTemplateModal(${contactId}, '${phoneNumber}')" class="btn-crm" title="Send Template Message">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                    <path d="M16 13H8v-2h8v2zm0 4H8v-2h8v2z"/>
                 </svg>
             </button>
             <button onclick="openCrmModal(${contactId})" class="btn-crm" title="CRM Actions">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"/>
+                    <path d="M19 10h-2v2h-2v-2h-2V8h2V6h2v2h2v2z"/>
                 </svg>
             </button>
         </div>
@@ -1094,7 +1089,9 @@ async function saveDeal(contactId) {
     }
     
     try {
-        const response = await fetch(`crm.php/contact/${contactId}/deal`, {
+        // Try PATH_INFO style URL first
+        let url = `crm.php/contact/${contactId}/deal`;
+        let response = await fetch(url, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ 
@@ -1106,6 +1103,22 @@ async function saveDeal(contactId) {
             })
         });
         
+        // If that fails, try with query parameter fallback
+        if (!response.ok && response.status === 404) {
+            url = `crm.php?path=/contact/${contactId}/deal`;
+            response = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    deal_name: dealName,
+                    amount: amount,
+                    status: status,
+                    deal_date: dealDate,
+                    notes: notes
+                })
+            });
+        }
+        
         const result = await response.json();
         
         if (response.ok && result.success) {
@@ -1114,11 +1127,12 @@ async function saveDeal(contactId) {
             await loadDeals(contactId);
             loadContacts(); // Refresh contact list
         } else {
+            console.error('Deal API error:', result);
             showToast('Failed to add deal: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error adding deal:', error);
-        showToast('Failed to add deal', 'error');
+        showToast('Failed to add deal: ' + error.message, 'error');
     }
 }
 

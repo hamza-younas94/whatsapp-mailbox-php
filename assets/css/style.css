@@ -1008,11 +1008,11 @@ body {
 }
 
 .btn-crm svg {
-    width: 20px;
-    height: 20px;
-    stroke: white;
-    fill: none;
-    display: block;
+    width: 20px !important;
+    height: 20px !important;
+    fill: white !important;
+    display: block !important;
+    flex-shrink: 0;
 }
 
 .btn-crm:hover {
@@ -1020,7 +1020,7 @@ body {
 }
 
 .btn-crm:hover svg {
-    stroke: white;
+    fill: white !important;
 }
 
 /* CRM Modal */
