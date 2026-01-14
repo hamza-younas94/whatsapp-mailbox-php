@@ -184,17 +184,23 @@ class WhatsAppService
             ];
         }
         
-        // Normalize language code - keep full format (e.g., "en_US" stays "en_US")
-        // WhatsApp API requires exact language code as shown in Business Manager
+        // Normalize language code - WhatsApp API expects format like "en_US" (lowercase language, uppercase country)
+        // Convert input to proper format: "en_us" or "en_US" -> "en_US"
         $languageCode = trim($languageCode);
         
-        // Convert to lowercase but preserve underscore format
-        // "en_US" -> "en_us" (WhatsApp expects lowercase with underscore)
-        $languageCode = strtolower($languageCode);
-        
-        // If no language code provided, default to "en"
         if (empty($languageCode)) {
             $languageCode = 'en';
+        } else {
+            // Split by underscore if present
+            if (strpos($languageCode, '_') !== false) {
+                $parts = explode('_', $languageCode);
+                $lang = strtolower($parts[0]); // Language part lowercase
+                $country = isset($parts[1]) ? strtoupper($parts[1]) : ''; // Country part uppercase
+                $languageCode = $lang . ($country ? '_' . $country : '');
+            } else {
+                // Single part like "en" - keep lowercase
+                $languageCode = strtolower($languageCode);
+            }
         }
         
         // Validate template name (no spaces, alphanumeric and underscores only)
