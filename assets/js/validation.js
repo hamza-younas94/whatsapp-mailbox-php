@@ -18,8 +18,8 @@ class FormValidator {
     }
     
     init() {
-        // Add validation classes to form
-        this.form.classList.add('validated-form');
+        // Add Bootstrap validation class
+        this.form.classList.add('needs-validation');
         
         // Add error container
         const errorContainer = document.createElement('div');
@@ -32,8 +32,8 @@ class FormValidator {
             // Skip hidden inputs
             if (input.type === 'hidden') return;
             
-            // Add validation wrapper
-            this.wrapInput(input);
+            // Add Bootstrap invalid-feedback div
+            this.addFeedbackDiv(input);
             
             // Real-time validation
             input.addEventListener('blur', () => this.validateField(input));
@@ -49,41 +49,34 @@ class FormValidator {
             if (!this.validate()) {
                 e.preventDefault();
                 e.stopPropagation();
+                this.form.classList.add('was-validated');
                 return false;
             }
         });
     }
     
-    wrapInput(input) {
-        // Skip if already wrapped
-        if (input.parentElement && input.parentElement.classList.contains('form-field-wrapper')) {
+    addFeedbackDiv(input) {
+        // Check if feedback div already exists
+        if (input.nextElementSibling && 
+            (input.nextElementSibling.classList.contains('invalid-feedback') || 
+             input.nextElementSibling.classList.contains('valid-feedback'))) {
             return;
         }
         
-        // Skip if input is inside a label or special container
-        if (input.closest('label') || input.closest('.form-check')) {
-            return;
+        // Create invalid feedback div
+        const invalidFeedback = document.createElement('div');
+        invalidFeedback.className = 'invalid-feedback';
+        invalidFeedback.setAttribute('data-field', input.name);
+        
+        // Insert after input (or after its parent if it's in a wrapper)
+        const parent = input.parentElement;
+        if (parent.classList.contains('mb-3') || parent.classList.contains('form-group')) {
+            parent.appendChild(invalidFeedback);
+        } else {
+            input.parentNode.insertBefore(invalidFeedback, input.nextSibling);
         }
-        
-        const wrapper = document.createElement('div');
-        wrapper.className = 'form-field-wrapper';
-        
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'field-error-message';
-        errorMsg.setAttribute('data-field', input.name);
-        
-        // Get parent (usually .mb-3 or similar)
-        const parent = input.parentNode;
-        
-        // Insert wrapper before input
-        parent.insertBefore(wrapper, input);
-        
-        // Move input into wrapper
-        wrapper.appendChild(input);
-        
-        // Add error message
-        wrapper.appendChild(errorMsg);
     }
+    
     
     validate() {
         this.errors = {};
@@ -240,69 +233,51 @@ class FormValidator {
     }
     
     showFieldError(input, message) {
-        // Find the wrapper (could be parent or parent's parent)
-        let wrapper = input.parentElement;
-        if (!wrapper || !wrapper.classList.contains('form-field-wrapper')) {
-            wrapper = input.closest('.form-field-wrapper');
+        // Use Bootstrap classes
+        input.classList.add('is-invalid');
+        input.classList.remove('is-valid');
+        
+        // Find or create invalid-feedback div
+        let feedback = input.nextElementSibling;
+        if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+            // Look in parent
+            const parent = input.parentElement;
+            feedback = parent.querySelector('.invalid-feedback[data-field="' + input.name + '"]');
+            
+            if (!feedback) {
+                this.addFeedbackDiv(input);
+                feedback = input.nextElementSibling || parent.querySelector('.invalid-feedback[data-field="' + input.name + '"]');
+            }
         }
         
-        if (!wrapper) {
-            // If no wrapper found, create one
-            this.wrapInput(input);
-            wrapper = input.parentElement;
+        if (feedback) {
+            feedback.textContent = message;
         }
-        
-        if (!wrapper || !wrapper.classList.contains('form-field-wrapper')) {
-            console.warn('Could not find or create wrapper for input:', input);
-            return;
-        }
-        
-        const errorMsg = wrapper.querySelector('.field-error-message');
-        if (errorMsg) {
-            errorMsg.textContent = message;
-            errorMsg.classList.add('show');
-        }
-        
-        input.classList.add('error');
-        input.classList.remove('success');
-        wrapper.classList.add('has-error');
-        wrapper.classList.remove('has-success');
     }
     
     clearFieldError(input) {
-        let wrapper = input.parentElement;
-        if (!wrapper || !wrapper.classList.contains('form-field-wrapper')) {
-            wrapper = input.closest('.form-field-wrapper');
+        // Remove Bootstrap classes
+        input.classList.remove('is-invalid', 'is-valid');
+        
+        // Clear feedback message
+        const feedback = input.nextElementSibling;
+        if (feedback && feedback.classList.contains('invalid-feedback')) {
+            feedback.textContent = '';
+        } else {
+            const parent = input.parentElement;
+            const parentFeedback = parent.querySelector('.invalid-feedback[data-field="' + input.name + '"]');
+            if (parentFeedback) {
+                parentFeedback.textContent = '';
+            }
         }
-        
-        if (!wrapper) return;
-        
-        const errorMsg = wrapper.querySelector('.field-error-message');
-        if (errorMsg) {
-            errorMsg.textContent = '';
-            errorMsg.classList.remove('show');
-        }
-        
-        input.classList.remove('error');
-        wrapper.classList.remove('has-error');
     }
     
     updateFieldState(input, isValid) {
-        let wrapper = input.parentElement;
-        if (!wrapper || !wrapper.classList.contains('form-field-wrapper')) {
-            wrapper = input.closest('.form-field-wrapper');
-        }
-        
-        if (!wrapper) return;
-        
         if (isValid && this.getValue(input)) {
-            input.classList.add('success');
-            input.classList.remove('error');
-            wrapper.classList.add('has-success');
-            wrapper.classList.remove('has-error');
+            input.classList.add('is-valid');
+            input.classList.remove('is-invalid');
         } else {
-            input.classList.remove('success');
-            wrapper.classList.remove('has-success');
+            input.classList.remove('is-valid');
         }
     }
     

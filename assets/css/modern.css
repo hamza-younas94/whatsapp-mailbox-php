@@ -1175,6 +1175,7 @@ a.btn-secondary,
 .modal-dialog {
     max-width: 600px !important;
     margin: 1.75rem auto !important;
+    width: auto !important;
 }
 
 .modal-dialog.modal-lg {
@@ -1190,6 +1191,18 @@ a.btn-secondary,
     border-radius: 12px;
     width: 100% !important;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    min-width: 400px;
+}
+
+/* Prevent modal from being squeezed */
+.modal {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal[style*="display: block"] {
+    display: flex !important;
 }
 
 .modal-header {

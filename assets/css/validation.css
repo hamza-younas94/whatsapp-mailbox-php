@@ -1,61 +1,74 @@
 /**
- * Professional Form Validation Styles
+ * Bootstrap-Style Form Validation Styles
  */
 
-/* Form Field Wrapper */
-.form-field-wrapper {
-    position: relative;
-    margin-bottom: 20px;
+/* Bootstrap Validation Classes */
+.was-validated .form-control:invalid,
+.was-validated .form-select:invalid,
+.form-control.is-invalid,
+.form-select.is-invalid,
+.crm-input.is-invalid,
+.crm-select.is-invalid,
+.crm-textarea.is-invalid {
+    border-color: #dc3545 !important;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 3.6 .4.4.4-.4m0 4.8-.4-.4-.4.4'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
 
-.form-field-wrapper:last-child {
-    margin-bottom: 0;
+.was-validated .form-control:valid,
+.was-validated .form-select:valid,
+.form-control.is-valid,
+.form-select.is-valid,
+.crm-input.is-valid,
+.crm-select.is-valid,
+.crm-textarea.is-valid {
+    border-color: #198754 !important;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
 
-/* Input States */
-.form-field-wrapper input,
-.form-field-wrapper textarea,
-.form-field-wrapper select {
-    transition: all 0.3s ease;
-    border: 1.5px solid rgba(15, 23, 42, 0.1);
+/* Invalid Feedback - Bootstrap Style */
+.invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
 }
 
-.form-field-wrapper input:focus,
-.form-field-wrapper textarea:focus,
-.form-field-wrapper select:focus {
-    outline: none;
-    border-color: #0dd198;
-    box-shadow: 0 0 0 3px rgba(13, 209, 152, 0.1);
+.was-validated .form-control:invalid ~ .invalid-feedback,
+.was-validated .form-select:invalid ~ .invalid-feedback,
+.form-control.is-invalid ~ .invalid-feedback,
+.form-select.is-invalid ~ .invalid-feedback,
+.crm-input.is-invalid ~ .invalid-feedback,
+.crm-select.is-invalid ~ .invalid-feedback,
+.crm-textarea.is-invalid ~ .invalid-feedback {
+    display: block;
 }
 
-/* Success State */
-.form-field-wrapper.has-success input,
-.form-field-wrapper.has-success textarea,
-.form-field-wrapper.has-success select {
-    border-color: #10b981;
-    background-color: rgba(16, 185, 129, 0.02);
+/* Valid Feedback */
+.valid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #198754;
 }
 
-.form-field-wrapper.has-success input:focus,
-.form-field-wrapper.has-success textarea:focus,
-.form-field-wrapper.has-success select:focus {
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-}
-
-/* Error State */
-.form-field-wrapper.has-error input,
-.form-field-wrapper.has-error textarea,
-.form-field-wrapper.has-error select {
-    border-color: #ef4444;
-    background-color: rgba(239, 68, 68, 0.02);
-    animation: shake 0.3s ease;
-}
-
-.form-field-wrapper.has-error input:focus,
-.form-field-wrapper.has-error textarea:focus,
-.form-field-wrapper.has-error select:focus {
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
-    border-color: #ef4444;
+.was-validated .form-control:valid ~ .valid-feedback,
+.was-validated .form-select:valid ~ .valid-feedback,
+.form-control.is-valid ~ .valid-feedback,
+.form-select.is-valid ~ .valid-feedback,
+.crm-input.is-valid ~ .valid-feedback,
+.crm-select.is-valid ~ .valid-feedback,
+.crm-textarea.is-valid ~ .valid-feedback {
+    display: block;
 }
 
 @keyframes shake {
@@ -64,39 +77,13 @@
     75% { transform: translateX(5px); }
 }
 
-/* Field Error Message */
-.field-error-message {
-    position: absolute;
-    bottom: -22px;
-    left: 0;
-    font-size: 12px;
-    color: #ef4444;
-    font-weight: 500;
-    opacity: 0;
-    transform: translateY(-5px);
-    transition: all 0.3s ease;
-    pointer-events: none;
-    z-index: 10;
-    white-space: nowrap;
-    background: white;
-    padding: 2px 6px;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+/* Form Group Spacing for Bootstrap */
+.mb-3 {
+    margin-bottom: 1rem !important;
 }
 
-.field-error-message.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Ensure error messages are visible in modals */
-.modal-body .form-field-wrapper {
-    margin-bottom: 28px;
-    padding-bottom: 0;
-}
-
-.modal-body .form-field-wrapper.has-error {
-    margin-bottom: 32px;
+.mb-3:has(.is-invalid) {
+    margin-bottom: 1.5rem !important;
 }
 
 /* Validation Errors Container */
