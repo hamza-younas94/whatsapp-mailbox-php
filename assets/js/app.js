@@ -254,16 +254,13 @@ async function selectContact(contactId, name, phoneNumber) {
         </div>
         <div class="crm-actions">
             <button onclick="openTemplateModal(${contactId}, '${phoneNumber}')" class="btn-crm" title="Send Template Message">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M7 8h10M7 12h10M7 16h6"/>
-                    <rect x="3" y="4" width="18" height="16" rx="2"/>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
                 </svg>
             </button>
             <button onclick="openCrmModal(${contactId})" class="btn-crm" title="CRM Actions">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="8.5" cy="7" r="4"/>
-                    <path d="M20 8v6M23 11h-6"/>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
                 </svg>
             </button>
         </div>
@@ -710,19 +707,6 @@ function openCrmModal(contactId) {
                 <input type="email" id="crmEmail" class="crm-input" placeholder="Email" value="${contact.email || ''}">
                 <input type="text" id="crmCity" class="crm-input" placeholder="City" value="${contact.city || ''}">
                 <button onclick="updateCompanyInfo(${contactId})" class="btn-primary">Update Info</button>
-            </div>
-            
-            <div class="crm-section">
-                <div class="crm-section-header">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    <h3>Deal Information</h3>
-                </div>
-                <input type="number" id="crmDealValue" class="crm-input" placeholder="Deal Value" value="${contact.deal_value || ''}">
-                <input type="date" id="crmExpectedClose" class="crm-input" value="${contact.expected_close_date || ''}">
-                <button onclick="updateDealInfo(${contactId})" class="btn-primary">Update Deal</button>
             </div>
             
             <div class="crm-section">
