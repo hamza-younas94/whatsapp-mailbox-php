@@ -574,8 +574,8 @@ a.btn {
 }
 
 .deals-page .btn {
-    padding: 11px 20px;
-    font-size: 14px;
+    padding: 9px 16px !important;
+    font-size: 13px !important;
     border-radius: 8px;
 }
 
@@ -763,9 +763,8 @@ a.btn {
 }
 
 .segments-page .action-buttons .btn {
-    flex: 1;
-    font-size: 0.8rem;
-    padding: 0.4rem;
+    padding: 9px 16px !important;
+    font-size: 13px !important;
 }
 
 @media (max-width: 768px) {
