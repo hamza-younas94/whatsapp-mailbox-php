@@ -833,10 +833,14 @@ function openCrmModal(contactId) {
             </div>
     `;
     
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    loadNotes(contactId);
-    loadDeals(contactId);
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+        document.body.classList.add('modal-open');
+        document.body.style.overflow = 'hidden';
+        loadNotes(contactId);
+        loadDeals(contactId);
+    }
 }
 
 /**
@@ -846,6 +850,8 @@ function closeCrmModal() {
     const modal = document.getElementById('crmModal');
     if (modal) {
         modal.style.display = 'none';
+        modal.classList.remove('show');
+        document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
         // Hide add deal form if open
         hideAddDealForm();
