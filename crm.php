@@ -39,6 +39,27 @@ try {
         $contactId = $matches[1];
         $data = json_decode(file_get_contents('php://input'), true);
         
+        // Validate input
+        $validation = validate([
+            'email' => sanitize($data['email'] ?? ''),
+            'company_name' => sanitize($data['company_name'] ?? ''),
+            'city' => sanitize($data['city'] ?? '')
+        ], [
+            'email' => 'email|max:255',
+            'company_name' => 'max:255',
+            'city' => 'max:100'
+        ]);
+        
+        if ($validation !== true) {
+            http_response_code(422);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Validation failed',
+                'errors' => $validation
+            ]);
+            exit;
+        }
+        
         $contact = Contact::findOrFail($contactId);
         
         $updateFields = [];
@@ -47,7 +68,7 @@ try {
         
         foreach ($allowedFields as $field) {
             if (isset($data[$field])) {
-                $updateFields[$field] = $data[$field];
+                $updateFields[$field] = sanitize($data[$field]);
             }
         }
         
@@ -79,16 +100,29 @@ try {
         $contactId = $matches[1];
         $data = json_decode(file_get_contents('php://input'), true);
         
-        if (empty($data['content'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Note content is required']);
+        // Validate input
+        $validation = validate([
+            'content' => sanitize($data['content'] ?? ''),
+            'type' => sanitize($data['type'] ?? 'general')
+        ], [
+            'content' => 'required|min:1|max:5000',
+            'type' => 'max:50'
+        ]);
+        
+        if ($validation !== true) {
+            http_response_code(422);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Validation failed',
+                'errors' => $validation
+            ]);
             exit;
         }
         
         $note = Note::create([
             'contact_id' => $contactId,
-            'content' => $data['content'],
-            'type' => $data['type'] ?? 'general',
+            'content' => sanitize($data['content']),
+            'type' => sanitize($data['type'] ?? 'general'),
             'created_by' => $_SESSION['user_id']
         ]);
         
@@ -150,26 +184,67 @@ try {
         $contactId = $matches[1];
         $data = json_decode(file_get_contents('php://input'), true);
         
-        if (empty($data['deal_name']) || empty($data['amount'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Deal name and amount are required']);
+        // Validate input
+        $validation = validate([
+            'deal_name' => sanitize($data['deal_name'] ?? ''),
+            'amount' => $data['amount'] ?? '',
+            'deal_date' => $data['deal_date'] ?? '',
+            'status' => sanitize($data['status'] ?? 'pending')
+        ], [
+            'deal_name' => 'required|min:2|max:255',
+            'amount' => 'required|number',
+            'deal_date' => 'required',
+            'status' => 'max:50'
+        ]);
+        
+        if ($validation !== true) {
+            http_response_code(422);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Validation failed',
+                'errors' => $validation
+            ]);
+            exit;
+        }
+        
+        // Validate amount is positive
+        $amount = floatval($data['amount']);
+        if ($amount <= 0) {
+            http_response_code(422);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Amount must be greater than 0',
+                'errors' => ['amount' => ['Amount must be greater than 0']]
+            ]);
+            exit;
+        }
+        
+        // Validate date format
+        $dealDate = $data['deal_date'];
+        if (!strtotime($dealDate)) {
+            http_response_code(422);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Invalid date format',
+                'errors' => ['deal_date' => ['Invalid date format']]
+            ]);
             exit;
         }
         
         $deal = Deal::create([
             'contact_id' => $contactId,
-            'deal_name' => $data['deal_name'],
-            'amount' => $data['amount'],
-            'currency' => $data['currency'] ?? 'PKR',
-            'status' => $data['status'] ?? 'pending',
-            'deal_date' => $data['deal_date'] ?? now(),
-            'notes' => $data['notes'] ?? null,
+            'deal_name' => sanitize($data['deal_name']),
+            'amount' => $amount,
+            'currency' => sanitize($data['currency'] ?? 'PKR'),
+            'status' => sanitize($data['status'] ?? 'pending'),
+            'deal_date' => $dealDate,
+            'notes' => !empty($data['notes']) ? sanitize($data['notes']) : null,
             'created_by' => $_SESSION['user_id']
         ]);
         
         // Add activity
         $contact = Contact::find($contactId);
-        $contact->addActivity('deal_added', "Deal added: {$data['deal_name']} - PKR " . number_format($data['amount'], 0));
+        $contact->addActivity('deal_added', "Deal added: {$data['deal_name']} - PKR " . number_format($amount, 0));
         $contact->touch('last_activity_at');
         
         // Update lead score if deal is won

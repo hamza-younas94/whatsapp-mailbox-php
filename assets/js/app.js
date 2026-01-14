@@ -754,10 +754,21 @@ function openCrmModal(contactId) {
                     </svg>
                     <h3>Company Information</h3>
                 </div>
-                <input type="text" id="crmCompany" class="crm-input" placeholder="Company Name" value="${contact.company_name || ''}">
-                <input type="email" id="crmEmail" class="crm-input" placeholder="Email" value="${contact.email || ''}">
-                <input type="text" id="crmCity" class="crm-input" placeholder="City" value="${contact.city || ''}">
-                <button onclick="updateCompanyInfo(${contactId})" class="btn-primary">Update Info</button>
+                <form id="companyInfoForm" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <input type="text" id="crmCompany" name="company_name" class="crm-input form-control" placeholder="Company Name" value="${contact.company_name || ''}">
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="email" id="crmEmail" name="email" class="crm-input form-control" placeholder="Email" value="${contact.email || ''}">
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" id="crmCity" name="city" class="crm-input form-control" placeholder="City" value="${contact.city || ''}">
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <button type="button" onclick="updateCompanyInfo(${contactId})" class="btn-primary">Update Info</button>
+                </form>
             </div>
             
             <div class="crm-section">
@@ -767,14 +778,21 @@ function openCrmModal(contactId) {
                     </svg>
                     <h3>Add Note</h3>
                 </div>
-                <textarea id="crmNote" class="crm-textarea" placeholder="Type your note here..." rows="3"></textarea>
-                <select id="crmNoteType" class="crm-select">
-                    <option value="general">General</option>
-                    <option value="call">Call</option>
-                    <option value="meeting">Meeting</option>
-                    <option value="email">Email</option>
-                </select>
-                <button onclick="addNote(${contactId})" class="btn-primary">Add Note</button>
+                <form id="addNoteForm" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <textarea id="crmNote" name="content" class="crm-textarea form-control" placeholder="Type your note here..." rows="3" required></textarea>
+                        <div class="invalid-feedback">Please enter a note</div>
+                    </div>
+                    <div class="mb-3">
+                        <select id="crmNoteType" name="type" class="crm-select form-select">
+                            <option value="general">General</option>
+                            <option value="call">Call</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="email">Email</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="addNote(${contactId})" class="btn-primary">Add Note</button>
+                </form>
             </div>
             
             <div class="crm-section">
@@ -817,19 +835,34 @@ function openCrmModal(contactId) {
                     </svg>
                     <h3>Add New Deal</h3>
                 </div>
-                <input type="text" id="dealName" class="crm-input" placeholder="Deal Name (e.g., Website Package)">
-                <input type="number" id="dealAmount" class="crm-input" placeholder="Amount" step="0.01">
-                <select id="dealStatus" class="crm-select">
-                    <option value="pending">Pending</option>
-                    <option value="won">Won</option>
-                    <option value="lost">Lost</option>
-                </select>
-                <input type="date" id="dealDate" class="crm-input">
-                <textarea id="dealNotes" class="crm-textarea" placeholder="Deal notes..." rows="2"></textarea>
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="saveDeal(${contactId})" class="btn-primary" style="flex: 1;">Save Deal</button>
-                    <button onclick="hideAddDealForm()" class="btn-secondary" style="flex: 1;">Cancel</button>
-                </div>
+                <form id="addDealFormElement" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <input type="text" id="dealName" name="deal_name" class="crm-input form-control" placeholder="Deal Name (e.g., Website Package)" required>
+                        <div class="invalid-feedback">Please enter a deal name</div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="number" id="dealAmount" name="amount" class="crm-input form-control" placeholder="Amount" step="0.01" min="0" required>
+                        <div class="invalid-feedback">Please enter a valid amount</div>
+                    </div>
+                    <div class="mb-3">
+                        <select id="dealStatus" name="status" class="crm-select form-select" required>
+                            <option value="pending">Pending</option>
+                            <option value="won">Won</option>
+                            <option value="lost">Lost</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <input type="date" id="dealDate" name="deal_date" class="crm-input form-control" required>
+                        <div class="invalid-feedback">Please select a date</div>
+                    </div>
+                    <div class="mb-3">
+                        <textarea id="dealNotes" name="notes" class="crm-textarea form-control" placeholder="Deal notes..." rows="2"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" onclick="saveDeal(${contactId})" class="btn-primary" style="flex: 1;">Save Deal</button>
+                        <button type="button" onclick="hideAddDealForm()" class="btn-secondary" style="flex: 1;">Cancel</button>
+                    </div>
+                </form>
             </div>
     `;
     
@@ -902,9 +935,35 @@ async function updateStage(contactId) {
  * Update company info
  */
 async function updateCompanyInfo(contactId) {
-    const company_name = document.getElementById('crmCompany').value;
-    const email = document.getElementById('crmEmail').value;
-    const city = document.getElementById('crmCity').value;
+    const form = document.getElementById('companyInfoForm');
+    if (!form) return;
+    
+    // Validate form
+    if (typeof FormValidator !== 'undefined') {
+        const validator = new FormValidator('companyInfoForm', {
+            email: ['email', 'max:255'],
+            company_name: ['max:255'],
+            city: ['max:100']
+        });
+        
+        if (!validator.validate()) {
+            return;
+        }
+    } else {
+        // Fallback validation
+        const email = document.getElementById('crmEmail').value.trim();
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            const emailField = document.getElementById('crmEmail');
+            emailField.classList.add('is-invalid');
+            emailField.nextElementSibling.textContent = 'Please enter a valid email address';
+            showToast('Please enter a valid email address', 'error');
+            return;
+        }
+    }
+    
+    const company_name = document.getElementById('crmCompany').value.trim();
+    const email = document.getElementById('crmEmail').value.trim();
+    const city = document.getElementById('crmCity').value.trim();
     
     try {
         const response = await fetch(`crm.php/contact/${contactId}/crm`, {
@@ -916,10 +975,24 @@ async function updateCompanyInfo(contactId) {
         const result = await response.json();
         
         if (response.ok && result.success) {
+            // Clear validation
+            form.classList.remove('was-validated');
+            ['crmCompany', 'crmEmail', 'crmCity'].forEach(id => {
+                const field = document.getElementById(id);
+                if (field) {
+                    field.classList.remove('is-invalid', 'is-valid');
+                }
+            });
             showToast('Company info updated!', 'success');
             loadContacts();
         } else {
-            showToast('Failed to update: ' + (result.error || 'Unknown error'), 'error');
+            // Show backend validation errors
+            if (result.errors && typeof FormValidator !== 'undefined') {
+                const validator = new FormValidator('companyInfoForm', {});
+                validator.setErrors(result.errors);
+            } else {
+                showToast('Failed to update: ' + (result.error || 'Unknown error'), 'error');
+            }
         }
     } catch (error) {
         console.error('Error updating company info:', error);
@@ -960,12 +1033,30 @@ async function updateDealInfo(contactId) {
  * Add note
  */
 async function addNote(contactId) {
+    const form = document.getElementById('addNoteForm');
+    if (!form) return;
+    
     const content = document.getElementById('crmNote').value.trim();
     const type = document.getElementById('crmNoteType').value;
     
-    if (!content) {
-        showToast('Please enter a note', 'error');
-        return;
+    // Validate
+    if (typeof FormValidator !== 'undefined') {
+        const validator = new FormValidator('addNoteForm', {
+            content: ['required', 'min:1', 'max:5000']
+        });
+        
+        if (!validator.validate()) {
+            return;
+        }
+    } else {
+        // Fallback validation
+        if (!content) {
+            const noteField = document.getElementById('crmNote');
+            noteField.classList.add('is-invalid');
+            noteField.nextElementSibling.textContent = 'Please enter a note';
+            showToast('Please enter a note', 'error');
+            return;
+        }
     }
     
     try {
@@ -978,11 +1069,23 @@ async function addNote(contactId) {
         const result = await response.json();
         
         if (response.ok && result.success) {
+            // Clear form and validation
             document.getElementById('crmNote').value = '';
+            form.classList.remove('was-validated');
+            const noteField = document.getElementById('crmNote');
+            if (noteField) {
+                noteField.classList.remove('is-invalid', 'is-valid');
+            }
             showToast('Note added successfully!', 'success');
             await loadNotes(contactId);
         } else {
-            showToast('Failed to add note: ' + (result.error || 'Unknown error'), 'error');
+            // Show backend validation errors
+            if (result.errors && typeof FormValidator !== 'undefined') {
+                const validator = new FormValidator('addNoteForm', {});
+                validator.setErrors(result.errors);
+            } else {
+                showToast('Failed to add note: ' + (result.error || 'Unknown error'), 'error');
+            }
         }
     } catch (error) {
         console.error('Error adding note:', error);
@@ -1185,16 +1288,60 @@ function hideAddDealForm() {
  * Save new deal
  */
 async function saveDeal(contactId) {
+    const form = document.getElementById('addDealFormElement');
+    if (!form) return;
+    
+    // Validate form
+    if (typeof FormValidator !== 'undefined') {
+        const validator = new FormValidator('addDealFormElement', {
+            deal_name: ['required', 'min:2', 'max:255'],
+            amount: ['required', 'number', {min: 0}],
+            deal_date: ['required']
+        });
+        
+        if (!validator.validate()) {
+            return;
+        }
+    } else {
+        // Fallback validation
+        const dealName = document.getElementById('dealName').value.trim();
+        const amount = document.getElementById('dealAmount').value;
+        const dealDate = document.getElementById('dealDate').value;
+        
+        let hasError = false;
+        
+        if (!dealName) {
+            const nameField = document.getElementById('dealName');
+            nameField.classList.add('is-invalid');
+            nameField.nextElementSibling.textContent = 'Please enter a deal name';
+            hasError = true;
+        }
+        
+        if (!amount || parseFloat(amount) <= 0) {
+            const amountField = document.getElementById('dealAmount');
+            amountField.classList.add('is-invalid');
+            amountField.nextElementSibling.textContent = 'Please enter a valid amount';
+            hasError = true;
+        }
+        
+        if (!dealDate) {
+            const dateField = document.getElementById('dealDate');
+            dateField.classList.add('is-invalid');
+            dateField.nextElementSibling.textContent = 'Please select a date';
+            hasError = true;
+        }
+        
+        if (hasError) {
+            showToast('Please fill in all required fields', 'error');
+            return;
+        }
+    }
+    
     const dealName = document.getElementById('dealName').value.trim();
     const amount = document.getElementById('dealAmount').value;
     const status = document.getElementById('dealStatus').value;
     const dealDate = document.getElementById('dealDate').value;
     const notes = document.getElementById('dealNotes').value.trim();
-    
-    if (!dealName || !amount) {
-        showToast('Please enter deal name and amount', 'error');
-        return;
-    }
     
     try {
         // Try PATH_INFO style URL first
