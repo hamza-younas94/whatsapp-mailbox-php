@@ -79,7 +79,7 @@ require_once __DIR__ . '/includes/header.php';
             <p>Smart grouping for targeted campaigns</p>
         </div>
         <button class="btn btn-primary" onclick="openSegmentModal()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
             New Segment
         </button>
     </div>
