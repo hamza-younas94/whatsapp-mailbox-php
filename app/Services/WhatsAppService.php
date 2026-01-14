@@ -378,6 +378,20 @@ class WhatsAppService
                             $errorMessage .= '. Available templates: ' . json_encode($availableTemplates);
                         }
                     }
+                    
+                    // Error 132000 = Parameter count mismatch
+                    if ($errorCode == 132000) {
+                        $errorDetails = $errorData['error']['error_data']['details'] ?? '';
+                        $errorMessage = 'Template parameter mismatch. ' . 
+                                       'The number of parameters you provided does not match what the template expects. ' .
+                                       'Please check the template in WhatsApp Business Manager to see how many parameters it requires. ' .
+                                       'If the template has no placeholders ({{1}}, {{2}}, etc.), do not add any parameters. ' .
+                                       'Error details: ' . ($errorData['error']['message'] ?? 'Parameter mismatch');
+                        
+                        if ($errorDetails) {
+                            $errorMessage .= ' (' . $errorDetails . ')';
+                        }
+                    }
                 }
             }
             

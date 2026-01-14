@@ -1481,16 +1481,10 @@ function closeTemplateModal() {
         if (templateNameInput) templateNameInput.value = 'hello_world';
         if (templateLanguageSelect) templateLanguageSelect.value = 'en_US';
         
-        // Clear parameters (keep first one, remove others)
+        // Clear all parameters
         const paramContainer = document.getElementById('templateParameters');
         if (paramContainer) {
-            while (paramContainer.children.length > 1) {
-                paramContainer.removeChild(paramContainer.lastChild);
-            }
-            if (paramContainer.children.length > 0) {
-                const firstInput = paramContainer.children[0].querySelector('.template-param-input');
-                if (firstInput) firstInput.value = '';
-            }
+            paramContainer.innerHTML = '';
         }
     }
     templateContactId = null;
@@ -1521,6 +1515,9 @@ function addTemplateParam() {
     row.appendChild(input);
     row.appendChild(removeBtn);
     container.appendChild(row);
+    
+    // Focus on the new input
+    input.focus();
 }
 
 function removeTemplateParam(button) {
