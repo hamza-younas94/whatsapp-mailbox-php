@@ -696,15 +696,23 @@ function getStatusIcon(status) {
                 <polyline points="20 6 9 17 4 12"></polyline>
             </svg>`;
         case 'delivered':
-            return `<svg class="message-status-icon delivered" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="20 6 9 17 4 12"></polyline>
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>`;
+            return `<span class="message-status-double">
+                <svg class="message-status-icon delivered" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <svg class="message-status-icon delivered" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </span>`;
         case 'read':
-            return `<svg class="message-status-icon read" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="20 6 9 17 4 12"></polyline>
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>`;
+            return `<span class="message-status-double">
+                <svg class="message-status-icon read" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <svg class="message-status-icon read" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </span>`;
         case 'failed':
             return `<svg class="message-status-icon failed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <circle cx="12" cy="12" r="10"></circle>
