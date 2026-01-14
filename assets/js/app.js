@@ -1479,7 +1479,7 @@ function closeTemplateModal() {
         const templateNameInput = document.getElementById('templateName');
         const templateLanguageSelect = document.getElementById('templateLanguage');
         if (templateNameInput) templateNameInput.value = 'hello_world';
-        if (templateLanguageSelect) templateLanguageSelect.value = 'en_US';
+        if (templateLanguageSelect) templateLanguageSelect.value = 'en';
         
         // Clear all parameters
         const paramContainer = document.getElementById('templateParameters');
