@@ -67,7 +67,7 @@
 /* Field Error Message */
 .field-error-message {
     position: absolute;
-    bottom: -20px;
+    bottom: -22px;
     left: 0;
     font-size: 12px;
     color: #ef4444;
@@ -77,11 +77,26 @@
     transition: all 0.3s ease;
     pointer-events: none;
     z-index: 10;
+    white-space: nowrap;
+    background: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
 }
 
 .field-error-message.show {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* Ensure error messages are visible in modals */
+.modal-body .form-field-wrapper {
+    margin-bottom: 28px;
+    padding-bottom: 0;
+}
+
+.modal-body .form-field-wrapper.has-error {
+    margin-bottom: 32px;
 }
 
 /* Validation Errors Container */

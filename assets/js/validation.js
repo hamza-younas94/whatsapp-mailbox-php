@@ -56,7 +56,12 @@ class FormValidator {
     
     wrapInput(input) {
         // Skip if already wrapped
-        if (input.parentElement.classList.contains('form-field-wrapper')) {
+        if (input.parentElement && input.parentElement.classList.contains('form-field-wrapper')) {
+            return;
+        }
+        
+        // Skip if input is inside a label or special container
+        if (input.closest('label') || input.closest('.form-check')) {
             return;
         }
         
@@ -67,8 +72,16 @@ class FormValidator {
         errorMsg.className = 'field-error-message';
         errorMsg.setAttribute('data-field', input.name);
         
-        input.parentNode.insertBefore(wrapper, input);
+        // Get parent (usually .mb-3 or similar)
+        const parent = input.parentNode;
+        
+        // Insert wrapper before input
+        parent.insertBefore(wrapper, input);
+        
+        // Move input into wrapper
         wrapper.appendChild(input);
+        
+        // Add error message
         wrapper.appendChild(errorMsg);
     }
     
@@ -227,8 +240,20 @@ class FormValidator {
     }
     
     showFieldError(input, message) {
-        const wrapper = input.parentElement;
+        // Find the wrapper (could be parent or parent's parent)
+        let wrapper = input.parentElement;
         if (!wrapper || !wrapper.classList.contains('form-field-wrapper')) {
+            wrapper = input.closest('.form-field-wrapper');
+        }
+        
+        if (!wrapper) {
+            // If no wrapper found, create one
+            this.wrapInput(input);
+            wrapper = input.parentElement;
+        }
+        
+        if (!wrapper || !wrapper.classList.contains('form-field-wrapper')) {
+            console.warn('Could not find or create wrapper for input:', input);
             return;
         }
         
@@ -241,10 +266,15 @@ class FormValidator {
         input.classList.add('error');
         input.classList.remove('success');
         wrapper.classList.add('has-error');
+        wrapper.classList.remove('has-success');
     }
     
     clearFieldError(input) {
-        const wrapper = input.parentElement;
+        let wrapper = input.parentElement;
+        if (!wrapper || !wrapper.classList.contains('form-field-wrapper')) {
+            wrapper = input.closest('.form-field-wrapper');
+        }
+        
         if (!wrapper) return;
         
         const errorMsg = wrapper.querySelector('.field-error-message');
@@ -258,7 +288,11 @@ class FormValidator {
     }
     
     updateFieldState(input, isValid) {
-        const wrapper = input.parentElement;
+        let wrapper = input.parentElement;
+        if (!wrapper || !wrapper.classList.contains('form-field-wrapper')) {
+            wrapper = input.closest('.form-field-wrapper');
+        }
+        
         if (!wrapper) return;
         
         if (isValid && this.getValue(input)) {
