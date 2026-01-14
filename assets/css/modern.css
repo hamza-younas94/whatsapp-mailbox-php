@@ -88,17 +88,17 @@ body {
     font-size: 14px;
 }
 
-/* Page Header Buttons - Action Buttons (Small) */
+/* Page Header Buttons - Consistent with other buttons */
 .page-header .btn,
 .page-header button.btn,
 .page-header .btn-primary,
 .page-header .btn-secondary,
 .page-header .btn-success {
-    padding: 9px 16px !important;
-    font-size: 13px !important;
+    padding: 10px 18px !important;
+    font-size: 14px !important;
     height: auto !important;
-    min-height: auto !important;
-    line-height: 1 !important;
+    min-height: 40px !important;
+    line-height: 1.4 !important;
 }
 
 /* Cards */
@@ -129,12 +129,12 @@ body {
     color: #0f172a;
 }
 
-/* Buttons */
+/* Buttons - Consistent Sizing */
 .btn {
-    padding: 9px 16px !important;
+    padding: 10px 18px !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     border: none !important;
     transition: all 0.2s ease !important;
     cursor: pointer !important;
@@ -144,7 +144,8 @@ body {
     text-decoration: none !important;
     font-family: inherit !important;
     height: auto !important;
-    line-height: 1 !important;
+    min-height: 40px !important;
+    line-height: 1.4 !important;
 }
 
 .btn svg {
@@ -976,15 +977,16 @@ a.btn {
 
 .search-input-group input {
     flex: 1;
-    padding: 9px 14px !important;
+    padding: 12px 16px !important;
     border: 1px solid rgba(15,23,42,0.12) !important;
     border-radius: 8px !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     font-family: inherit !important;
     color: #0f172a !important;
     background: white !important;
-    min-height: auto !important;
-    height: auto !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    line-height: 1.5 !important;
 }
 
 .search-input-group input:focus {
@@ -994,10 +996,12 @@ a.btn {
 }
 
 .search-input-group button {
-    padding: 9px 16px !important;
-    min-width: auto !important;
+    padding: 12px 20px !important;
+    min-width: 120px !important;
     white-space: nowrap !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
+    height: 44px !important;
+    min-height: 44px !important;
 }
 
 /* Filters Row */
@@ -1007,20 +1011,21 @@ a.btn {
     gap: 20px;
 }
 
-/* CRM Inputs (from search page) */
+/* CRM Inputs - Consistent Sizing */
 .crm-input,
 .crm-select {
-    padding: 9px 14px !important;
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+    min-height: 44px !important;
+    height: 44px !important;
     border: 1px solid rgba(15,23,42,0.12) !important;
     border-radius: 8px !important;
-    font-size: 13px !important;
     font-family: inherit !important;
     color: #0f172a !important;
     background: white !important;
     width: 100% !important;
     transition: all 0.2s ease !important;
-    height: auto !important;
-    min-height: auto !important;
+    line-height: 1.5 !important;
 }
 
 .crm-input:focus,
@@ -1447,14 +1452,15 @@ a.btn {
     width: 100% !important;
 }
 
-.crm-input,
-.crm-select,
+/* Duplicate - use the one above */
 .crm-textarea {
-    padding: 10px 12px !important;
+    padding: 12px 16px !important;
     font-size: 14px !important;
-    border: 1px solid #e2e8f0 !important;
+    border: 1px solid rgba(15,23,42,0.12) !important;
     border-radius: 8px !important;
     font-family: inherit !important;
+    min-height: 100px !important;
+    resize: vertical !important;
     background: #f8fafc !important;
     transition: all 0.2s !important;
 }
