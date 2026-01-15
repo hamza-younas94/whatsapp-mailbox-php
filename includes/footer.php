@@ -1,7 +1,7 @@
     <!-- Footer -->
     <footer class="mt-5 py-4 bg-light">
         <div class="container text-center text-muted">
-            <p class="mb-0">&copy; <?php echo date('Y'); ?> ChatFlow CRM. All rights reserved.</p>
+            <p class="mb-0">&copy; <?php echo date('Y'); ?> MessageHubilBox. All rights reserved.</p>
         </div>
     </footer>
 

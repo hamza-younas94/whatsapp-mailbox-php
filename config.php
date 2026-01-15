@@ -1,7 +1,7 @@
 <?php
 // Database Configuration
 define('DB_HOST', 'localhost'); // Usually 'localhost' on shared hosting
-define('DB_NAME', 'chatflow_crm'); // Your database name
+define('DB_NAME', 'messagehubilbox'); // Your database name
 define('DB_USER', 'your_db_username'); // Your database username
 define('DB_PASS', 'your_db_password'); // Your database password
 

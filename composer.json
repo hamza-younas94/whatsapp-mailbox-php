@@ -1,6 +1,6 @@
 {
-    "name": "chatflow/crm",
-    "description": "ChatFlow CRM - Professional Business Messaging Platform",
+    "name": "messagehubilbox/app",
+    "description": "MessageHubilBox - Professional Business Messaging Platform",
     "type": "project",
     "require": {
         "php": ">=7.4",
