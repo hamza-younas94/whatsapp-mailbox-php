@@ -743,6 +743,8 @@ class WhatsAppService
             $searchText = strtolower($messageBody);
             $originalText = $messageBody;
             
+            logger("[QUICK_REPLY] Passed empty check, searchText: '{$searchText}'");
+            
             // Check for IP address command (dcmb ip <IP>)
             if (preg_match('/^dcmb\s+ip\s+([0-9a-fA-F:\.]+)$/i', $messageBody, $matches)) {
                 $ipAddress = $matches[1];
@@ -813,6 +815,8 @@ class WhatsAppService
                 }
             }
             
+            logger("[QUICK_REPLY] Passed IP command check");
+            
             // Rate limiting: Check if we sent a reply to this contact recently (within last 30 seconds)
             $recentReply = Message::where('contact_id', $contact->id)
                 ->where('direction', 'outgoing')
@@ -824,6 +828,8 @@ class WhatsAppService
                 logger("[QUICK_REPLY] Rate limit: Recent auto-reply sent, skipping to prevent spam");
                 return;
             }
+            
+            logger("[QUICK_REPLY] Passed rate limit check");
             
             // Get all active quick replies, ordered by priority (if exists) or usage count
             $allQuickReplies = \App\Models\QuickReply::where('is_active', true)
