@@ -830,19 +830,29 @@ class WhatsAppService
                 ->orderBy('usage_count', 'desc') // Most used first
                 ->get();
             
+            logger("[QUICK_REPLY] Found " . $allQuickReplies->count() . " active quick replies");
+            
             if ($allQuickReplies->isEmpty()) {
                 logger("[QUICK_REPLY] No active quick replies found");
                 return;
             }
             
+            logger("[QUICK_REPLY] Search text: '{$searchText}'");
+            logger("[QUICK_REPLY] Available shortcuts: " . $allQuickReplies->pluck('shortcut')->implode(', '));
+            
             $matchedReply = null;
             $matchType = null;
             
+            logger("[QUICK_REPLY] Starting pattern matching strategies...");
+            
             // Strategy 1: Exact match (highest priority)
+            logger("[QUICK_REPLY] Strategy 1: Exact match");
             foreach ($allQuickReplies as $qr) {
                 $shortcut = trim($qr->shortcut);
                 $shortcutLower = strtolower($shortcut);
                 $shortcutNoSlash = ltrim($shortcutLower, '/');
+                
+                logger("[QUICK_REPLY] Testing '{$searchText}' against '{$shortcutLower}' and '{$shortcutNoSlash}'");
                 
                 // Exact match (case-insensitive, with or without leading slash)
                 if ($searchText === $shortcutLower || $searchText === $shortcutNoSlash) {
@@ -855,6 +865,7 @@ class WhatsAppService
             
             // Strategy 2: Word boundary match (matches whole words only)
             if (!$matchedReply) {
+                logger("[QUICK_REPLY] Strategy 2: Word boundary match");
                 foreach ($allQuickReplies as $qr) {
                     $shortcut = trim($qr->shortcut);
                     $shortcutLower = strtolower(ltrim($shortcut, '/'));
