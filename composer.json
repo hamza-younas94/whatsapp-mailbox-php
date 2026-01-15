@@ -1,6 +1,6 @@
 {
-    "name": "whatsapp/mailbox",
-    "description": "WhatsApp Business API Mailbox System",
+    "name": "superwhatsapp/mailbox",
+    "description": "SuperWhatsApp Mailbox - Business Messaging System",
     "type": "project",
     "require": {
         "php": ">=7.4",

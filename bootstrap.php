@@ -89,7 +89,7 @@ $twig = new Environment($loader, [
 ]);
 
 // Add global variables to Twig
-$twig->addGlobal('app_name', env('APP_NAME', 'WhatsApp Mailbox'));
+$twig->addGlobal('app_name', env('APP_NAME', 'SuperWhatsApp Mailbox'));
 $twig->addGlobal('app_url', env('APP_URL', ''));
 
 // Make Twig available globally

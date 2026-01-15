@@ -1,18 +1,18 @@
 <?php
 // Database Configuration
 define('DB_HOST', 'localhost'); // Usually 'localhost' on shared hosting
-define('DB_NAME', 'whatsapp_mailbox'); // Your database name
+define('DB_NAME', 'messagehub_crm'); // Your database name
 define('DB_USER', 'your_db_username'); // Your database username
 define('DB_PASS', 'your_db_password'); // Your database password
 
-// WhatsApp API Configuration
+// Business Messaging API Configuration (Meta/Facebook Business Platform)
 // Get these from your Facebook Developer Console
-define('WHATSAPP_ACCESS_TOKEN', 'YOUR_ACCESS_TOKEN_HERE');
-define('WHATSAPP_PHONE_NUMBER_ID', 'YOUR_PHONE_NUMBER_ID_HERE');
+define('API_ACCESS_TOKEN', 'YOUR_ACCESS_TOKEN_HERE');
+define('API_PHONE_NUMBER_ID', 'YOUR_PHONE_NUMBER_ID_HERE');
 define('WEBHOOK_VERIFY_TOKEN', 'YOUR_VERIFY_TOKEN_HERE'); // You create this token
 
 // Base URLs
-define('WHATSAPP_API_URL', 'https://graph.facebook.com/v18.0');
+define('API_BASE_URL', 'https://graph.facebook.com/v18.0');
 define('BASE_URL', 'https://yourdomain.com'); // Your Namecheap domain
 
 // Timezone
