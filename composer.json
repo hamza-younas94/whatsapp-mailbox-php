@@ -1,6 +1,6 @@
 {
-    "name": "superwhatsapp/mailbox",
-    "description": "SuperWhatsApp Mailbox - Business Messaging System",
+    "name": "chatflow/crm",
+    "description": "ChatFlow CRM - Professional Business Messaging Platform",
     "type": "project",
     "require": {
         "php": ">=7.4",
