@@ -89,7 +89,7 @@ $twig = new Environment($loader, [
 ]);
 
 // Add global variables to Twig
-$twig->addGlobal('app_name', env('APP_NAME', 'MessageHubilBox'));
+$twig->addGlobal('app_name', env('APP_NAME', 'MessageHub'));
 $twig->addGlobal('app_url', env('APP_URL', ''));
 
 // Make Twig available globally

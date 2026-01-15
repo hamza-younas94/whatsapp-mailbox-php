@@ -1,6 +1,6 @@
 {
-    "name": "messagehubilbox/app",
-    "description": "MessageHubilBox - Professional Business Messaging Platform",
+    "name": "messagehub/app",
+    "description": "MessageHub - Professional Business Messaging Platform",
     "type": "project",
     "require": {
         "php": ">=7.4",
