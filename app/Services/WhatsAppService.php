@@ -726,6 +726,7 @@ class WhatsAppService
     
     /**
      * Check incoming message for quick reply shortcuts and auto-respond
+     * Enhanced with better matching, rate limiting, and error handling
      */
     private function checkAndSendQuickReply($messageBody, $contact, $phoneNumber)
     {
@@ -734,7 +735,13 @@ class WhatsAppService
             
             // Trim and normalize the message
             $messageBody = trim($messageBody);
+            if (empty($messageBody)) {
+                logger("[QUICK_REPLY] Empty message, skipping");
+                return;
+            }
+            
             $searchText = strtolower($messageBody);
+            $originalText = $messageBody;
             
             // Check for IP address command (dcmb ip <IP>)
             if (preg_match('/^dcmb\s+ip\s+([0-9a-fA-F:\.]+)$/i', $messageBody, $matches)) {
@@ -806,62 +813,115 @@ class WhatsAppService
                 }
             }
             
-            // Fuzzy matching: Find quick replies that match the message
-            logger("[QUICK_REPLY] Starting fuzzy search for message: {$searchText}");
-            
-            // Get all active quick replies
-            $allQuickReplies = \App\Models\QuickReply::where('is_active', true)->get();
-            $quickReply = null;
-            
-            // Try exact match first (with or without /)
-            foreach ($allQuickReplies as $qr) {
-                $qrShortcut = strtolower(trim($qr->shortcut));
-                $qrShortcutNoSlash = ltrim($qrShortcut, '/');
+            // Rate limiting: Check if we sent a reply to this contact recently (within last 30 seconds)
+            $recentReply = Message::where('contact_id', $contact->id)
+                ->where('direction', 'outgoing')
+                ->where('message_body', 'like', '%[AUTO-REPLY]%')
+                ->where('timestamp', '>', now()->subSeconds(30))
+                ->exists();
                 
-                if ($searchText === $qrShortcut || $searchText === $qrShortcutNoSlash) {
-                    $quickReply = $qr;
-                    logger("[QUICK_REPLY] ✅ Exact match found: {$qr->shortcut}");
+            if ($recentReply) {
+                logger("[QUICK_REPLY] Rate limit: Recent auto-reply sent, skipping to prevent spam");
+                return;
+            }
+            
+            // Get all active quick replies, ordered by priority (if exists) or usage count
+            $allQuickReplies = \App\Models\QuickReply::where('is_active', true)
+                ->orderBy('usage_count', 'desc') // Most used first
+                ->get();
+            
+            if ($allQuickReplies->isEmpty()) {
+                logger("[QUICK_REPLY] No active quick replies found");
+                return;
+            }
+            
+            $matchedReply = null;
+            $matchType = null;
+            
+            // Strategy 1: Exact match (highest priority)
+            foreach ($allQuickReplies as $qr) {
+                $shortcut = trim($qr->shortcut);
+                $shortcutLower = strtolower($shortcut);
+                $shortcutNoSlash = ltrim($shortcutLower, '/');
+                
+                // Exact match (case-insensitive, with or without leading slash)
+                if ($searchText === $shortcutLower || $searchText === $shortcutNoSlash) {
+                    $matchedReply = $qr;
+                    $matchType = 'exact';
+                    logger("[QUICK_REPLY] ✅ Exact match: '{$shortcut}'");
                     break;
                 }
             }
             
-            // If no exact match, try fuzzy matching (keyword appears anywhere in message)
-            if (!$quickReply) {
+            // Strategy 2: Word boundary match (matches whole words only)
+            if (!$matchedReply) {
                 foreach ($allQuickReplies as $qr) {
-                    $qrShortcut = strtolower(ltrim(trim($qr->shortcut), '/'));
+                    $shortcut = trim($qr->shortcut);
+                    $shortcutLower = strtolower(ltrim($shortcut, '/'));
                     
-                    // Check if the shortcut keyword appears in the message
-                    if (strpos($searchText, $qrShortcut) !== false) {
-                        $quickReply = $qr;
-                        logger("[QUICK_REPLY] ✅ Fuzzy match found: {$qr->shortcut} in message");
+                    // Match whole word (word boundary)
+                    $pattern = '/\b' . preg_quote($shortcutLower, '/') . '\b/i';
+                    if (preg_match($pattern, $searchText)) {
+                        $matchedReply = $qr;
+                        $matchType = 'word_boundary';
+                        logger("[QUICK_REPLY] ✅ Word boundary match: '{$shortcut}'");
                         break;
                     }
                 }
             }
             
-            logger("[QUICK_REPLY] Final result: " . ($quickReply ? "FOUND - {$quickReply->shortcut}" : "NOT FOUND"));
+            // Strategy 3: Starts with match
+            if (!$matchedReply) {
+                foreach ($allQuickReplies as $qr) {
+                    $shortcut = trim($qr->shortcut);
+                    $shortcutLower = strtolower(ltrim($shortcut, '/'));
+                    
+                    if (strpos($searchText, $shortcutLower) === 0) {
+                        $matchedReply = $qr;
+                        $matchType = 'starts_with';
+                        logger("[QUICK_REPLY] ✅ Starts with match: '{$shortcut}'");
+                        break;
+                    }
+                }
+            }
             
-            if ($quickReply) {
-                logger("[QUICK_REPLY] Match found: " . $quickReply->title);
+            // Strategy 4: Contains match (fuzzy - lowest priority)
+            if (!$matchedReply) {
+                foreach ($allQuickReplies as $qr) {
+                    $shortcut = trim($qr->shortcut);
+                    $shortcutLower = strtolower(ltrim($shortcut, '/'));
+                    
+                    if (strpos($searchText, $shortcutLower) !== false) {
+                        $matchedReply = $qr;
+                        $matchType = 'contains';
+                        logger("[QUICK_REPLY] ✅ Contains match: '{$shortcut}'");
+                        break;
+                    }
+                }
+            }
+            
+            if ($matchedReply) {
+                logger("[QUICK_REPLY] Match found: '{$matchedReply->title}' (Type: {$matchType})");
                 
-                // Send the quick reply message
-                $response = $this->sendTextMessage($phoneNumber, $quickReply->message);
+                // Process message with variables
+                $replyMessage = $this->processQuickReplyMessage($matchedReply->message, $contact, $originalText);
                 
-                logger("[QUICK_REPLY] Send response: " . json_encode($response));
+                // Send the quick reply message with retry logic
+                $response = $this->sendQuickReplyWithRetry($phoneNumber, $replyMessage, 2);
                 
                 if ($response['success']) {
                     // Increment usage count
-                    $quickReply->increment('usage_count');
-                    logger("[QUICK_REPLY] ✅ Sent successfully, usage count: " . $quickReply->usage_count);
+                    $matchedReply->increment('usage_count');
+                    logger("[QUICK_REPLY] ✅ Sent successfully, usage count: " . $matchedReply->usage_count);
                     
-                    // Save the outgoing message to database
+                    // Save the outgoing message to database with auto-reply marker
                     Message::create([
                         'contact_id' => $contact->id,
                         'phone_number' => $phoneNumber,
                         'message_id' => $response['message_id'],
                         'message_type' => 'text',
                         'direction' => 'outgoing',
-                        'message_body' => $quickReply->message,
+                        'message_body' => '[AUTO-REPLY] ' . $replyMessage,
                         'timestamp' => now(),
                         'status' => 'sent',
                         'is_read' => true
@@ -870,12 +930,68 @@ class WhatsAppService
                     logger("[QUICK_REPLY] ❌ Failed to send: " . ($response['error'] ?? 'Unknown error'), 'error');
                 }
             } else {
-                logger("[QUICK_REPLY] No active quick reply found for: {$shortcut}");
+                logger("[QUICK_REPLY] No match found for message: " . substr($searchText, 0, 50));
             }
         } catch (\Exception $e) {
             logger("[QUICK_REPLY ERROR] " . $e->getMessage(), 'error');
             logger("[QUICK_REPLY ERROR] Stack: " . $e->getTraceAsString(), 'error');
         }
+    }
+    
+    /**
+     * Process quick reply message with variables
+     */
+    private function processQuickReplyMessage($message, $contact, $originalMessage = '')
+    {
+        // Replace variables in message
+        $replacements = [
+            '{{name}}' => $contact->name,
+            '{{contact_name}}' => $contact->name,
+            '{{phone}}' => $contact->phone_number,
+            '{{phone_number}}' => $contact->phone_number,
+            '{{message}}' => $originalMessage,
+            '{{user_message}}' => $originalMessage,
+        ];
+        
+        $processedMessage = $message;
+        foreach ($replacements as $placeholder => $value) {
+            $processedMessage = str_replace($placeholder, $value, $processedMessage);
+        }
+        
+        return $processedMessage;
+    }
+    
+    /**
+     * Send quick reply with retry logic
+     */
+    private function sendQuickReplyWithRetry($phoneNumber, $message, $maxRetries = 2)
+    {
+        $attempt = 0;
+        $lastError = null;
+        
+        while ($attempt < $maxRetries) {
+            $attempt++;
+            logger("[QUICK_REPLY] Sending attempt {$attempt}/{$maxRetries}");
+            
+            $response = $this->sendTextMessage($phoneNumber, $message);
+            
+            if ($response['success']) {
+                return $response;
+            }
+            
+            $lastError = $response['error'] ?? 'Unknown error';
+            logger("[QUICK_REPLY] Attempt {$attempt} failed: {$lastError}");
+            
+            // Wait before retry (exponential backoff)
+            if ($attempt < $maxRetries) {
+                sleep(pow(2, $attempt - 1)); // 1s, 2s, 4s...
+            }
+        }
+        
+        return [
+            'success' => false,
+            'error' => "Failed after {$maxRetries} attempts: {$lastError}"
+        ];
     }
     
     /**
