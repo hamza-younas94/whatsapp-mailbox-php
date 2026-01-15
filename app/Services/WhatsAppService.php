@@ -818,13 +818,22 @@ class WhatsAppService
             logger("[QUICK_REPLY] Passed IP command check");
             
             // Rate limiting: Check if we sent a reply to this contact recently (within last 30 seconds)
-            $recentReply = Message::where('contact_id', $contact->id)
+            $cutoffTime = now()->subSeconds(30);
+            logger("[QUICK_REPLY] Checking rate limit - Contact ID: {$contact->id}, Cutoff: " . $cutoffTime->toDateTimeString());
+            
+            $recentReplyQuery = Message::where('contact_id', $contact->id)
                 ->where('direction', 'outgoing')
                 ->where('message_body', 'like', '%[AUTO-REPLY]%')
-                ->where('timestamp', '>', now()->subSeconds(30))
-                ->exists();
-                
-            if ($recentReply) {
+                ->where('timestamp', '>', $cutoffTime);
+            
+            $recentReplyCount = $recentReplyQuery->count();
+            logger("[QUICK_REPLY] Found {$recentReplyCount} recent auto-replies in last 30 seconds");
+            
+            if ($recentReplyCount > 0) {
+                $recentMessages = $recentReplyQuery->limit(3)->get(['message_body', 'timestamp']);
+                foreach ($recentMessages as $msg) {
+                    logger("[QUICK_REPLY] Recent: " . substr($msg->message_body, 0, 50) . " at " . $msg->timestamp);
+                }
                 logger("[QUICK_REPLY] Rate limit: Recent auto-reply sent, skipping to prevent spam");
                 return;
             }
