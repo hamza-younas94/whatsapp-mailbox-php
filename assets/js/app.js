@@ -1598,6 +1598,124 @@ window.onclick = function(event) {
         closeTemplateModal();
     }
 }
+
+/**
+ * Validate message input
+ */
+function validateMessageInput() {
+    const input = document.getElementById('messageInput');
+    const message = input ? input.value.trim() : '';
+    const validationMsg = document.getElementById('validationMessage');
+    const form = document.getElementById('messageForm');
+    
+    // Check if there's a message or media selected
+    if (!message && !selectedMediaFile) {
+        if (validationMsg) {
+            validationMsg.textContent = 'Please enter a message or select media';
+            validationMsg.classList.add('show', 'error');
+            validationMsg.classList.remove('success', 'warning', 'info');
+        }
+        if (form) {
+            form.classList.add('error');
+            form.classList.remove('success', 'warning');
+        }
+        return false;
+    }
+    
+    // Check message length
+    if (message && message.length > 4096) {
+        if (validationMsg) {
+            validationMsg.textContent = `Message too long (${message.length}/4096 characters)`;
+            validationMsg.classList.add('show', 'error');
+            validationMsg.classList.remove('success', 'warning', 'info');
+        }
+        if (form) {
+            form.classList.add('error');
+            form.classList.remove('success', 'warning');
+        }
+        return false;
+    }
+    
+    // Check if contact is selected
+    if (!currentContactId) {
+        if (validationMsg) {
+            validationMsg.textContent = 'Please select a contact first';
+            validationMsg.classList.add('show', 'error');
+            validationMsg.classList.remove('success', 'warning', 'info');
+        }
+        if (form) {
+            form.classList.add('error');
+            form.classList.remove('success', 'warning');
+        }
+        return false;
+    }
+    
+    // Validation passed
+    if (form) {
+        form.classList.remove('error', 'warning');
+        form.classList.add('success');
+    }
+    if (validationMsg) {
+        validationMsg.classList.remove('show');
+    }
+    return true;
+}
+
+/**
+ * Real-time message validation
+ */
+function validateMessageInputRealTime() {
+    const input = document.getElementById('messageInput');
+    const message = input ? input.value.trim() : '';
+    const validationMsg = document.getElementById('validationMessage');
+    const form = document.getElementById('messageForm');
+    
+    // Clear validation message while typing
+    if (message.length < 4096 && !validationMsg?.classList.contains('error')) {
+        if (validationMsg) {
+            validationMsg.classList.remove('show');
+        }
+        return true;
+    }
+    
+    // Check for message too long
+    if (message.length > 4096) {
+        if (validationMsg) {
+            validationMsg.textContent = `Message too long (${message.length}/4096 characters)`;
+            validationMsg.classList.add('show', 'warning');
+            validationMsg.classList.remove('error', 'success', 'info');
+        }
+        if (form) {
+            form.classList.add('warning');
+            form.classList.remove('error', 'success');
+        }
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * Update character counter for message input
+ */
+function updateCharacterCounter() {
+    const input = document.getElementById('messageInput');
+    const counter = document.getElementById('characterCounter');
+    
+    if (input && counter) {
+        const count = input.value.length;
+        counter.textContent = `${count}/4096`;
+        
+        if (count > 4000) {
+            counter.style.color = '#e74c3c';
+        } else if (count > 3000) {
+            counter.style.color = '#f39c12';
+        } else {
+            counter.style.color = 'var(--text-secondary)';
+        }
+    }
+}
+
 /**
  * Media Upload Functions
  */
