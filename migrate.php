@@ -55,9 +55,21 @@ class MigrationRunner
                     echo "⚙️  Running: {$migration}...\n";
                 }
                 
-                require_once $this->migrationsPath . '/' . $migration;
+                // Load migration file (returns array with 'up' and 'down' functions)
+                $migrationData = require $this->migrationsPath . '/' . $migration;
                 
-                // Record migration
+                // Handle both array format and object format
+                if (is_array($migrationData) && isset($migrationData['up'])) {
+                    // Migration returns array: ['up' => function(), 'down' => function()]
+                    $migrationData['up']();
+                } elseif (is_object($migrationData) && method_exists($migrationData, 'up')) {
+                    // Migration returns object with up() method
+                    $migrationData->up();
+                } else {
+                    throw new Exception("Invalid migration format. Migration must return array with 'up' key or object with up() method.");
+                }
+                
+                // Record migration as completed
                 DB::table('migrations')->insert([
                     'migration' => $migration,
                     'batch' => $batch,

@@ -70,13 +70,18 @@ $capsule->setAsGlobal();
 $capsule->bootEloquent();
 
 // Auto-run migrations on bootstrap (only in web requests, not CLI)
+// This ensures database schema is always up-to-date when the app loads
 if (php_sapi_name() !== 'cli' && file_exists(__DIR__ . '/migrate.php')) {
     try {
         require_once __DIR__ . '/migrate.php';
         $migrationRunner = new MigrationRunner();
-        $migrationRunner->run(true); // Silent mode - no output
+        $migrationRunner->run(true); // Silent mode - no output (logs errors only)
     } catch (Exception $e) {
-        error_log("Migration error: " . $e->getMessage());
+        // Log migration errors but don't break the app
+        error_log("Migration auto-run error: " . $e->getMessage());
+        if (env('APP_DEBUG', false)) {
+            error_log("Migration stack trace: " . $e->getTraceAsString());
+        }
     }
 }
 
