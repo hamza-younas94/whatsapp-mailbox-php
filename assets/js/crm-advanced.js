@@ -709,7 +709,7 @@ async function renderDealsTab(contact) {
                     <i class="fas fa-plus-circle"></i>
                     <h3>Add New Deal</h3>
                 </div>
-                <form id="addDealFormElement" class="needs-validation" novalidate>
+                <form id="addDealFormElement" class="needs-validation" onsubmit="saveDeal(event, ${contact.id})" novalidate>
                     <div class="mb-3">
                         <input type="text" id="dealName" name="deal_name" class="form-control" placeholder="Deal Name (e.g., Website Package)" required>
                         <div class="invalid-feedback">Please enter a deal name (min 2 characters)</div>
