@@ -3,7 +3,9 @@
  * Provides real-time and submit-time validation with beautiful UI feedback
  */
 
-class FormValidator {
+// Prevent redeclaration if script is loaded multiple times
+if (typeof FormValidator === 'undefined') {
+    class FormValidator {
     constructor(formId, rules = {}) {
         this.form = document.getElementById(formId);
         this.rules = rules;
@@ -94,7 +96,18 @@ class FormValidator {
     validateField(input) {
         const fieldName = input.name;
         const value = this.getValue(input);
-        const fieldRules = this.rules[fieldName] || [];
+        
+        // Ensure fieldRules is always an array
+        let fieldRules = this.rules[fieldName];
+        if (!fieldRules) {
+            fieldRules = [];
+        } else if (typeof fieldRules === 'string') {
+            // Convert string rule to array
+            fieldRules = [fieldRules];
+        } else if (!Array.isArray(fieldRules)) {
+            // Convert non-array to array
+            fieldRules = [fieldRules];
+        }
         
         // Clear previous error
         delete this.errors[fieldName];
@@ -351,8 +364,9 @@ class FormValidator {
         
         return data;
     }
-}
+    }
 
-// Export for use in other files
-window.FormValidator = FormValidator;
+    // Export for use in other files
+    window.FormValidator = FormValidator;
+}
 
