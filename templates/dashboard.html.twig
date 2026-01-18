@@ -176,14 +176,9 @@
     </div>
 </div>
 
-<!-- CRM Modal (kept for backward compatibility) -->
-<div id="crmModal" class="modal" style="display: none;">
-    <div class="modal-content" id="crmModalContent">
-        <!-- Content loaded by JavaScript -->
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="assets/js/crm-advanced.js?v={{ "now"|date("U") }}"></script>
 <script src="assets/js/app.js?v={{ "now"|date("U") }}"></script>
 {% endblock %}
