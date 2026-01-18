@@ -127,6 +127,13 @@ require_once __DIR__ . '/includes/header.php';
         <div>
             <h1>🔄 Workflows</h1>
             <p>Automate actions based on triggers and conditions</p>
+            <?php if ($workflows->isEmpty()): ?>
+                <div class="alert alert-info mt-2 mb-0" style="max-width: 800px;">
+                    <i class="fas fa-lightbulb"></i> <strong>Get Started:</strong> Workflows automatically perform actions when specific triggers occur.
+                    Example: Send a welcome message when a new message is received.
+                    <br><small class="mt-1 d-block"><strong>Or run:</strong> <code>php seed_default_data.php</code> to create sample workflows</small>
+                </div>
+            <?php endif; ?>
         </div>
         <button class="btn btn-primary" onclick="openWorkflowModal()">
             <i class="fas fa-plus"></i> New Workflow

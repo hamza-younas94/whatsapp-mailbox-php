@@ -146,12 +146,34 @@ require_once __DIR__ . '/includes/header.php';
     <div class="page-header">
         <div>
             <h1>🔗 Webhook Manager</h1>
-            <p>Configure webhooks to receive real-time notifications</p>
+            <p>Configure <strong>outgoing</strong> webhooks to send notifications to external systems</p>
+            <div class="alert alert-info mt-2 mb-0" style="max-width: 800px;">
+                <i class="fas fa-info-circle"></i> <strong>Note:</strong> This page manages <strong>outgoing</strong> webhooks (your system → external URLs).
+                For <strong>incoming</strong> WhatsApp webhooks (Meta → your system), see <code>webhook.php</code>.
+                Outgoing webhooks are automatically triggered by the system (e.g., when messages are received).
+            </div>
         </div>
         <button class="btn btn-primary" onclick="openWebhookModal()">
             <i class="fas fa-plus"></i> New Webhook
         </button>
     </div>
+    
+    <?php if ($webhooks->isEmpty()): ?>
+        <div class="alert alert-warning">
+            <h5><i class="fas fa-database"></i> No webhooks configured</h5>
+            <p class="mb-2">You don't have any webhooks yet. Create one to start receiving notifications about system events.</p>
+            <p class="mb-2"><strong>Quick Start:</strong></p>
+            <ol class="mb-0">
+                <li>Click "New Webhook" above</li>
+                <li>Enter your webhook URL (e.g., https://your-domain.com/webhook-handler)</li>
+                <li>Select events to listen for (e.g., message.received, contact.created)</li>
+                <li>Activate the webhook</li>
+            </ol>
+            <p class="mt-3 mb-0">
+                <small><strong>Or run:</strong> <code>php seed_default_data.php</code> to create sample webhooks</small>
+            </p>
+        </div>
+    <?php endif; ?>
 
     <!-- Webhooks Table -->
     <div class="card">

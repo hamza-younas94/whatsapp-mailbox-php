@@ -150,6 +150,13 @@ require_once __DIR__ . '/includes/header.php';
         <div>
             <h1>💧 Drip Campaigns</h1>
             <p>Create multi-step message sequences with delays</p>
+            <?php if ($campaigns->isEmpty()): ?>
+                <div class="alert alert-info mt-2 mb-0" style="max-width: 800px;">
+                    <i class="fas fa-lightbulb"></i> <strong>Get Started:</strong> Drip campaigns send a series of messages over time.
+                    Example: Welcome message → Product overview (1 hour later) → Get started guide (24 hours later).
+                    <br><small class="mt-1 d-block"><strong>Or run:</strong> <code>php seed_default_data.php</code> to create sample campaigns</small>
+                </div>
+            <?php endif; ?>
         </div>
         <button class="btn btn-primary" onclick="openCampaignModal()">
             <i class="fas fa-plus"></i> New Campaign

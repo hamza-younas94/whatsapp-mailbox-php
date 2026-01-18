@@ -107,6 +107,13 @@ require_once __DIR__ . '/includes/header.php';
         <div>
             <h1>📝 Message Templates</h1>
             <p>Manage WhatsApp message templates with variables</p>
+            <?php if ($templates->isEmpty()): ?>
+                <div class="alert alert-info mt-2 mb-0" style="max-width: 800px;">
+                    <i class="fas fa-lightbulb"></i> <strong>Get Started:</strong> Message templates are pre-approved messages from WhatsApp Business Manager.
+                    Use variables like {{1}}, {{2}} for dynamic content.
+                    <br><small class="mt-1 d-block"><strong>Or run:</strong> <code>php seed_default_data.php</code> to create sample templates</small>
+                </div>
+            <?php endif; ?>
         </div>
         <button class="btn btn-primary" onclick="openTemplateModal()">
             <i class="fas fa-plus"></i> New Template
