@@ -280,13 +280,16 @@ function renderOverviewTab(contact) {
             </div>
             <form id="companyInfoForm" class="needs-validation" novalidate>
                 <div class="mb-3">
-                    <input type="text" id="crmCompany" name="company_name" class="crm-input form-control" placeholder="Company Name" value="${contact.company_name || ''}">
+                    <input type="text" id="crmCompany" name="company_name" class="crm-input form-control" placeholder="Company Name" value="${contact.company_name || ''}" maxlength="255">
+                    <div class="invalid-feedback">Company name must be less than 255 characters</div>
                 </div>
                 <div class="mb-3">
-                    <input type="email" id="crmEmail" name="email" class="crm-input form-control" placeholder="Email" value="${contact.email || ''}">
+                    <input type="email" id="crmEmail" name="email" class="crm-input form-control" placeholder="Email" value="${contact.email || ''}" maxlength="255">
+                    <div class="invalid-feedback">Please enter a valid email address</div>
                 </div>
                 <div class="mb-3">
-                    <input type="text" id="crmCity" name="city" class="crm-input form-control" placeholder="City" value="${contact.city || ''}">
+                    <input type="text" id="crmCity" name="city" class="crm-input form-control" placeholder="City" value="${contact.city || ''}" maxlength="100">
+                    <div class="invalid-feedback">City must be less than 100 characters</div>
                 </div>
                 <button type="button" onclick="updateCompanyInfo(${contact.id})" class="btn-primary">Update Info</button>
             </form>
@@ -413,12 +416,26 @@ function hideAddDealForm() {
 async function saveDeal(event, contactId) {
     event.preventDefault();
     
+    const form = event.target;
+    const validator = new FormValidator(form);
+    
+    const rules = {
+        deal_name: { required: true, minLength: 2, maxLength: 255 },
+        amount: { required: true, number: true, min: 0 },
+        status: { required: true },
+        deal_date: { required: true }
+    };
+    
+    if (!validator.validate(rules)) {
+        return;
+    }
+    
     const dealData = {
-        deal_name: document.getElementById('dealName').value,
+        deal_name: document.getElementById('dealName').value.trim(),
         amount: parseFloat(document.getElementById('dealAmount').value),
         status: document.getElementById('dealStatus').value,
         deal_date: document.getElementById('dealDate').value,
-        notes: document.getElementById('dealNotes').value
+        notes: document.getElementById('dealNotes').value.trim()
     };
     
     try {
@@ -434,11 +451,18 @@ async function saveDeal(event, contactId) {
             if (typeof showToast === 'function') {
                 showToast('Deal added successfully!', 'success');
             }
+            form.reset();
+            validator.reset();
             hideAddDealForm();
             switchCrmTab('deals');
         } else {
-            if (typeof showToast === 'function') {
-                showToast('Failed to add deal: ' + (result.error || 'Unknown error'), 'error');
+            // Handle validation errors from backend
+            if (result.errors) {
+                validator.showBackendErrors(result.errors);
+            } else {
+                if (typeof showToast === 'function') {
+                    showToast(result.error || 'Failed to add deal', 'error');
+                }
             }
         }
     } catch (error) {
@@ -520,34 +544,37 @@ async function renderTasksTab(contact) {
                     <i class="fas fa-plus-circle"></i>
                     <h3>Create Task</h3>
                 </div>
-                <form id="taskForm" onsubmit="createTask(event, ${contact.id})">
+                <form id="taskForm" class="needs-validation" novalidate>
                     <div class="mb-3">
-                        <input type="text" id="taskTitle" class="form-control" placeholder="Task title" required>
+                        <input type="text" id="taskTitle" name="title" class="form-control" placeholder="Task title" required>
+                        <div class="invalid-feedback">Please enter a task title (min 2 characters)</div>
                     </div>
                     <div class="mb-3">
-                        <textarea id="taskDescription" class="form-control" placeholder="Description" rows="2"></textarea>
+                        <textarea id="taskDescription" name="description" class="form-control" placeholder="Description" rows="2"></textarea>
                     </div>
                     <div class="row mb-3">
                         <div class="col-6">
-                            <select id="taskType" class="form-select">
+                            <select id="taskType" name="type" class="form-select" required>
                                 <option value="follow_up">Follow Up</option>
                                 <option value="call">Call</option>
                                 <option value="meeting">Meeting</option>
                                 <option value="email">Email</option>
                                 <option value="other">Other</option>
                             </select>
+                            <div class="invalid-feedback">Please select a task type</div>
                         </div>
                         <div class="col-6">
-                            <select id="taskPriority" class="form-select">
+                            <select id="taskPriority" name="priority" class="form-select" required>
                                 <option value="low">Low</option>
                                 <option value="medium" selected>Medium</option>
                                 <option value="high">High</option>
                                 <option value="urgent">Urgent</option>
                             </select>
+                            <div class="invalid-feedback">Please select a priority</div>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <input type="datetime-local" id="taskDueDate" class="form-control">
+                        <input type="datetime-local" id="taskDueDate" name="due_date" class="form-control">
                     </div>
                     <button type="submit" class="btn-primary">Create Task</button>
                 </form>
@@ -602,17 +629,19 @@ async function renderNotesTab(contact) {
                 <i class="fas fa-plus-circle"></i>
                 <h3>Add Note</h3>
             </div>
-            <form id="addNoteForm" onsubmit="addNote(event, ${contact.id})">
+            <form id="addNoteForm" class="needs-validation" onsubmit="addNote(event, ${contact.id})" novalidate>
                 <div class="mb-3">
-                    <textarea id="crmNote" class="form-control" placeholder="Type your note here..." rows="3" required></textarea>
+                    <textarea id="crmNote" name="content" class="form-control" placeholder="Type your note here..." rows="3" required></textarea>
+                    <div class="invalid-feedback">Please enter a note (min 2 characters)</div>
                 </div>
                 <div class="mb-3">
-                    <select id="crmNoteType" class="form-select">
+                    <select id="crmNoteType" name="type" class="form-select" required>
                         <option value="general">General</option>
                         <option value="call">Call</option>
                         <option value="meeting">Meeting</option>
                         <option value="email">Email</option>
                     </select>
+                    <div class="invalid-feedback">Please select a note type</div>
                 </div>
                 <button type="submit" class="btn-primary">Add Note</button>
             </form>
@@ -674,6 +703,42 @@ async function renderDealsTab(contact) {
                 </div>
                 <button onclick="showAddDealForm(${contact.id})" class="btn-primary">+ Add New Deal</button>
             </div>
+            
+            <div class="crm-section" id="addDealForm" style="display: none;">
+                <div class="crm-section-header">
+                    <i class="fas fa-plus-circle"></i>
+                    <h3>Add New Deal</h3>
+                </div>
+                <form id="addDealFormElement" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <input type="text" id="dealName" name="deal_name" class="form-control" placeholder="Deal Name (e.g., Website Package)" required>
+                        <div class="invalid-feedback">Please enter a deal name (min 2 characters)</div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="number" id="dealAmount" name="amount" class="form-control" placeholder="Amount" step="0.01" min="0" required>
+                        <div class="invalid-feedback">Please enter a valid amount (min 0)</div>
+                    </div>
+                    <div class="mb-3">
+                        <select id="dealStatus" name="status" class="form-select" required>
+                            <option value="pending">Pending</option>
+                            <option value="won">Won</option>
+                            <option value="lost">Lost</option>
+                        </select>
+                        <div class="invalid-feedback">Please select a status</div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="date" id="dealDate" name="deal_date" class="form-control" required>
+                        <div class="invalid-feedback">Please select a date</div>
+                    </div>
+                    <div class="mb-3">
+                        <textarea id="dealNotes" name="notes" class="form-control" placeholder="Deal notes..." rows="2"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn-primary" style="flex: 1;">Save Deal</button>
+                        <button type="button" onclick="hideAddDealForm()" class="btn-secondary" style="flex: 1;">Cancel</button>
+                    </div>
+                </form>
+            </div>
         `;
     } catch (error) {
         console.error('Error loading deals:', error);
@@ -700,13 +765,26 @@ function getTimelineIcon(type) {
 async function createTask(event, contactId) {
     event.preventDefault();
     
+    const form = event.target;
+    const validator = new FormValidator(form);
+    
+    const rules = {
+        title: { required: true, minLength: 2, maxLength: 255 },
+        type: { required: true },
+        priority: { required: true }
+    };
+    
+    if (!validator.validate(rules)) {
+        return;
+    }
+    
     const taskData = {
-        contact_id: contactId,
-        title: document.getElementById('taskTitle').value,
-        description: document.getElementById('taskDescription').value,
+        contact_id: parseInt(contactId),
+        title: document.getElementById('taskTitle').value.trim(),
+        description: document.getElementById('taskDescription').value.trim(),
         type: document.getElementById('taskType').value,
         priority: document.getElementById('taskPriority').value,
-        due_date: document.getElementById('taskDueDate').value
+        due_date: document.getElementById('taskDueDate').value || null
     };
     
     try {
@@ -720,9 +798,18 @@ async function createTask(event, contactId) {
         
         if (response.ok && result.success) {
             showToast('Task created!', 'success');
+            // Reset form
+            form.reset();
+            validator.reset();
+            // Reload tasks tab
             switchCrmTab('tasks');
         } else {
-            showToast('Failed to create task', 'error');
+            // Handle validation errors from backend
+            if (result.errors) {
+                validator.showBackendErrors(result.errors);
+            } else {
+                showToast(result.error || 'Failed to create task', 'error');
+            }
         }
     } catch (error) {
         console.error('Error creating task:', error);
@@ -776,8 +863,20 @@ async function deleteTask(taskId) {
 async function addNote(event, contactId) {
     event.preventDefault();
     
+    const form = event.target;
+    const validator = new FormValidator(form);
+    
+    const rules = {
+        content: { required: true, minLength: 2 },
+        type: { required: true }
+    };
+    
+    if (!validator.validate(rules)) {
+        return;
+    }
+    
     const noteData = {
-        content: document.getElementById('crmNote').value,
+        content: document.getElementById('crmNote').value.trim(),
         type: document.getElementById('crmNoteType').value
     };
     
@@ -792,10 +891,16 @@ async function addNote(event, contactId) {
         
         if (response.ok && result.success) {
             showToast('Note added!', 'success');
-            document.getElementById('crmNote').value = '';
+            form.reset();
+            validator.reset();
             switchCrmTab('notes');
         } else {
-            showToast('Failed to add note', 'error');
+            // Handle validation errors from backend
+            if (result.errors) {
+                validator.showBackendErrors(result.errors);
+            } else {
+                showToast(result.error || 'Failed to add note', 'error');
+            }
         }
     } catch (error) {
         console.error('Error adding note:', error);

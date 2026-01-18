@@ -1157,7 +1157,7 @@ function createTask() {
     
     $validation = validate([
         'title' => sanitize($input['title'] ?? ''),
-        'contact_id' => $input['contact_id'] ?? null,
+        'contact_id' => isset($input['contact_id']) ? (int)$input['contact_id'] : null,
         'due_date' => $input['due_date'] ?? null
     ], [
         'title' => 'required|min:2|max:255',
