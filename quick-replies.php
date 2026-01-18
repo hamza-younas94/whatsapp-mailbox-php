@@ -410,15 +410,64 @@ require_once __DIR__ . '/includes/header.php';
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <div class="d-flex flex-wrap gap-1" style="max-width: 200px;">
+                                <?php
+                                // Count active features
+                                $featureCount = 0;
+                                $featureList = [];
+                                
+                                if ($hasBusinessHours) {
+                                    $featureCount++;
+                                    $featureList[] = 'Business Hours';
+                                }
+                                if ($hasConditions) {
+                                    $featureCount++;
+                                    $featureList[] = 'Conditions (' . count($reply->conditions) . ')';
+                                }
+                                if ($hasFilters) {
+                                    $featureCount++;
+                                    $featureList[] = 'Contact Filter';
+                                }
+                                if ($reply->allow_groups ?? false) {
+                                    $featureCount++;
+                                    $featureList[] = 'Groups';
+                                }
+                                if (($reply->delay_seconds ?? 0) > 0) {
+                                    $featureCount++;
+                                    $featureList[] = 'Delay (' . $reply->delay_seconds . 's)';
+                                }
+                                if ($hasMedia) {
+                                    $featureCount++;
+                                    $featureList[] = 'Media (' . ucfirst($reply->media_type ?? 'file') . ')';
+                                }
+                                if ($hasSequence) {
+                                    $featureCount++;
+                                    $featureList[] = 'Sequence (' . count($reply->sequence_messages) . ' msgs)';
+                                }
+                                if ($reply->use_regex ?? false) {
+                                    $featureCount++;
+                                    $featureList[] = 'Regex';
+                                }
+                                if (($reply->priority ?? 0) > 0) {
+                                    $featureCount++;
+                                    $featureList[] = 'Priority';
+                                }
+                                if (!empty($reply->shortcuts) && is_array($reply->shortcuts) && count($reply->shortcuts) > 1) {
+                                    $featureCount++;
+                                    $featureList[] = 'Multi-Shortcuts';
+                                }
+                                
+                                $hasAdvancedFeatures = $featureCount > 0;
+                                ?>
+                                
+                                <div class="d-flex flex-wrap gap-1" style="max-width: 250px;">
                                     <?php if ($hasBusinessHours): ?>
-                                        <span class="badge bg-success" style="font-size: 9px;" title="Business hours enabled">
+                                        <span class="badge bg-success" style="font-size: 9px;" title="Business hours: <?php echo date('H:i', strtotime($reply->business_hours_start)); ?> - <?php echo date('H:i', strtotime($reply->business_hours_end)); ?> (<?php echo $reply->timezone; ?>)">
                                             <i class="fas fa-clock"></i> Hours
                                         </span>
                                     <?php endif; ?>
                                     <?php if ($hasConditions): ?>
-                                        <span class="badge bg-warning text-dark" style="font-size: 9px;" title="Conditions: <?php echo count($reply->conditions); ?>">
-                                            <i class="fas fa-filter"></i> Conditions
+                                        <span class="badge bg-warning text-dark" style="font-size: 9px;" title="Conditions: <?php echo count($reply->conditions); ?> rules">
+                                            <i class="fas fa-filter"></i> <?php echo count($reply->conditions); ?> Cond
                                         </span>
                                     <?php endif; ?>
                                     <?php if ($hasFilters): ?>
@@ -427,17 +476,44 @@ require_once __DIR__ . '/includes/header.php';
                                         </span>
                                     <?php endif; ?>
                                     <?php if ($reply->allow_groups ?? false): ?>
-                                        <span class="badge bg-primary" style="font-size: 9px;" title="Works in groups">
+                                        <span class="badge bg-primary" style="font-size: 9px;" title="Works in group messages">
                                             <i class="fas fa-users"></i> Groups
                                         </span>
                                     <?php endif; ?>
                                     <?php if (($reply->delay_seconds ?? 0) > 0): ?>
-                                        <span class="badge bg-secondary" style="font-size: 9px;" title="Delay: <?php echo $reply->delay_seconds; ?>s">
+                                        <span class="badge bg-secondary" style="font-size: 9px;" title="Reply delay: <?php echo $reply->delay_seconds; ?> seconds">
                                             <i class="fas fa-hourglass-half"></i> <?php echo $reply->delay_seconds; ?>s
                                         </span>
                                     <?php endif; ?>
-                                    <?php if (!$hasBusinessHours && !$hasConditions && !$hasFilters && !($reply->allow_groups ?? false) && ($reply->delay_seconds ?? 0) == 0 && !$hasMedia && !$hasSequence): ?>
-                                        <small class="text-muted" style="font-size: 10px;">Basic</small>
+                                    <?php if ($hasMedia): ?>
+                                        <span class="badge bg-purple" style="font-size: 9px;" title="Media: <?php echo ucfirst($reply->media_type ?? 'file'); ?>">
+                                            <i class="fas fa-file-<?php echo $reply->media_type === 'image' ? 'image' : ($reply->media_type === 'video' ? 'video' : 'file'); ?>"></i> Media
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ($hasSequence): ?>
+                                        <span class="badge bg-danger" style="font-size: 9px;" title="Message sequence: <?php echo count($reply->sequence_messages); ?> messages">
+                                            <i class="fas fa-list-ol"></i> <?php echo count($reply->sequence_messages); ?> Seq
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ($reply->use_regex ?? false): ?>
+                                        <span class="badge bg-dark" style="font-size: 9px;" title="Uses regex pattern matching">
+                                            <i class="fas fa-code"></i> Regex
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($reply->shortcuts) && is_array($reply->shortcuts) && count($reply->shortcuts) > 1): ?>
+                                        <span class="badge bg-info" style="font-size: 9px;" title="<?php echo count($reply->shortcuts); ?> shortcuts configured">
+                                            <i class="fas fa-list"></i> <?php echo count($reply->shortcuts); ?> Shortcuts
+                                        </span>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (!$hasAdvancedFeatures): ?>
+                                        <span class="badge bg-light text-muted border" style="font-size: 9px;" title="Basic reply - no advanced features configured">
+                                            <i class="fas fa-info-circle"></i> Basic
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-success" style="font-size: 9px;" title="<?php echo implode(', ', $featureList); ?>">
+                                            <i class="fas fa-star"></i> <?php echo $featureCount; ?> Features
+                                        </span>
                                     <?php endif; ?>
                                 </div>
                             </td>
