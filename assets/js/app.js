@@ -1899,6 +1899,7 @@ function updateCharacterCounter() {
  * Media Upload Functions
  */
 let selectedMediaFile = null;
+let selectedMediaType = null;
 
 function handleFileSelect(event) {
     const file = event.target.files[0];
@@ -1958,6 +1959,17 @@ function handleFileSelect(event) {
     
     selectedMediaFile = file;
     
+    // Determine media type based on file type
+    if (file.type.startsWith('image/')) {
+        selectedMediaType = 'image';
+    } else if (file.type.startsWith('video/')) {
+        selectedMediaType = 'video';
+    } else if (file.type.startsWith('audio/')) {
+        selectedMediaType = 'audio';
+    } else {
+        selectedMediaType = 'document';
+    }
+    
     // Show preview
     const preview = document.getElementById('mediaPreview');
     const previewImage = document.getElementById('mediaPreviewImage');
@@ -2005,6 +2017,7 @@ function handleFileSelect(event) {
 
 function clearMediaSelection() {
     selectedMediaFile = null;
+    selectedMediaType = null;
     document.getElementById('mediaInput').value = '';
     document.getElementById('mediaPreview').style.display = 'none';
     document.getElementById('mediaPreviewImage').innerHTML = '';
