@@ -51,6 +51,9 @@ async function loadCrmData() {
         }
         
         allContacts = await response.json();
+        // Make contacts available globally for advanced CRM modal
+        window.allContacts = allContacts;
+        window.contacts = allContacts;
         updateStats(allContacts);
         renderCrmTable(allContacts);
         
