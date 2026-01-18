@@ -12,6 +12,8 @@ require_once __DIR__ . '/bootstrap.php';
 use App\Models\ScheduledMessage;
 use App\Models\Broadcast;
 use App\Models\BroadcastRecipient;
+use App\Models\DripSubscriber;
+use App\Services\WhatsAppService;
 use GuzzleHttp\Client;
 
 echo "[" . date('Y-m-d H:i:s') . "] Job processor started\n";
@@ -37,6 +39,9 @@ processScheduledMessages($client, $phoneNumberId, $accessToken);
 
 // Process broadcasts
 processBroadcasts($client, $phoneNumberId, $accessToken);
+
+// Process drip campaigns
+processDripCampaigns($phoneNumberId, $accessToken);
 
 echo "[" . date('Y-m-d H:i:s') . "] Job processor completed\n\n";
 
@@ -271,5 +276,59 @@ function scheduleNextRecurrence($originalMsg) {
         ]);
         
         echo "  🔄 Scheduled next recurrence for {$nextScheduledAt}\n";
+    }
+}
+
+/**
+ * Process drip campaigns - send next steps to subscribers
+ */
+function processDripCampaigns($phoneNumberId, $accessToken) {
+    $whatsappService = new WhatsAppService();
+    
+    // Get subscribers whose next_send_at is due
+    $dueSubscribers = DripSubscriber::with(['campaign', 'contact'])
+        ->where('status', 'active')
+        ->where('next_send_at', '<=', now())
+        ->limit(50) // Process 50 at a time
+        ->get();
+    
+    if ($dueSubscribers->isEmpty()) {
+        // Check upcoming sends for better logging
+        $upcomingCount = DripSubscriber::where('status', 'active')
+            ->where('next_send_at', '>', now())
+            ->count();
+        
+        if ($upcomingCount > 0) {
+            $nextSend = DripSubscriber::where('status', 'active')
+                ->where('next_send_at', '>', now())
+                ->orderBy('next_send_at', 'asc')
+                ->first();
+            echo "No drip campaign steps due. Next step at: {$nextSend->next_send_at} ({$upcomingCount} pending)\n";
+        } else {
+            echo "No drip campaign steps due\n";
+        }
+        return;
+    }
+    
+    echo "Processing " . $dueSubscribers->count() . " drip campaign steps\n";
+    
+    foreach ($dueSubscribers as $subscriber) {
+        try {
+            $result = $whatsappService->sendDripCampaignStep($subscriber);
+            
+            if ($result['success']) {
+                if (isset($result['completed']) && $result['completed']) {
+                    echo "  ✅ Campaign completed for {$subscriber->contact->phone_number}\n";
+                } else {
+                    echo "  ✅ Sent step to {$subscriber->contact->phone_number}. Next: {$result['next_send_at']}\n";
+                }
+            } else {
+                echo "  ❌ Failed to send step to {$subscriber->contact->phone_number}: " . ($result['error'] ?? 'Unknown error') . "\n";
+            }
+        } catch (Exception $e) {
+            echo "  ❌ Error processing subscriber {$subscriber->id}: " . $e->getMessage() . "\n";
+        }
+        
+        usleep(500000); // 500ms delay between messages
     }
 }

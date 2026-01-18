@@ -625,6 +625,13 @@ class WhatsAppService
             
             // Apply auto-tagging rules
             $this->applyAutoTagging($messageBody, $contact);
+            
+            // Check and trigger workflows
+            $this->checkAndTriggerWorkflows($contact, [
+                'trigger_type' => 'new_message',
+                'message' => $messageBody,
+                'keyword' => $messageBody
+            ]);
         }
         
         // Trigger webhooks
@@ -1345,5 +1352,344 @@ class WhatsAppService
             'application/pdf' => '.pdf'
         ];
         return $map[$mime] ?? '';
+    }
+    
+    /**
+     * Execute workflow for a contact
+     */
+    public function executeWorkflow($workflow, $contact, $context = [])
+    {
+        try {
+            if (!$workflow->is_active) {
+                return ['success' => false, 'error' => 'Workflow is not active'];
+            }
+            
+            // Check if trigger conditions are met
+            if (!$this->checkWorkflowTrigger($workflow, $contact, $context)) {
+                return ['success' => false, 'error' => 'Trigger conditions not met'];
+            }
+            
+            $actionsPerformed = [];
+            $errors = [];
+            
+            // Execute each action
+            foreach ($workflow->actions as $action) {
+                try {
+                    $result = $this->executeWorkflowAction($action, $contact);
+                    $actionsPerformed[] = [
+                        'action' => $action,
+                        'result' => $result
+                    ];
+                } catch (\Exception $e) {
+                    $errors[] = $e->getMessage();
+                    logger("[WORKFLOW] Action failed: " . $e->getMessage(), 'error');
+                }
+            }
+            
+            // Log execution
+            \App\Models\WorkflowExecution::create([
+                'workflow_id' => $workflow->id,
+                'contact_id' => $contact->id,
+                'status' => empty($errors) ? 'success' : 'failed',
+                'actions_performed' => $actionsPerformed,
+                'error_message' => !empty($errors) ? implode(', ', $errors) : null,
+                'executed_at' => now()
+            ]);
+            
+            // Update workflow stats
+            $workflow->increment('execution_count');
+            $workflow->update(['last_executed_at' => now()]);
+            
+            return [
+                'success' => empty($errors),
+                'actions_performed' => $actionsPerformed,
+                'errors' => $errors
+            ];
+        } catch (\Exception $e) {
+            logger("[WORKFLOW ERROR] " . $e->getMessage(), 'error');
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Check if workflow trigger conditions are met
+     */
+    private function checkWorkflowTrigger($workflow, $contact, $context)
+    {
+        $conditions = $workflow->trigger_conditions ?? [];
+        $triggerType = $workflow->trigger_type;
+        
+        switch ($triggerType) {
+            case 'new_message':
+                $keyword = $conditions['keyword'] ?? null;
+                if ($keyword && isset($context['message'])) {
+                    return stripos($context['message'], $keyword) !== false;
+                }
+                return true; // No keyword = always trigger
+                
+            case 'stage_change':
+                $fromStage = $conditions['from_stage'] ?? null;
+                $toStage = $conditions['to_stage'] ?? null;
+                if ($fromStage && isset($context['from_stage'])) {
+                    if ($context['from_stage'] !== $fromStage) return false;
+                }
+                if ($toStage && isset($context['to_stage'])) {
+                    if ($context['to_stage'] !== $toStage) return false;
+                }
+                return isset($context['to_stage']); // At least one stage should be set
+                
+            case 'tag_added':
+            case 'tag_removed':
+                $tagId = $conditions['tag_id'] ?? null;
+                if ($tagId && isset($context['tag_id'])) {
+                    return $context['tag_id'] == $tagId;
+                }
+                return isset($context['tag_id']);
+                
+            case 'lead_score_change':
+                $score = $conditions['score'] ?? null;
+                $direction = $conditions['direction'] ?? 'above';
+                if ($score && isset($context['lead_score'])) {
+                    if ($direction === 'above') {
+                        return $context['lead_score'] >= $score;
+                    } else {
+                        return $context['lead_score'] <= $score;
+                    }
+                }
+                return isset($context['lead_score']);
+                
+            case 'time_based':
+                // Time-based workflows are handled by cron
+                return isset($context['test_mode']) || false;
+                
+            default:
+                return true; // Unknown trigger = always execute in test mode
+        }
+    }
+    
+    /**
+     * Execute a single workflow action
+     */
+    private function executeWorkflowAction($action, $contact)
+    {
+        $actionType = $action['type'] ?? '';
+        
+        switch ($actionType) {
+            case 'send_message':
+                $message = $this->processQuickReplyMessage(
+                    $action['message'] ?? '',
+                    $contact
+                );
+                return $this->sendTextMessage($contact->phone_number, $message);
+                
+            case 'send_template':
+                $templateName = $action['template'] ?? '';
+                $params = $action['params'] ?? [];
+                $languageCode = $action['language_code'] ?? 'en';
+                return $this->sendTemplateMessage(
+                    $contact->phone_number,
+                    $templateName,
+                    $languageCode,
+                    $params
+                );
+                
+            case 'add_tag':
+                $tagId = $action['tag_id'] ?? null;
+                if ($tagId) {
+                    $contact->tags()->syncWithoutDetaching([$tagId]);
+                    return ['success' => true, 'message' => 'Tag added'];
+                }
+                return ['success' => false, 'error' => 'Tag ID missing'];
+                
+            case 'remove_tag':
+                $tagId = $action['tag_id'] ?? null;
+                if ($tagId) {
+                    $contact->tags()->detach($tagId);
+                    return ['success' => true, 'message' => 'Tag removed'];
+                }
+                return ['success' => false, 'error' => 'Tag ID missing'];
+                
+            case 'change_stage':
+                $stage = $action['stage'] ?? null;
+                if ($stage) {
+                    $contact->update(['stage' => $stage]);
+                    return ['success' => true, 'message' => 'Stage changed to ' . $stage];
+                }
+                return ['success' => false, 'error' => 'Stage missing'];
+                
+            case 'create_note':
+                $noteText = $action['note'] ?? '';
+                $noteType = $action['note_type'] ?? 'general';
+                if ($noteText) {
+                    \App\Models\Note::create([
+                        'contact_id' => $contact->id,
+                        'note' => $noteText,
+                        'note_type' => $noteType,
+                        'created_by' => $_SESSION['user_id'] ?? 1
+                    ]);
+                    return ['success' => true, 'message' => 'Note created'];
+                }
+                return ['success' => false, 'error' => 'Note text missing'];
+                
+            case 'assign_contact':
+                $userId = $action['user_id'] ?? null;
+                if ($userId) {
+                    $contact->update(['assigned_to' => $userId]);
+                    return ['success' => true, 'message' => 'Contact assigned'];
+                }
+                return ['success' => false, 'error' => 'User ID missing'];
+                
+            default:
+                return ['success' => false, 'error' => 'Unknown action type: ' . $actionType];
+        }
+    }
+    
+    /**
+     * Send next step in drip campaign for a subscriber
+     */
+    public function sendDripCampaignStep($subscriber, $forceNow = false)
+    {
+        try {
+            $campaign = $subscriber->campaign;
+            $contact = $subscriber->contact;
+            
+            if (!$campaign || !$contact) {
+                return ['success' => false, 'error' => 'Campaign or contact not found'];
+            }
+            
+            if ($subscriber->status !== 'active') {
+                return ['success' => false, 'error' => 'Subscriber is not active'];
+            }
+            
+            // Check if it's time to send
+            if (!$forceNow && $subscriber->next_send_at && strtotime($subscriber->next_send_at) > time()) {
+                return ['success' => false, 'error' => 'Not time to send yet. Next send: ' . $subscriber->next_send_at];
+            }
+            
+            // Get next step
+            $currentStep = $subscriber->current_step;
+            $steps = $campaign->steps()->orderBy('step_number')->get();
+            
+            if ($currentStep >= $steps->count()) {
+                // Campaign completed
+                $subscriber->update([
+                    'status' => 'completed',
+                    'completed_at' => now()
+                ]);
+                $campaign->increment('completed_count');
+                return ['success' => true, 'message' => 'Campaign completed', 'completed' => true];
+            }
+            
+            $step = $steps[$currentStep];
+            
+            // Send step message
+            $message = $step->message_content;
+            $processedMessage = $this->processQuickReplyMessage($message, $contact);
+            
+            $response = null;
+            if ($step->message_type === 'template' && $step->template_id) {
+                $template = \App\Models\MessageTemplate::find($step->template_id);
+                if ($template) {
+                    $params = []; // Extract params if needed
+                    $response = $this->sendTemplateMessage(
+                        $contact->phone_number,
+                        $template->whatsapp_template_name,
+                        $template->language_code,
+                        $params
+                    );
+                }
+            } else {
+                $response = $this->sendTextMessage($contact->phone_number, $processedMessage);
+            }
+            
+            if ($response && $response['success']) {
+                // Update subscriber
+                $nextStep = $currentStep + 1;
+                $nextSendAt = null;
+                
+                if ($nextStep < $steps->count()) {
+                    // Calculate next send time
+                    $nextStepObj = $steps[$nextStep];
+                    $delayMinutes = $nextStepObj->delay_minutes ?? 0;
+                    $nextSendAt = now()->addMinutes($delayMinutes);
+                } else {
+                    // Campaign completed
+                    $subscriber->update([
+                        'status' => 'completed',
+                        'completed_at' => now(),
+                        'current_step' => $nextStep
+                    ]);
+                    $campaign->increment('completed_count');
+                }
+                
+                if ($nextSendAt) {
+                    $subscriber->update([
+                        'current_step' => $nextStep,
+                        'next_send_at' => $nextSendAt
+                    ]);
+                }
+                
+                // Update step stats
+                $step->increment('sent_count');
+                
+                // Save to message history
+                try {
+                    \App\Models\Message::create([
+                        'contact_id' => $contact->id,
+                        'phone_number' => $contact->phone_number,
+                        'message_id' => $response['message_id'] ?? null,
+                        'message_type' => 'text',
+                        'direction' => 'outgoing',
+                        'message_body' => '[DRIP: ' . $campaign->name . ' - Step ' . ($currentStep + 1) . '] ' . $processedMessage,
+                        'timestamp' => now(),
+                        'status' => 'sent',
+                        'is_read' => true
+                    ]);
+                } catch (\Exception $e) {
+                    logger("[DRIP] Failed to save message history: " . $e->getMessage(), 'error');
+                }
+                
+                return [
+                    'success' => true,
+                    'step_name' => $step->name,
+                    'message' => $processedMessage,
+                    'next_send_at' => $nextSendAt,
+                    'completed' => !$nextSendAt
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error' => $response['error'] ?? 'Failed to send message'
+                ];
+            }
+        } catch (\Exception $e) {
+            logger("[DRIP ERROR] " . $e->getMessage(), 'error');
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Check and trigger workflows for a contact
+     */
+    public function checkAndTriggerWorkflows($contact, $context = [])
+    {
+        try {
+            $workflows = \App\Models\Workflow::where('is_active', true)->get();
+            
+            foreach ($workflows as $workflow) {
+                // Skip time-based workflows (handled by cron)
+                if ($workflow->trigger_type === 'time_based' && !isset($context['test_mode'])) {
+                    continue;
+                }
+                
+                try {
+                    $this->executeWorkflow($workflow, $contact, $context);
+                } catch (\Exception $e) {
+                    logger("[WORKFLOW] Failed to execute workflow {$workflow->id}: " . $e->getMessage(), 'error');
+                }
+            }
+        } catch (\Exception $e) {
+            logger("[WORKFLOW ERROR] " . $e->getMessage(), 'error');
+        }
     }
 }
