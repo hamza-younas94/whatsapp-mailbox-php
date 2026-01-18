@@ -1785,4 +1785,4 @@ class WhatsAppService
             logger("[WORKFLOW ERROR] " . $e->getMessage(), 'error');
         }
     }
-image.png}
+}
