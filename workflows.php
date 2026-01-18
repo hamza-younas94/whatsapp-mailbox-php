@@ -863,5 +863,26 @@ function toggleWorkflow(id) {
 }
 </script>
 
+<script>
+// Toast notification function (if not already defined)
+if (typeof showToast === 'undefined') {
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+        toast.style.position = 'fixed';
+        toast.style.top = '20px';
+        toast.style.right = '20px';
+        toast.style.zIndex = '9999';
+        toast.style.minWidth = '300px';
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+}
+</script>
+
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
 

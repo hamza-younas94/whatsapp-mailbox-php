@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class Workflow extends Model
 {
@@ -40,6 +41,6 @@ class Workflow extends Model
      */
     public function creator()
     {
-        return $this->belongsTo(AdminUser::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 }
