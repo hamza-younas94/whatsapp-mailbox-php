@@ -454,13 +454,33 @@ function sendMediaMessage() {
         // Clean up uploaded file
         @unlink($uploadPath);
         
+        // Get detailed error message
+        $errorMsg = $result['error'] ?? 'Failed to send media';
+        $errorResponse = $result['response'] ?? null;
+        
+        // Parse error response if available
+        if ($errorResponse) {
+            $errorData = json_decode($errorResponse, true);
+            if (isset($errorData['error']['message'])) {
+                $errorMsg = $errorData['error']['message'];
+            }
+        }
+        
+        logger('Failed to send media: ' . $errorMsg, 'error');
+        logger('Media URL was: ' . $mediaUrl, 'error');
+        logger('Media Type: ' . $mediaType, 'error');
+        
         // Check if it's a 24-hour window error
-        $errorMsg = $result['error'] ?? '';
-        if (strpos($errorMsg, '400') !== false) {
+        if (strpos($errorMsg, '400') !== false || strpos($errorMsg, '24') !== false) {
             response_error('Cannot send: Contact must message you first (24-hour window)', 403, ['details' => $result]);
         }
         
-        response_error('Failed to send media', 500, ['details' => $result]);
+        // Check if it's a media URL access error
+        if (strpos($errorMsg, 'Media URL') !== false || strpos($errorMsg, 'Invalid URL') !== false || strpos($errorMsg, 'URL') !== false) {
+            response_error('Media URL is not accessible. Make sure your server is publicly accessible: ' . $errorMsg, 500, ['details' => $result, 'media_url' => $mediaUrl]);
+        }
+        
+        response_error($errorMsg, 500, ['details' => $result]);
     }
     
     // Get or create contact

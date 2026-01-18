@@ -157,12 +157,25 @@ class WhatsAppService
             ];
 
         } catch (RequestException $e) {
-            logger('WhatsApp Media Error: ' . $e->getMessage(), 'error');
+            $errorMessage = $e->getMessage();
+            $responseBody = null;
+            
+            if ($e->hasResponse()) {
+                $responseBody = $e->getResponse()->getBody()->getContents();
+                $errorData = json_decode($responseBody, true);
+                if (isset($errorData['error']['message'])) {
+                    $errorMessage = $errorData['error']['message'];
+                }
+            }
+            
+            logger('WhatsApp Media Error: ' . $errorMessage, 'error');
+            logger('WhatsApp Media URL: ' . $mediaUrl, 'error');
+            logger('WhatsApp Media Response: ' . ($responseBody ?? 'No response'), 'error');
             
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
-                'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null
+                'error' => $errorMessage,
+                'response' => $responseBody
             ];
         }
     }

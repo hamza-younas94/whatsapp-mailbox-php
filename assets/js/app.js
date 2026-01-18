@@ -697,8 +697,36 @@ async function sendMessage() {
                 showValidationError('Cannot send: Contact must message you first (24-hour window). Use a template message instead.', {});
                 showToast('Cannot send: Contact must message you first (24-hour window)', 'error');
             } else {
-                showValidationError(errorMsg, validationErrors);
-                showToast('Failed to send: ' + errorMsg, 'error');
+                // For media errors, provide more helpful error messages
+                if (selectedMediaFile) {
+                    const details = result.errors?.details || {};
+                    let detailedError = errorMsg;
+                    
+                    if (details.error) {
+                        detailedError = details.error;
+                    } else if (details.response) {
+                        try {
+                            const errorResponse = typeof details.response === 'string' ? JSON.parse(details.response) : details.response;
+                            if (errorResponse.error?.message) {
+                                detailedError = errorResponse.error.message;
+                            }
+                        } catch (e) {
+                            // Ignore JSON parse errors
+                        }
+                    }
+                    
+                    // Check for common WhatsApp API errors
+                    if (detailedError.includes('Media URL') || detailedError.includes('Invalid URL')) {
+                        showToast('Media URL is not accessible. Make sure your server is publicly accessible.', 'error');
+                    } else if (detailedError.includes('400') || detailedError.includes('Bad Request')) {
+                        showToast('Invalid media format or URL. Please try again.', 'error');
+                    } else {
+                        showToast('Failed to send media: ' + detailedError, 'error');
+                    }
+                } else {
+                    showValidationError(errorMsg, validationErrors);
+                    showToast('Failed to send: ' + errorMsg, 'error');
+                }
             }
         }
         
@@ -1990,6 +2018,57 @@ function formatFileSize(bytes) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
+
+/**
+ * Star a message
+ */
+async function starMessage(messageId, buttonElement) {
+    try {
+        const response = await fetch('api.php/message-action', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message_id: messageId,
+                action_type: 'star'
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            // Toggle star icon
+            const icon = buttonElement.querySelector('i');
+            if (icon) {
+                if (icon.classList.contains('far')) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    showToast('Message starred', 'success');
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    showToast('Message unstarred', 'success');
+                }
+            }
+        } else {
+            showToast(result.error || 'Failed to star message', 'error');
+        }
+    } catch (error) {
+        console.error('Error starring message:', error);
+        showToast('Failed to star message', 'error');
+    }
+}
+
+/**
+ * Forward a message
+ */
+async function forwardMessage(messageId) {
+    // Show contact selection modal
+    showToast('Forward feature - Select a contact', 'info');
+    // TODO: Implement contact selection modal for forwarding
+}
+
 /**
  * Desktop Notifications
  */
