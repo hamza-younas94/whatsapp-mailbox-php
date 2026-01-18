@@ -137,6 +137,17 @@ $pageDescription = 'Manage canned responses for faster messaging';
 require_once __DIR__ . '/includes/header.php';
 ?>
 
+<style>
+.bg-purple {
+    background-color: #9333ea !important;
+    color: white !important;
+}
+.message-preview {
+    max-width: 300px;
+    word-wrap: break-word;
+}
+</style>
+
 <div class="container-fluid">
     <div class="page-header">
         <div>
@@ -182,39 +193,146 @@ require_once __DIR__ . '/includes/header.php';
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Shortcut</th>
+                            <th>Priority</th>
+                            <th>Shortcut(s)</th>
                             <th>Title</th>
                             <th>Message Preview</th>
-                            <th>Usage Count</th>
+                            <th>Features</th>
+                            <th>Stats</th>
                             <th>Status</th>
-                            <th>Created By</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($replies as $reply): ?>
+                        <?php foreach ($replies as $reply): 
+                            // Get all shortcuts (legacy + new)
+                            $shortcuts = [];
+                            if (!empty($reply->shortcuts) && is_array($reply->shortcuts)) {
+                                $shortcuts = $reply->shortcuts;
+                            }
+                            if (!empty($reply->shortcut) && !in_array($reply->shortcut, $shortcuts)) {
+                                $shortcuts[] = $reply->shortcut;
+                            }
+                            if (empty($shortcuts)) {
+                                $shortcuts = [$reply->shortcut ?? 'N/A'];
+                            }
+                            
+                            // Check features
+                            $hasBusinessHours = !empty($reply->business_hours_start) || !empty($reply->business_hours_end);
+                            $hasConditions = !empty($reply->conditions) && is_array($reply->conditions) && count($reply->conditions) > 0;
+                            $hasMedia = !empty($reply->media_url) || !empty($reply->media_filename);
+                            $hasSequence = !empty($reply->sequence_messages) && is_array($reply->sequence_messages) && count($reply->sequence_messages) > 0;
+                            $hasFilters = (!empty($reply->excluded_contact_ids) || !empty($reply->included_contact_ids));
+                        ?>
                         <tr>
                             <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <code class="bg-light px-2 py-1 rounded" style="font-weight: 600;"><?php echo htmlspecialchars($reply->shortcut); ?></code>
-                                    <span class="badge bg-info" style="font-size: 10px;" title="Fuzzy matching enabled">
-                                        <i class="fas fa-magic"></i> Smart
+                                <?php if ($hasPriorityColumn && isset($reply->priority) && $reply->priority > 0): ?>
+                                    <span class="badge bg-warning text-dark" title="Priority: <?php echo $reply->priority; ?>">
+                                        <i class="fas fa-sort-numeric-down"></i> <?php echo $reply->priority; ?>
                                     </span>
-                                </div>
-                                <small class="text-muted d-block mt-1" style="font-size: 11px;">
-                                    <i class="fas fa-search"></i> Matches anywhere in message
-                                </small>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary" title="Default priority">0</span>
+                                <?php endif; ?>
                             </td>
-                            <td><?php echo htmlspecialchars($reply->title); ?></td>
+                            <td>
+                                <div class="d-flex flex-column gap-1">
+                                    <?php foreach ($shortcuts as $sc): ?>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <code class="bg-light px-2 py-1 rounded" style="font-weight: 600; font-size: 11px;">
+                                                <?php echo htmlspecialchars($sc); ?>
+                                            </code>
+                                            <?php if ($reply->use_regex ?? false): ?>
+                                                <span class="badge bg-purple" style="font-size: 9px;" title="Uses regex pattern">
+                                                    <i class="fas fa-code"></i> Regex
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge bg-info" style="font-size: 9px;" title="Fuzzy matching">
+                                                    <i class="fas fa-magic"></i> Smart
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                    <?php if (count($shortcuts) > 1): ?>
+                                        <small class="text-muted" style="font-size: 10px;">
+                                            <i class="fas fa-list"></i> <?php echo count($shortcuts); ?> shortcuts
+                                        </small>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                            <td>
+                                <strong><?php echo htmlspecialchars($reply->title); ?></strong>
+                                <?php if ($hasSequence): ?>
+                                    <br><span class="badge bg-primary" style="font-size: 9px;" title="Message sequence">
+                                        <i class="fas fa-list-ol"></i> Sequence
+                                    </span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <div class="message-preview" style="background: #f8f9fa; padding: 8px 12px; border-radius: 8px; border-left: 3px solid #10b981;">
                                     <small style="font-family: -apple-system, system-ui; line-height: 1.4;">
                                         <?php echo nl2br(htmlspecialchars(substr($reply->message, 0, 80)) . (strlen($reply->message) > 80 ? '...' : '')); ?>
                                     </small>
                                 </div>
+                                <?php if ($hasMedia): ?>
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fas fa-file-<?php echo $reply->media_type === 'image' ? 'image' : ($reply->media_type === 'video' ? 'video' : 'file'); ?>"></i>
+                                        <?php echo ucfirst($reply->media_type ?? 'media'); ?>
+                                    </small>
+                                <?php endif; ?>
                             </td>
                             <td>
-                                <span class="badge bg-info"><?php echo $reply->usage_count; ?> times</span>
+                                <div class="d-flex flex-wrap gap-1" style="max-width: 200px;">
+                                    <?php if ($hasBusinessHours): ?>
+                                        <span class="badge bg-success" style="font-size: 9px;" title="Business hours enabled">
+                                            <i class="fas fa-clock"></i> Hours
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ($hasConditions): ?>
+                                        <span class="badge bg-warning text-dark" style="font-size: 9px;" title="Conditions: <?php echo count($reply->conditions); ?>">
+                                            <i class="fas fa-filter"></i> Conditions
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ($hasFilters): ?>
+                                        <span class="badge bg-info" style="font-size: 9px;" title="Contact filtering enabled">
+                                            <i class="fas fa-users-slash"></i> Filter
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ($reply->allow_groups ?? false): ?>
+                                        <span class="badge bg-primary" style="font-size: 9px;" title="Works in groups">
+                                            <i class="fas fa-users"></i> Groups
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if (($reply->delay_seconds ?? 0) > 0): ?>
+                                        <span class="badge bg-secondary" style="font-size: 9px;" title="Delay: <?php echo $reply->delay_seconds; ?>s">
+                                            <i class="fas fa-hourglass-half"></i> <?php echo $reply->delay_seconds; ?>s
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if (!$hasBusinessHours && !$hasConditions && !$hasFilters && !($reply->allow_groups ?? false) && ($reply->delay_seconds ?? 0) == 0 && !$hasMedia && !$hasSequence): ?>
+                                        <small class="text-muted" style="font-size: 10px;">Basic</small>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column gap-1">
+                                    <span class="badge bg-info" title="Total usage">
+                                        <i class="fas fa-chart-line"></i> <?php echo $reply->usage_count ?? 0; ?>
+                                    </span>
+                                    <?php if ($hasPriorityColumn && isset($reply->success_count) && $reply->success_count > 0): ?>
+                                        <span class="badge bg-success" style="font-size: 10px;" title="Success count">
+                                            <i class="fas fa-check"></i> <?php echo $reply->success_count; ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ($hasPriorityColumn && isset($reply->failure_count) && $reply->failure_count > 0): ?>
+                                        <span class="badge bg-danger" style="font-size: 10px;" title="Failure count">
+                                            <i class="fas fa-times"></i> <?php echo $reply->failure_count; ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ($hasPriorityColumn && isset($reply->last_used_at) && $reply->last_used_at): ?>
+                                        <small class="text-muted" style="font-size: 9px;" title="Last used: <?php echo date('M d, Y H:i', strtotime($reply->last_used_at)); ?>">
+                                            <i class="fas fa-clock"></i> <?php echo date('M d', strtotime($reply->last_used_at)); ?>
+                                        </small>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                             <td>
                                 <div class="form-check form-switch">
@@ -223,17 +341,18 @@ require_once __DIR__ . '/includes/header.php';
                                            onchange="toggleReply(<?php echo $reply->id; ?>)">
                                 </div>
                             </td>
-                            <td><?php echo htmlspecialchars($reply->creator->username ?? 'Admin'); ?></td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="editReply(<?php echo $reply->id; ?>)">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteReply(<?php echo $reply->id; ?>)">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary" onclick="copyMessage(<?php echo $reply->id; ?>)">
-                                    <i class="fas fa-copy"></i>
-                                </button>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editReply(<?php echo $reply->id; ?>)" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteReply(<?php echo $reply->id; ?>)" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyMessage(<?php echo $reply->id; ?>)" title="Copy message">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
