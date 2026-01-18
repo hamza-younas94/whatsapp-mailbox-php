@@ -112,12 +112,12 @@
     
     <!-- CRM Modal -->
     <div id="crmModal" class="modal" style="display: none;">
-        <div class="modal-content">
+        <div class="modal-content" onclick="event.stopPropagation();">
             <div class="modal-header">
                 <h2 id="crmModalTitle">CRM Details</h2>
-                <button onclick="closeCrmModal()" class="modal-close">&times;</button>
+                <button onclick="closeCrmModal(); event.stopPropagation();" class="modal-close" aria-label="Close">&times;</button>
             </div>
-            <div class="modal-body" id="crmModalContent">
+            <div class="modal-body" id="crmModalContent" onclick="event.stopPropagation();">
                 <!-- Content loaded by JavaScript -->
             </div>
         </div>

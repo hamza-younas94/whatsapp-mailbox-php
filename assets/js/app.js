@@ -1004,20 +1004,29 @@ function closeCrmModal() {
         modal.classList.remove('show');
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
         // Hide add deal form if open
-        hideAddDealForm();
+        if (typeof hideAddDealForm === 'function') {
+            hideAddDealForm();
+        }
     }
 }
 
-// Close modal when clicking outside
-document.addEventListener('DOMContentLoaded', function() {
+// Close modal when clicking outside (on backdrop)
+document.addEventListener('click', function(e) {
     const crmModal = document.getElementById('crmModal');
-    if (crmModal) {
-        crmModal.addEventListener('click', function(e) {
-            if (e.target === crmModal) {
-                closeCrmModal();
-            }
-        });
+    if (crmModal && crmModal.classList.contains('show') && e.target === crmModal) {
+        closeCrmModal();
+    }
+});
+
+// Close modal with ESC key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const crmModal = document.getElementById('crmModal');
+        if (crmModal && crmModal.classList.contains('show')) {
+            closeCrmModal();
+        }
     }
 });
 

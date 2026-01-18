@@ -86,8 +86,23 @@ window.openCrmModalAdvanced = async function openCrmModal(contactId) {
             const closeBtn = document.createElement('button');
             closeBtn.className = 'modal-close';
             closeBtn.innerHTML = '&times;';
-            closeBtn.onclick = closeCrmModal;
+            closeBtn.setAttribute('aria-label', 'Close');
+            closeBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeCrmModal();
+            };
             header.appendChild(closeBtn);
+        }
+        
+        // Update existing close button onclick
+        const existingCloseBtn = header.querySelector('.modal-close');
+        if (existingCloseBtn) {
+            existingCloseBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeCrmModal();
+            };
         }
     }
     
