@@ -2003,9 +2003,7 @@ function openImageModal(imageUrl) {
             background-color: rgba(0,0,0,0.9);
             cursor: zoom-out;
         `;
-        modal.onclick = function() {
-            modal.style.display = 'none';
-        };
+        // Modal should NOT close when clicking outside - removed backdrop click handler
         
         const img = document.createElement('img');
         img.id = 'modalImage';
