@@ -17,6 +17,7 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Twig\Loader\FilesystemLoader;
 use Twig\Environment;
+use Twig\TwigFunction;
 
 // Load environment variables
 try {
@@ -98,7 +99,6 @@ $twig->addGlobal('app_name', env('APP_NAME', 'MessageHub'));
 $twig->addGlobal('app_url', env('APP_URL', ''));
 
 // Add Twig functions
-use Twig\TwigFunction;
 $twig->addFunction(new TwigFunction('getLevelColor', function($level) {
     $colors = [
         'ERROR' => 'danger',
