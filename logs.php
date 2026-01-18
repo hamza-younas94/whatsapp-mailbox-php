@@ -106,21 +106,8 @@ function formatBytes($bytes, $precision = 2) {
     return round($bytes, $precision) . ' ' . $units[$pow];
 }
 
-function getLevelColor($level) {
-    $colors = [
-        'ERROR' => 'danger',
-        'WARNING' => 'warning',
-        'INFO' => 'info',
-        'DEBUG' => 'secondary',
-        'CRITICAL' => 'danger',
-        'ALERT' => 'warning',
-        'EMERGENCY' => 'danger'
-    ];
-    return $colors[$level] ?? 'secondary';
-}
-
-$twig = getTwig();
-echo $twig->render('logs.html.twig', [
+// Render logs page using Twig
+render('logs.html.twig', [
     'logFiles' => $logFiles,
     'selectedFile' => $selectedFile,
     'selectedLevel' => $selectedLevel,
@@ -128,6 +115,18 @@ echo $twig->render('logs.html.twig', [
     'logLines' => $logLines,
     'fileSize' => $fileSize,
     'formattedSize' => formatBytes($fileSize),
-    'user' => $user
+    'user' => $user,
+    'getLevelColor' => function($level) {
+        $colors = [
+            'ERROR' => 'danger',
+            'WARNING' => 'warning',
+            'INFO' => 'info',
+            'DEBUG' => 'secondary',
+            'CRITICAL' => 'danger',
+            'ALERT' => 'warning',
+            'EMERGENCY' => 'danger'
+        ];
+        return $colors[$level] ?? 'secondary';
+    }
 ]);
 

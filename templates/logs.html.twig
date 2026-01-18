@@ -90,7 +90,7 @@
                                         {{ line.timestamp }}
                                     </td>
                                     <td style="width: 80px;">
-                                        <span class="badge bg-{% if line.level == 'ERROR' or line.level == 'CRITICAL' or line.level == 'EMERGENCY' %}danger{% elseif line.level == 'WARNING' or line.level == 'ALERT' %}warning{% elseif line.level == 'INFO' %}info{% else %}secondary{% endif %}">
+                                        <span class="badge bg-{{ getLevelColor(line.level) }}">
                                             {{ line.level }}
                                         </span>
                                     </td>
