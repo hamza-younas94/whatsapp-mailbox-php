@@ -22,10 +22,53 @@ window.openCrmModalAdvanced = async function openCrmModal(contactId) {
     currentCrmTab = 'overview';
     
     const modal = document.getElementById('crmModal');
-    const content = document.getElementById('crmModalContent');
-    const modalTitle = document.getElementById('crmModalTitle');
+    if (!modal) {
+        console.error('CRM Modal not found');
+        return;
+    }
     
-    modalTitle.textContent = escapeHtml(contact.name);
+    let content = document.getElementById('crmModalContent');
+    let modalTitle = document.getElementById('crmModalTitle');
+    
+    // Ensure modal has proper structure
+    if (!content) {
+        // Create modal body if it doesn't exist
+        content = document.createElement('div');
+        content.className = 'modal-body';
+        content.id = 'crmModalContent';
+        
+        const modalContent = modal.querySelector('.modal-content') || modal;
+        if (!modalContent.querySelector('.modal-body')) {
+            modalContent.appendChild(content);
+        }
+    }
+    
+    if (!modalTitle) {
+        // Create modal title if it doesn't exist
+        let header = modal.querySelector('.modal-header');
+        if (!header) {
+            header = document.createElement('div');
+            header.className = 'modal-header';
+            const modalContent = modal.querySelector('.modal-content') || modal;
+            modalContent.insertBefore(header, modalContent.firstChild);
+        }
+        modalTitle = document.createElement('h2');
+        modalTitle.id = 'crmModalTitle';
+        header.insertBefore(modalTitle, header.firstChild);
+        
+        // Add close button if missing
+        if (!header.querySelector('.modal-close')) {
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'modal-close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.onclick = closeCrmModal;
+            header.appendChild(closeBtn);
+        }
+    }
+    
+    if (modalTitle) {
+        modalTitle.textContent = escapeHtml(contact.name);
+    }
     
     // Load tags for contact
     await loadTagsForCrm(contact.id, contact);
