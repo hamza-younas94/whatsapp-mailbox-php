@@ -5,7 +5,7 @@
 
 require_once __DIR__ . '/bootstrap.php';
 
-use App\Models\AdminUser;
+use App\Models\User;
 
 /**
  * Check if user is authenticated
@@ -32,15 +32,31 @@ function login($username, $password) {
             return false;
         }
 
-        // Find user
-        $user = AdminUser::findByUsername($username);
+        // Find user in users table first
+        $user = User::where('username', $username)->first();
         
-        if ($user && $user->verifyPassword($password)) {
+        // Fallback to admin_users if not found in users table
+        if (!$user && class_exists('App\Models\AdminUser')) {
+            $adminUser = \App\Models\AdminUser::findByUsername($username);
+            if ($adminUser && $adminUser->verifyPassword($password)) {
+                // Migrate admin user to users table
+                $user = User::create([
+                    'username' => $adminUser->username,
+                    'email' => $adminUser->email ?? null,
+                    'password' => $adminUser->password_hash,
+                    'role' => 'admin',
+                    'name' => $adminUser->username,
+                    'is_active' => true
+                ]);
+            }
+        }
+        
+        if ($user && password_verify($password, $user->password)) {
             $_SESSION['user_id'] = $user->id;
             $_SESSION['username'] = $user->username;
             
             // Update last login
-            $user->updateLastLogin();
+            $user->update(['last_login' => now()]);
             
             return true;
         }
@@ -86,8 +102,8 @@ function getCurrentUser() {
             return $user;
         }
         
-        // Fallback to AdminUser (legacy)
-        return AdminUser::find($userId);
+        // No user found
+        return null;
     } catch (\Exception $e) {
         logger('Get current user error: ' . $e->getMessage(), 'error');
         return null;
@@ -130,11 +146,6 @@ function isAdmin() {
         return $user->role === 'admin';
     }
     
-    // AdminUser is always admin
-    if ($user instanceof AdminUser) {
-        return true;
-    }
-    
     return false;
 }
 
@@ -143,13 +154,13 @@ function isAdmin() {
  */
 function changePassword($userId, $newPassword) {
     try {
-        $user = AdminUser::find($userId);
+        $user = User::find($userId);
         
         if (!$user) {
             return false;
         }
         
-        $user->password = $newPassword;
+        $user->password = password_hash($newPassword, PASSWORD_DEFAULT);
         return $user->save();
     } catch (\Exception $e) {
         logger('Change password error: ' . $e->getMessage(), 'error');

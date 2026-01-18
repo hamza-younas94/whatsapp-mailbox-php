@@ -115,19 +115,19 @@ window.openCrmModalAdvanced = async function openCrmModal(contactId) {
     
     content.innerHTML = `
         <div class="crm-tabs">
-            <button class="crm-tab ${currentCrmTab === 'overview' ? 'active' : ''}" onclick="switchCrmTab('overview')">
+            <button class="crm-tab ${currentCrmTab === 'overview' ? 'active' : ''}" onclick="event.preventDefault(); switchCrmTab('overview'); return false;">
                 <i class="fas fa-chart-line"></i> Overview
             </button>
-            <button class="crm-tab ${currentCrmTab === 'timeline' ? 'active' : ''}" onclick="switchCrmTab('timeline')">
+            <button class="crm-tab ${currentCrmTab === 'timeline' ? 'active' : ''}" onclick="event.preventDefault(); switchCrmTab('timeline'); return false;">
                 <i class="fas fa-history"></i> Timeline
             </button>
-            <button class="crm-tab ${currentCrmTab === 'tasks' ? 'active' : ''}" onclick="switchCrmTab('tasks')">
+            <button class="crm-tab ${currentCrmTab === 'tasks' ? 'active' : ''}" onclick="event.preventDefault(); switchCrmTab('tasks'); return false;">
                 <i class="fas fa-tasks"></i> Tasks
             </button>
-            <button class="crm-tab ${currentCrmTab === 'notes' ? 'active' : ''}" onclick="switchCrmTab('notes')">
+            <button class="crm-tab ${currentCrmTab === 'notes' ? 'active' : ''}" onclick="event.preventDefault(); switchCrmTab('notes'); return false;">
                 <i class="fas fa-sticky-note"></i> Notes
             </button>
-            <button class="crm-tab ${currentCrmTab === 'deals' ? 'active' : ''}" onclick="switchCrmTab('deals')">
+            <button class="crm-tab ${currentCrmTab === 'deals' ? 'active' : ''}" onclick="event.preventDefault(); switchCrmTab('deals'); return false;">
                 <i class="fas fa-dollar-sign"></i> Deals
             </button>
         </div>
@@ -154,28 +154,56 @@ window.openCrmModalAdvanced = async function openCrmModal(contactId) {
  * Switch CRM Tab
  */
 async function switchCrmTab(tab) {
-    currentCrmTab = tab;
-    
-    // Update tab buttons
-    document.querySelectorAll('.crm-tab').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.textContent.includes(getTabLabel(tab))) {
-            btn.classList.add('active');
+    try {
+        currentCrmTab = tab;
+        
+        // Update tab buttons
+        document.querySelectorAll('.crm-tab').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.textContent.includes(getTabLabel(tab))) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Load tab content
+        const contactsList = window.allContacts || window.contacts || [];
+        const contact = contactsList.find(c => c.id == currentCrmContactId);
+        if (!contact) {
+            // Try to fetch contact if not found
+            try {
+                const response = await fetch(`api.php/contacts`);
+                if (response.ok) {
+                    const allContactsData = await response.json();
+                    window.allContacts = allContactsData;
+                    window.contacts = allContactsData;
+                    const foundContact = allContactsData.find(c => c.id == currentCrmContactId);
+                    if (!foundContact) {
+                        console.error('Contact not found for tab switch:', currentCrmContactId);
+                        return;
+                    }
+                    // Continue with found contact
+                    contact = foundContact;
+                } else {
+                    console.error('Failed to fetch contacts');
+                    return;
+                }
+            } catch (e) {
+                console.error('Error fetching contacts:', e);
+                return;
+            }
         }
-    });
-    
-    // Load tab content
-    const contactsList = window.allContacts || window.contacts || [];
-    const contact = contactsList.find(c => c.id === currentCrmContactId);
-    if (!contact) {
-        console.error('Contact not found for tab switch');
-        return;
-    }
-    
-    const content = document.getElementById('crmTabContent');
-    if (content) {
-        content.innerHTML = '<div class="loading">Loading...</div>';
-        content.innerHTML = await renderCrmTab(tab, contact);
+        
+        const content = document.getElementById('crmTabContent');
+        if (content) {
+            content.innerHTML = '<div class="loading">Loading...</div>';
+            content.innerHTML = await renderCrmTab(tab, contact);
+        }
+    } catch (error) {
+        console.error('Error switching tab:', error);
+        const content = document.getElementById('crmTabContent');
+        if (content) {
+            content.innerHTML = '<div class="empty-state"><p>Error loading tab content</p></div>';
+        }
     }
 }
 

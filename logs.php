@@ -1,5 +1,6 @@
 <?php
 require_once 'bootstrap.php';
+require_once 'auth.php';
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
@@ -8,8 +9,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Only admins can view logs
-$user = \App\Models\User::find($_SESSION['user_id']);
-if (!$user || $user->role !== 'admin') {
+$user = getCurrentUser();
+if (!$user || !isAdmin()) {
     header('Location: index.php');
     exit;
 }
