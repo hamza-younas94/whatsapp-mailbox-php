@@ -285,6 +285,7 @@
                     <?php if (isAdmin()): ?>
                     <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
                         <a href="users.php" class="<?php echo $currentPage === 'users.php' ? 'active' : ''; ?>">👥 Users</a>
+                        <a href="logs.php" class="<?php echo $currentPage === 'logs.php' ? 'active' : ''; ?>">📋 Logs</a>
                     </div>
                     <?php endif; ?>
                 </div>
