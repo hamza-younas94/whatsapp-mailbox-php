@@ -369,70 +369,64 @@ async function pollNewMessages() {
     
     try {
         // Fetch recent messages (last 50) to get status updates for existing messages
-        const response = await fetch(`api.php/messages?contact_id=${currentContactId}&limit=50&order=desc`);
+        // If we have lastMessageId, use after_id for efficiency. Otherwise fetch recent 50 for status updates
+        const url = lastMessageId 
+            ? `api.php/messages?contact_id=${currentContactId}&after_id=${lastMessageId}`
+            : `api.php/messages?contact_id=${currentContactId}&limit=50`;
+        
+        const response = await fetch(url);
         if (!response.ok) {
             return;
         }
         
         const allMessages = await response.json();
         if (!Array.isArray(allMessages) || allMessages.length === 0) {
+            // If we were polling for status updates and got no new messages, fetch recent to check statuses
+            if (lastMessageId && messages.length > 0) {
+                const statusCheckResponse = await fetch(`api.php/messages?contact_id=${currentContactId}&limit=20`);
+                if (statusCheckResponse.ok) {
+                    const recentMessages = await statusCheckResponse.json();
+                    updateMessageStatuses(recentMessages);
+                }
+            }
             return;
         }
         
-        // Reverse to get chronological order
-        const recentMessages = allMessages.reverse();
+        // Messages are already in chronological order from API (oldest to newest)
+        const recentMessages = allMessages;
         
-        // Check if we have new messages or status updates
-        const hasNewMessages = lastMessageId ? recentMessages.some(m => m.id > lastMessageId) : true;
-        const hasStatusUpdates = messages.length > 0 && recentMessages.some(rm => {
-            const existingMsg = messages.find(m => m.id === rm.id);
-            return existingMsg && existingMsg.status !== rm.status;
-        });
-        
-        // Update existing messages with status changes
-        if (hasStatusUpdates) {
-            recentMessages.forEach(rm => {
-                const existingIndex = messages.findIndex(m => m.id === rm.id);
-                if (existingIndex !== -1 && messages[existingIndex].status !== rm.status) {
-                    messages[existingIndex].status = rm.status;
-                    // Update the UI element
-                    const messageEl = document.querySelector(`[data-message-id="${rm.id}"]`);
-                    if (messageEl) {
-                        const timeEl = messageEl.querySelector('.message-time');
-                        if (timeEl) {
-                            const timeText = timeEl.querySelector('.time-text');
-                            const statusHtml = getStatusIcon(rm.status);
-                            if (timeText && statusHtml) {
-                                timeEl.innerHTML = timeText.outerHTML + statusHtml;
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Add new messages
-        if (hasNewMessages) {
-            const newMessages = lastMessageId 
-                ? recentMessages.filter(m => m.id > lastMessageId)
-                : recentMessages.slice(messages.length);
-            
-            if (newMessages.length > 0) {
-                messages = messages.concat(newMessages);
-                lastMessageId = newMessages[newMessages.length - 1].id;
-                renderMessages(newMessages, { replace: false });
-            } else {
-                // No new messages, but update full list if statuses changed
-                messages = recentMessages;
+        // If using after_id, these are all new messages
+        if (lastMessageId) {
+            messages = messages.concat(recentMessages);
+            if (recentMessages.length > 0) {
+                lastMessageId = recentMessages[recentMessages.length - 1].id;
+                renderMessages(recentMessages, { replace: false });
             }
         } else {
-            // No new messages, but keep list updated
-            messages = recentMessages;
-        }
-        
-        // Update lastMessageId
-        if (recentMessages.length > 0) {
-            lastMessageId = recentMessages[recentMessages.length - 1].id;
+            // Fetching recent messages - check for new ones and status updates
+            const hasNewMessages = messages.length === 0 || recentMessages.some(rm => {
+                return !messages.find(m => m.id === rm.id);
+            });
+            
+            // Update statuses of existing messages
+            updateMessageStatuses(recentMessages);
+            
+            // Add new messages
+            if (hasNewMessages) {
+                const existingIds = new Set(messages.map(m => m.id));
+                const newMessages = recentMessages.filter(m => !existingIds.has(m.id));
+                
+                if (newMessages.length > 0) {
+                    messages = messages.concat(newMessages);
+                    lastMessageId = newMessages[newMessages.length - 1].id;
+                    renderMessages(newMessages, { replace: false });
+                }
+            }
+            
+            // Update lastMessageId if we have messages
+            if (recentMessages.length > 0) {
+                lastMessageId = recentMessages[recentMessages.length - 1].id;
+            }
         }
     } catch (error) {
         console.error('Error polling new messages:', error);
