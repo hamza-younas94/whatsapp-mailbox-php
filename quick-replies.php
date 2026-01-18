@@ -146,6 +146,45 @@ require_once __DIR__ . '/includes/header.php';
     max-width: 300px;
     word-wrap: break-word;
 }
+
+/* Tab Styling */
+#replyTabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 12px 20px;
+    transition: all 0.3s ease;
+    background: transparent;
+}
+
+#replyTabs .nav-link:hover {
+    background-color: #f8f9fa;
+    border-bottom-color: #128C7E;
+    color: #128C7E !important;
+}
+
+#replyTabs .nav-link.active {
+    color: #128C7E !important;
+    font-weight: 600;
+    border-bottom-color: #128C7E;
+    background-color: #f0fdfa;
+}
+
+#replyTabs .nav-link i {
+    margin-right: 6px;
+}
+
+.tab-content {
+    padding: 20px 0;
+}
+
+.tab-pane {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 </style>
 
 <div class="container-fluid">
@@ -586,18 +625,26 @@ require_once __DIR__ . '/includes/header.php';
                     <input type="hidden" id="reply_id" name="id">
                     
                     <!-- Tabs for organization -->
-                    <ul class="nav nav-tabs mb-3" id="replyTabs" role="tablist">
+                    <ul class="nav nav-tabs mb-3" id="replyTabs" role="tablist" style="border-bottom: 2px solid #dee2e6;">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button">Basic</button>
+                            <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" style="color: #128C7E; font-weight: 500;">
+                                <i class="fas fa-edit"></i> Basic
+                            </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button">Advanced</button>
+                            <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button" style="color: #6c757d; font-weight: 500;">
+                                <i class="fas fa-cogs"></i> Advanced
+                            </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="conditions-tab" data-bs-toggle="tab" data-bs-target="#conditions" type="button">Conditions</button>
+                            <button class="nav-link" id="conditions-tab" data-bs-toggle="tab" data-bs-target="#conditions" type="button" style="color: #6c757d; font-weight: 500;">
+                                <i class="fas fa-filter"></i> Conditions
+                            </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="options-tab" data-bs-toggle="tab" data-bs-target="#options" type="button">Options</button>
+                            <button class="nav-link" id="options-tab" data-bs-toggle="tab" data-bs-target="#options" type="button" style="color: #6c757d; font-weight: 500;">
+                                <i class="fas fa-sliders-h"></i> Options
+                            </button>
                         </li>
                     </ul>
                     
