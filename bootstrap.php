@@ -97,6 +97,21 @@ $twig = new Environment($loader, [
 $twig->addGlobal('app_name', env('APP_NAME', 'MessageHub'));
 $twig->addGlobal('app_url', env('APP_URL', ''));
 
+// Add Twig functions
+use Twig\TwigFunction;
+$twig->addFunction(new TwigFunction('getLevelColor', function($level) {
+    $colors = [
+        'ERROR' => 'danger',
+        'WARNING' => 'warning',
+        'INFO' => 'info',
+        'DEBUG' => 'secondary',
+        'CRITICAL' => 'danger',
+        'ALERT' => 'warning',
+        'EMERGENCY' => 'danger'
+    ];
+    return $colors[$level] ?? 'secondary';
+}));
+
 // Make Twig available globally
 $GLOBALS['twig'] = $twig;
 global $twig; // Also make it available as global variable for view() function

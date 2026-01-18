@@ -115,18 +115,6 @@ render('logs.html.twig', [
     'logLines' => $logLines,
     'fileSize' => $fileSize,
     'formattedSize' => formatBytes($fileSize),
-    'user' => $user,
-    'getLevelColor' => function($level) {
-        $colors = [
-            'ERROR' => 'danger',
-            'WARNING' => 'warning',
-            'INFO' => 'info',
-            'DEBUG' => 'secondary',
-            'CRITICAL' => 'danger',
-            'ALERT' => 'warning',
-            'EMERGENCY' => 'danger'
-        ];
-        return $colors[$level] ?? 'secondary';
-    }
+    'user' => $user
 ]);
 

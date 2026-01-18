@@ -519,6 +519,7 @@ class WhatsAppService
         
         logger("[SAVE] Message type: {$messageType}");
 
+        // Handle all WhatsApp message types
         switch ($messageType) {
             case 'text':
                 $messageBody = $messageData['text']['body'] ?? '';
@@ -535,6 +536,7 @@ class WhatsAppService
                 $mediaFilename = $mediaDetails['media_filename'] ?? null;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
+                $messageBody = $mediaCaption ?: 'Image';
                 break;
 
             case 'audio':
@@ -546,6 +548,7 @@ class WhatsAppService
                 $mediaFilename = $mediaDetails['media_filename'] ?? null;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
+                $messageBody = 'Audio message';
                 break;
 
             case 'video':
@@ -558,6 +561,7 @@ class WhatsAppService
                 $mediaFilename = $mediaDetails['media_filename'] ?? null;
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
+                $messageBody = $mediaCaption ?: 'Video message';
                 break;
 
             case 'document':
@@ -571,13 +575,102 @@ class WhatsAppService
                 $mediaSize = $mediaDetails['media_size'] ?? null;
                 $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
                 $mediaCaption = $mediaCaption ?: 'document_' . time();
+                $messageBody = 'Document: ' . $mediaCaption;
                 break;
 
             case 'location':
                 $latitude = $messageData['location']['latitude'] ?? '';
                 $longitude = $messageData['location']['longitude'] ?? '';
+                $name = $messageData['location']['name'] ?? '';
+                $address = $messageData['location']['address'] ?? '';
                 $messageBody = "Location: {$latitude}, {$longitude}";
+                if ($name) $messageBody .= " ({$name})";
+                if ($address) $messageBody .= " - {$address}";
                 break;
+
+            case 'contacts':
+                $contacts = $messageData['contacts'] ?? [];
+                $contactNames = [];
+                foreach ($contacts as $contact) {
+                    $name = $contact['name']['formatted_name'] ?? $contact['name']['first_name'] ?? 'Unknown';
+                    $phones = $contact['phones'] ?? [];
+                    $phone = !empty($phones) ? $phones[0]['phone'] ?? '' : '';
+                    $contactNames[] = $name . ($phone ? " ({$phone})" : '');
+                }
+                $messageBody = 'Contact' . (count($contactNames) > 1 ? 's' : '') . ': ' . implode(', ', $contactNames);
+                break;
+
+            case 'sticker':
+                $mediaId = $messageData['sticker']['id'] ?? '';
+                $mediaMimeType = 'image/webp'; // Stickers are usually webp
+                $messageBody = 'Sticker';
+                
+                $mediaDetails = $this->fetchMediaDetails($mediaId);
+                $mediaUrl = $mediaDetails['media_url'] ?? null;
+                $mediaFilename = $mediaDetails['media_filename'] ?? null;
+                $mediaSize = $mediaDetails['media_size'] ?? null;
+                $mediaMimeType = $mediaDetails['mime_type'] ?? $mediaMimeType;
+                break;
+
+            case 'reaction':
+                $messageId = $messageData['reaction']['message_id'] ?? '';
+                $emoji = $messageData['reaction']['emoji'] ?? '❤️';
+                $messageBody = "Reaction: {$emoji}";
+                // Note: Reactions are typically linked to the original message
+                break;
+
+            case 'interactive':
+                $type = $messageData['interactive']['type'] ?? 'unknown';
+                $messageBody = 'Interactive message (' . $type . ')';
+                if (isset($messageData['interactive']['button_reply']['title'])) {
+                    $messageBody .= ': ' . $messageData['interactive']['button_reply']['title'];
+                } elseif (isset($messageData['interactive']['list_reply']['title'])) {
+                    $messageBody .= ': ' . $messageData['interactive']['list_reply']['title'];
+                }
+                break;
+
+            case 'button':
+                $text = $messageData['button']['payload'] ?? $messageData['button']['text'] ?? '';
+                $messageBody = 'Button message: ' . $text;
+                break;
+
+            case 'list':
+                $title = $messageData['list']['title'] ?? '';
+                $description = $messageData['list']['description'] ?? '';
+                $messageBody = 'List message: ' . $title;
+                if ($description) $messageBody .= ' - ' . $description;
+                break;
+
+            case 'system':
+                $messageBody = $messageData['system']['body'] ?? 'System message';
+                break;
+
+            case 'notification':
+                $messageBody = $messageData['notification']['body'] ?? 'Notification';
+                break;
+
+            case 'unsupported':
+            default:
+                // For unsupported or unknown types, save what we can
+                $messageBody = 'Unsupported message type: ' . $messageType;
+                logger("[SAVE] ⚠️  Unsupported message type received: {$messageType}", 'warning');
+                
+                // Try to extract any available text content
+                if (isset($messageData['body'])) {
+                    $messageBody = $messageData['body'];
+                } elseif (isset($messageData['text'])) {
+                    $messageBody = is_array($messageData['text']) ? ($messageData['text']['body'] ?? $messageBody) : $messageData['text'];
+                }
+                
+                // Store full message data in message_body as JSON for debugging
+                $messageBody = $messageBody . ' | Raw data: ' . json_encode($messageData, JSON_UNESCAPED_UNICODE);
+                break;
+        }
+        
+        // Normalize message_type - ensure it's a valid string
+        $messageType = strtolower(trim($messageType));
+        if (empty($messageType)) {
+            $messageType = 'unsupported';
         }
 
         // Save message
@@ -1692,4 +1785,4 @@ class WhatsAppService
             logger("[WORKFLOW ERROR] " . $e->getMessage(), 'error');
         }
     }
-}
+image.png}
