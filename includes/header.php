@@ -80,11 +80,14 @@
             background: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             border-radius: 8px;
-            min-width: 220px;
+            min-width: 280px;
+            max-width: 320px;
             z-index: 1001;
             padding: 0.5rem 0;
             margin-top: 0;
             animation: slideDown 0.2s ease;
+            max-height: 80vh;
+            overflow-y: auto;
         }
         @keyframes slideDown {
             from {
@@ -108,6 +111,7 @@
             text-decoration: none;
             transition: all 0.2s ease;
             font-size: 0.95rem;
+            justify-content: space-between;
         }
         .top-nav .dropdown-menu a:hover {
             background: #f5f5f5;
@@ -198,7 +202,11 @@
         'scheduled-messages.php',
         'notes.php',
         'deals.php',
-        'ip-commands.php'
+        'ip-commands.php',
+        'workflows.php',
+        'drip-campaigns.php',
+        'message-templates.php',
+        'webhook-manager.php'
     ];
     ?>
     <!-- Top Navigation -->
@@ -238,8 +246,46 @@
                     <a href="notes.php" class="<?php echo $currentPage === 'notes.php' ? 'active' : ''; ?>">📝 Notes</a>
                     <a href="deals.php" class="<?php echo $currentPage === 'deals.php' ? 'active' : ''; ?>">💰 Deals</a>
                     <a href="ip-commands.php" class="<?php echo $currentPage === 'ip-commands.php' ? 'active' : ''; ?>">💻 IP Commands</a>
+                    
+                    <!-- Automation Section -->
+                    <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
+                        <div style="padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Automation</div>
+                        <a href="workflows.php" class="<?php echo $currentPage === 'workflows.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../workflows.php') ? '1' : '0.6'; ?>;">
+                            🔄 Workflows
+                            <?php if (!file_exists(__DIR__ . '/../workflows.php')): ?>
+                                <span style="font-size: 0.7rem; color: #f59e0b; margin-left: auto;">(Coming Soon)</span>
+                            <?php endif; ?>
+                        </a>
+                        <a href="drip-campaigns.php" class="<?php echo $currentPage === 'drip-campaigns.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../drip-campaigns.php') ? '1' : '0.6'; ?>;">
+                            💧 Drip Campaigns
+                            <?php if (!file_exists(__DIR__ . '/../drip-campaigns.php')): ?>
+                                <span style="font-size: 0.7rem; color: #f59e0b; margin-left: auto;">(Coming Soon)</span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
+                    
+                    <!-- Templates & Integration Section -->
+                    <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
+                        <div style="padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Templates & Integration</div>
+                        <a href="message-templates.php" class="<?php echo $currentPage === 'message-templates.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../message-templates.php') ? '1' : '0.6'; ?>;">
+                            📝 Message Templates
+                            <?php if (!file_exists(__DIR__ . '/../message-templates.php')): ?>
+                                <span style="font-size: 0.7rem; color: #f59e0b; margin-left: auto;">(Coming Soon)</span>
+                            <?php endif; ?>
+                        </a>
+                        <a href="webhook-manager.php" class="<?php echo $currentPage === 'webhook-manager.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../webhook-manager.php') ? '1' : '0.6'; ?>;">
+                            🔗 Webhook Manager
+                            <?php if (!file_exists(__DIR__ . '/../webhook-manager.php')): ?>
+                                <span style="font-size: 0.7rem; color: #f59e0b; margin-left: auto;">(Coming Soon)</span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
+                    
+                    <!-- Admin Section -->
                     <?php if (isAdmin()): ?>
-                    <a href="users.php" class="<?php echo $currentPage === 'users.php' ? 'active' : ''; ?>">👥 Users</a>
+                    <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
+                        <a href="users.php" class="<?php echo $currentPage === 'users.php' ? 'active' : ''; ?>">👥 Users</a>
+                    </div>
                     <?php endif; ?>
                 </div>
             </div>
