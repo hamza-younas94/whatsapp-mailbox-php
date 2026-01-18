@@ -149,7 +149,7 @@
 </div>
 
 <!-- CRM Modal with Advanced Features -->
-<div id="crmModal" class="modal" style="display: none;">
+<div id="crmModal" class="modal" style="display: none;" onclick="if(event.target === this) event.stopPropagation();">
     <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation();">
         <div class="modal-header">
             <h2 id="crmModalTitle">CRM Details</h2>

@@ -318,15 +318,9 @@ function closeCrmModal() {
     }
 }
 
-// Close modal when clicking outside (on backdrop)
-document.addEventListener('click', function(e) {
-    const modal = document.getElementById('crmModal');
-    if (modal && modal.classList.contains('show') && e.target === modal) {
-        closeCrmModal();
-    }
-});
+// Modals should NOT close when clicking outside - removed backdrop click handler
 
-// Close modal with ESC key
+// ESC key still closes modals (kept for UX)
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         const modal = document.getElementById('crmModal');

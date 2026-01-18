@@ -1189,16 +1189,27 @@ function createTask() {
             }
         }
     } else {
-        // Get first admin user
-        $adminUser = \App\Models\User::where('role', 'admin')->first();
-        if ($adminUser) {
-            $userId = $adminUser->id;
-        } else {
-            $anyUser = \App\Models\User::first();
-            if ($anyUser) {
-                $userId = $anyUser->id;
+        // If no user_id in session, try to get current user from session
+        if (isset($_SESSION['user_id'])) {
+            $sessionUser = \App\Models\User::find($_SESSION['user_id']);
+            if ($sessionUser) {
+                $userId = $sessionUser->id;
+            }
+        }
+        
+        // If still no user, try to get first admin user
+        if (!$userId) {
+            $adminUser = \App\Models\User::where('role', 'admin')->first();
+            if ($adminUser) {
+                $userId = $adminUser->id;
             } else {
-                response_error('No valid user found. Please create a user first.', 422);
+                // Get any user as last resort
+                $anyUser = \App\Models\User::first();
+                if ($anyUser) {
+                    $userId = $anyUser->id;
+                } else {
+                    response_error('No valid user found. Please create a user first.', 422);
+                }
             }
         }
     }

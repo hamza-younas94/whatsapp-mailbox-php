@@ -1025,13 +1025,7 @@ function closeCrmModal() {
     }
 }
 
-// Close modal when clicking outside (on backdrop)
-document.addEventListener('click', function(e) {
-    const crmModal = document.getElementById('crmModal');
-    if (crmModal && crmModal.classList.contains('show') && e.target === crmModal) {
-        closeCrmModal();
-    }
-});
+// Modals should NOT close when clicking outside - removed backdrop click handler
 
 // Close modal with ESC key
 document.addEventListener('keydown', function(e) {
@@ -1671,14 +1665,7 @@ async function sendTemplate() {
     }
 }
 
-// Close template modal when clicking outside (on backdrop only)
-window.onclick = function(event) {
-    const templateModal = document.getElementById('templateModal');
-    
-    if (event.target === templateModal) {
-        closeTemplateModal();
-    }
-}
+// Modals should NOT close when clicking outside - removed backdrop click handler
 
 /**
  * Validate message input

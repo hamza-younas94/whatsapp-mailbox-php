@@ -542,13 +542,20 @@ async function saveDeal(event, contactId) {
                 showToast('Deal added successfully!', 'success');
             }
             form.reset();
-            validator.reset();
+            if (validator && typeof validator.reset === 'function') {
+                validator.reset();
+            }
             hideAddDealForm();
-            switchCrmTab('deals');
+            // Reload deals tab
+            setTimeout(() => switchCrmTab('deals'), 500);
         } else {
             // Handle validation errors from backend
-            if (result.errors) {
-                validator.showBackendErrors(result.errors);
+            if (result.errors && validator) {
+                if (typeof validator.showBackendErrors === 'function') {
+                    validator.showBackendErrors(result.errors);
+                } else if (typeof validator.setErrors === 'function') {
+                    validator.setErrors(result.errors);
+                }
             } else {
                 if (typeof showToast === 'function') {
                     showToast(result.error || 'Failed to add deal', 'error');
@@ -906,13 +913,19 @@ async function createTask(event, contactId) {
             showToast('Task created!', 'success');
             // Reset form
             form.reset();
-            validator.reset();
+            if (validator && typeof validator.reset === 'function') {
+                validator.reset();
+            }
             // Reload tasks tab
-            switchCrmTab('tasks');
+            setTimeout(() => switchCrmTab('tasks'), 500);
         } else {
             // Handle validation errors from backend
-            if (result.errors) {
-                validator.showBackendErrors(result.errors);
+            if (result.errors && validator) {
+                if (typeof validator.showBackendErrors === 'function') {
+                    validator.showBackendErrors(result.errors);
+                } else if (typeof validator.setErrors === 'function') {
+                    validator.setErrors(result.errors);
+                }
             } else {
                 showToast(result.error || 'Failed to create task', 'error');
             }
@@ -998,12 +1011,19 @@ async function addNote(event, contactId) {
         if (response.ok && result.success) {
             showToast('Note added!', 'success');
             form.reset();
-            validator.reset();
-            switchCrmTab('notes');
+            if (validator && typeof validator.reset === 'function') {
+                validator.reset();
+            }
+            // Reload notes tab
+            setTimeout(() => switchCrmTab('notes'), 500);
         } else {
             // Handle validation errors from backend
-            if (result.errors) {
-                validator.showBackendErrors(result.errors);
+            if (result.errors && validator) {
+                if (typeof validator.showBackendErrors === 'function') {
+                    validator.showBackendErrors(result.errors);
+                } else if (typeof validator.setErrors === 'function') {
+                    validator.setErrors(result.errors);
+                }
             } else {
                 showToast(result.error || 'Failed to add note', 'error');
             }

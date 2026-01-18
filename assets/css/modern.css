@@ -1169,7 +1169,7 @@ a.btn-secondary,
     justify-content: center !important;
     padding: 20px !important;
     overflow-y: auto !important;
-    cursor: pointer !important;
+    cursor: default !important;
 }
 
 .modal[style*="display: block"],

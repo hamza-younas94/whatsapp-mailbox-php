@@ -342,6 +342,11 @@ if (typeof FormValidator === 'undefined') {
         });
     }
     
+    showBackendErrors(errors) {
+        // Alias for setErrors for compatibility
+        this.setErrors(errors);
+    }
+    
     clearErrors() {
         this.errors = {};
         this.displayErrors();

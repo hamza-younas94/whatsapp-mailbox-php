@@ -556,13 +556,7 @@ async function deleteUser(userId) {
     }
 }
 
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const userModal = document.getElementById('userModal');
-    if (event.target === userModal) {
-        closeUserModal();
-    }
-}
+// Modals should NOT close when clicking outside - removed backdrop click handler
 </script>
 
 <?php

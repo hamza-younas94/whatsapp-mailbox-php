@@ -292,10 +292,4 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('messageDetailModal');
-    if (event.target === modal) {
-        closeDetailModal();
-    }
-}
+// Modals should NOT close when clicking outside - removed backdrop click handler
