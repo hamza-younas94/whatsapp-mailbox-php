@@ -611,7 +611,17 @@ class WhatsAppService
         
         // Check for quick reply shortcuts (only for text messages)
         if ($messageType === 'text' && !empty($messageBody)) {
-            $this->checkAndSendQuickReply($messageBody, $contact, $from);
+            // Detect if message is from a group (groups usually have @g.us suffix or context.group_id)
+            $isGroup = false;
+            if (isset($messageData['context']['from'])) {
+                $isGroup = strpos($messageData['context']['from'], '@g.us') !== false;
+            } elseif (isset($messageData['context']['group_id'])) {
+                $isGroup = true;
+            } elseif (isset($messageData['from']) && strpos($messageData['from'], '@g.us') !== false) {
+                $isGroup = true;
+            }
+            
+            $this->checkAndSendQuickReply($messageBody, $contact, $from, $isGroup);
             
             // Apply auto-tagging rules
             $this->applyAutoTagging($messageBody, $contact);
@@ -728,10 +738,10 @@ class WhatsAppService
      * Check incoming message for quick reply shortcuts and auto-respond
      * Enhanced with better matching, rate limiting, and error handling
      */
-    private function checkAndSendQuickReply($messageBody, $contact, $phoneNumber)
+    private function checkAndSendQuickReply($messageBody, $contact, $phoneNumber, $isGroup = false)
     {
         try {
-            logger("[QUICK_REPLY] Checking message: " . substr($messageBody, 0, 50));
+            logger("[QUICK_REPLY] Checking message: " . substr($messageBody, 0, 50) . ($isGroup ? " [GROUP]" : ""));
             
             // Trim and normalize the message
             $messageBody = trim($messageBody);
@@ -845,9 +855,10 @@ class WhatsAppService
             
             logger("[QUICK_REPLY] Passed rate limit check");
             
-            // Get all active quick replies, ordered by priority (if exists) or usage count
+            // Get all active quick replies, ordered by priority (desc) then usage count (desc)
             $allQuickReplies = \App\Models\QuickReply::where('is_active', true)
-                ->orderBy('usage_count', 'desc') // Most used first
+                ->orderBy('priority', 'desc')
+                ->orderBy('usage_count', 'desc')
                 ->get();
             
             logger("[QUICK_REPLY] Found " . $allQuickReplies->count() . " active quick replies");
@@ -858,107 +869,61 @@ class WhatsAppService
             }
             
             logger("[QUICK_REPLY] Search text: '{$searchText}'");
-            logger("[QUICK_REPLY] Available shortcuts: " . $allQuickReplies->pluck('shortcut')->implode(', '));
             
+            // Find matching reply with all filters
             $matchedReply = null;
-            $matchType = null;
             
-            logger("[QUICK_REPLY] Starting pattern matching strategies...");
-            
-            // Strategy 1: Exact match (highest priority)
-            logger("[QUICK_REPLY] Strategy 1: Exact match");
             foreach ($allQuickReplies as $qr) {
-                $shortcut = trim($qr->shortcut);
-                $shortcutLower = strtolower($shortcut);
-                $shortcutNoSlash = ltrim($shortcutLower, '/');
+                // Check contact filtering (blacklist/whitelist)
+                if (!$this->passesContactFilter($qr, $contact)) {
+                    logger("[QUICK_REPLY] Reply '{$qr->title}' filtered by contact filter");
+                    continue;
+                }
                 
-                logger("[QUICK_REPLY] Testing '{$searchText}' against '{$shortcutLower}' and '{$shortcutNoSlash}'");
+                // Check conditions
+                if (!$qr->conditionsMet($contact)) {
+                    logger("[QUICK_REPLY] Reply '{$qr->title}' filtered by conditions");
+                    continue;
+                }
                 
-                // Exact match (case-insensitive, with or without leading slash)
-                if ($searchText === $shortcutLower || $searchText === $shortcutNoSlash) {
+                // Check business hours
+                if (!$qr->isWithinBusinessHours()) {
+                    if ($qr->outside_hours_message) {
+                        // Send outside hours message instead
+                        $matchedReply = $qr;
+                        $matchedReply->message = $qr->outside_hours_message;
+                        logger("[QUICK_REPLY] Outside business hours, using outside hours message");
+                    } else {
+                        logger("[QUICK_REPLY] Reply '{$qr->title}' filtered by business hours");
+                        continue;
+                    }
+                    break;
+                }
+                
+                // Check if matches using model's matches() method
+                if ($qr->matches($searchText)) {
                     $matchedReply = $qr;
-                    $matchType = 'exact';
-                    logger("[QUICK_REPLY] ✅ Exact match: '{$shortcut}'");
+                    logger("[QUICK_REPLY] ✅ Match found: '{$qr->title}'");
                     break;
                 }
             }
             
-            // Strategy 2: Word boundary match (matches whole words only)
-            if (!$matchedReply) {
-                logger("[QUICK_REPLY] Strategy 2: Word boundary match");
-                foreach ($allQuickReplies as $qr) {
-                    $shortcut = trim($qr->shortcut);
-                    $shortcutLower = strtolower(ltrim($shortcut, '/'));
-                    
-                    // Match whole word (word boundary)
-                    $pattern = '/\b' . preg_quote($shortcutLower, '/') . '\b/i';
-                    if (preg_match($pattern, $searchText)) {
-                        $matchedReply = $qr;
-                        $matchType = 'word_boundary';
-                        logger("[QUICK_REPLY] ✅ Word boundary match: '{$shortcut}'");
-                        break;
-                    }
-                }
-            }
-            
-            // Strategy 3: Starts with match
-            if (!$matchedReply) {
-                foreach ($allQuickReplies as $qr) {
-                    $shortcut = trim($qr->shortcut);
-                    $shortcutLower = strtolower(ltrim($shortcut, '/'));
-                    
-                    if (strpos($searchText, $shortcutLower) === 0) {
-                        $matchedReply = $qr;
-                        $matchType = 'starts_with';
-                        logger("[QUICK_REPLY] ✅ Starts with match: '{$shortcut}'");
-                        break;
-                    }
-                }
-            }
-            
-            // Strategy 4: Contains match (fuzzy - lowest priority)
-            if (!$matchedReply) {
-                foreach ($allQuickReplies as $qr) {
-                    $shortcut = trim($qr->shortcut);
-                    $shortcutLower = strtolower(ltrim($shortcut, '/'));
-                    
-                    if (strpos($searchText, $shortcutLower) !== false) {
-                        $matchedReply = $qr;
-                        $matchType = 'contains';
-                        logger("[QUICK_REPLY] ✅ Contains match: '{$shortcut}'");
-                        break;
-                    }
-                }
-            }
-            
             if ($matchedReply) {
-                logger("[QUICK_REPLY] Match found: '{$matchedReply->title}' (Type: {$matchType})");
+                logger("[QUICK_REPLY] Processing match: '{$matchedReply->title}'");
                 
-                // Process message with variables
-                $replyMessage = $this->processQuickReplyMessage($matchedReply->message, $contact, $originalText);
+                // Apply delay if configured
+                if ($matchedReply->delay_seconds > 0) {
+                    logger("[QUICK_REPLY] Waiting {$matchedReply->delay_seconds} seconds before sending");
+                    sleep($matchedReply->delay_seconds);
+                }
                 
-                // Send the quick reply message with retry logic
-                $response = $this->sendQuickReplyWithRetry($phoneNumber, $replyMessage, 2);
-                
-                if ($response['success']) {
-                    // Increment usage count
-                    $matchedReply->increment('usage_count');
-                    logger("[QUICK_REPLY] ✅ Sent successfully, usage count: " . $matchedReply->usage_count);
-                    
-                    // Save the outgoing message to database with auto-reply marker
-                    Message::create([
-                        'contact_id' => $contact->id,
-                        'phone_number' => $phoneNumber,
-                        'message_id' => $response['message_id'],
-                        'message_type' => 'text',
-                        'direction' => 'outgoing',
-                        'message_body' => '[AUTO-REPLY] ' . $replyMessage,
-                        'timestamp' => now(),
-                        'status' => 'sent',
-                        'is_read' => true
-                    ]);
+                // Check if this is a sequence or single message
+                if (!empty($matchedReply->sequence_messages) && is_array($matchedReply->sequence_messages)) {
+                    // Send sequence of messages
+                    $this->sendQuickReplySequence($matchedReply, $contact, $phoneNumber, $originalText);
                 } else {
-                    logger("[QUICK_REPLY] ❌ Failed to send: " . ($response['error'] ?? 'Unknown error'), 'error');
+                    // Send single message (with optional media)
+                    $this->sendQuickReplyMessage($matchedReply, $contact, $phoneNumber, $originalText);
                 }
             } else {
                 logger("[QUICK_REPLY] No match found for message: " . substr($searchText, 0, 50));
@@ -970,23 +935,218 @@ class WhatsAppService
     }
     
     /**
-     * Process quick reply message with variables
+     * Check if contact passes filter (blacklist/whitelist)
+     */
+    private function passesContactFilter($quickReply, $contact)
+    {
+        // Check excluded contacts (blacklist)
+        if (!empty($quickReply->excluded_contact_ids) && is_array($quickReply->excluded_contact_ids)) {
+            if (in_array($contact->id, $quickReply->excluded_contact_ids)) {
+                return false;
+            }
+        }
+        
+        // Check included contacts (whitelist) - if set, only these contacts are allowed
+        if (!empty($quickReply->included_contact_ids) && is_array($quickReply->included_contact_ids)) {
+            if (!in_array($contact->id, $quickReply->included_contact_ids)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Send quick reply message (single or with media)
+     */
+    private function sendQuickReplyMessage($quickReply, $contact, $phoneNumber, $originalMessage)
+    {
+        // Process message with advanced variables
+        $replyMessage = $this->processQuickReplyMessage($quickReply->message, $contact, $originalMessage);
+        
+        $response = null;
+        
+        // Check if has media
+        if (!empty($quickReply->media_url) || !empty($quickReply->media_filename)) {
+            logger("[QUICK_REPLY] Sending message with media");
+            $mediaUrl = $quickReply->media_url;
+            
+            // If media_filename is set, construct local path
+            if (empty($mediaUrl) && !empty($quickReply->media_filename)) {
+                $mediaUrl = __DIR__ . '/../../uploads/' . $quickReply->media_filename;
+            }
+            
+            $mediaType = $quickReply->media_type ?? 'image';
+            
+            // Send media message
+            $response = $this->sendMediaMessage(
+                $phoneNumber,
+                $mediaUrl,
+                $mediaType,
+                $replyMessage // Caption
+            );
+        } else {
+            // Send text message
+            $response = $this->sendQuickReplyWithRetry($phoneNumber, $replyMessage, 2);
+        }
+        
+        if ($response && $response['success']) {
+            // Update analytics
+            $quickReply->incrementUsage();
+            $quickReply->incrementSuccess();
+            
+            logger("[QUICK_REPLY] ✅ Sent successfully");
+            
+            // Save the outgoing message to database with auto-reply marker
+            Message::create([
+                'contact_id' => $contact->id,
+                'phone_number' => $phoneNumber,
+                'message_id' => $response['message_id'] ?? null,
+                'message_type' => !empty($quickReply->media_url) ? $quickReply->media_type : 'text',
+                'direction' => 'outgoing',
+                'message_body' => '[AUTO-REPLY] ' . $replyMessage,
+                'media_url' => $quickReply->media_url ?? null,
+                'media_filename' => $quickReply->media_filename ?? null,
+                'timestamp' => now(),
+                'status' => 'sent',
+                'is_read' => true
+            ]);
+        } else {
+            // Track failure
+            $quickReply->incrementFailure();
+            logger("[QUICK_REPLY] ❌ Failed to send: " . ($response['error'] ?? 'Unknown error'), 'error');
+        }
+    }
+    
+    /**
+     * Send quick reply sequence (multiple messages)
+     */
+    private function sendQuickReplySequence($quickReply, $contact, $phoneNumber, $originalMessage)
+    {
+        $sequenceMessages = $quickReply->sequence_messages;
+        $delaySeconds = $quickReply->sequence_delay_seconds ?? 2;
+        
+        logger("[QUICK_REPLY] Sending sequence of " . count($sequenceMessages) . " messages");
+        
+        $allSuccess = true;
+        
+        foreach ($sequenceMessages as $index => $seqMessage) {
+            // Process message with variables
+            $message = is_array($seqMessage) ? ($seqMessage['message'] ?? '') : $seqMessage;
+            $processedMessage = $this->processQuickReplyMessage($message, $contact, $originalMessage);
+            
+            // Check if this message has media
+            $mediaUrl = is_array($seqMessage) ? ($seqMessage['media_url'] ?? null) : null;
+            $mediaType = is_array($seqMessage) ? ($seqMessage['media_type'] ?? 'image') : 'image';
+            
+            $response = null;
+            
+            if ($mediaUrl) {
+                $response = $this->sendMediaMessage($phoneNumber, $mediaUrl, $mediaType, $processedMessage);
+            } else {
+                $response = $this->sendQuickReplyWithRetry($phoneNumber, $processedMessage, 2);
+            }
+            
+            if ($response && $response['success']) {
+                // Save message to database
+                Message::create([
+                    'contact_id' => $contact->id,
+                    'phone_number' => $phoneNumber,
+                    'message_id' => $response['message_id'] ?? null,
+                    'message_type' => $mediaUrl ? $mediaType : 'text',
+                    'direction' => 'outgoing',
+                    'message_body' => '[AUTO-REPLY SEQUENCE ' . ($index + 1) . '/' . count($sequenceMessages) . '] ' . $processedMessage,
+                    'media_url' => $mediaUrl ?? null,
+                    'timestamp' => now(),
+                    'status' => 'sent',
+                    'is_read' => true
+                ]);
+                
+                // Wait before next message (except for last one)
+                if ($index < count($sequenceMessages) - 1 && $delaySeconds > 0) {
+                    sleep($delaySeconds);
+                }
+            } else {
+                $allSuccess = false;
+                logger("[QUICK_REPLY] ❌ Failed to send sequence message " . ($index + 1), 'error');
+                break; // Stop sequence on failure
+            }
+        }
+        
+        // Update analytics
+        $quickReply->incrementUsage();
+        if ($allSuccess) {
+            $quickReply->incrementSuccess();
+        } else {
+            $quickReply->incrementFailure();
+        }
+    }
+    
+    /**
+     * Process quick reply message with advanced variables
      */
     private function processQuickReplyMessage($message, $contact, $originalMessage = '')
     {
+        // Get contact's company name, stage, etc.
+        $companyName = $contact->company_name ?? '';
+        $stage = $contact->stage ?? '';
+        $email = $contact->email ?? '';
+        $city = $contact->city ?? '';
+        $country = $contact->country ?? '';
+        
+        // Get message count
+        $messageCount = Message::where('contact_id', $contact->id)->count();
+        
+        // Get last message date/time
+        $lastMessage = Message::where('contact_id', $contact->id)
+            ->orderBy('timestamp', 'desc')
+            ->first();
+        $lastMessageDate = $lastMessage ? date('Y-m-d', strtotime($lastMessage->timestamp)) : '';
+        $lastMessageTime = $lastMessage ? date('H:i:s', strtotime($lastMessage->timestamp)) : '';
+        
+        // Current date/time
+        $now = new \DateTime();
+        $currentDate = $now->format('Y-m-d');
+        $currentTime = $now->format('H:i:s');
+        $currentDateTime = $now->format('Y-m-d H:i:s');
+        
         // Replace variables in message
         $replacements = [
-            '{{name}}' => $contact->name,
-            '{{contact_name}}' => $contact->name,
-            '{{phone}}' => $contact->phone_number,
-            '{{phone_number}}' => $contact->phone_number,
+            // Basic contact info
+            '{{name}}' => $contact->name ?? '',
+            '{{contact_name}}' => $contact->name ?? '',
+            '{{phone}}' => $contact->phone_number ?? '',
+            '{{phone_number}}' => $contact->phone_number ?? '',
             '{{message}}' => $originalMessage,
             '{{user_message}}' => $originalMessage,
+            
+            // Advanced contact info
+            '{{company}}' => $companyName,
+            '{{company_name}}' => $companyName,
+            '{{stage}}' => $stage,
+            '{{email}}' => $email,
+            '{{city}}' => $city,
+            '{{country}}' => $country,
+            
+            // Date/time variables
+            '{{date}}' => $currentDate,
+            '{{time}}' => $currentTime,
+            '{{datetime}}' => $currentDateTime,
+            '{{current_date}}' => $currentDate,
+            '{{current_time}}' => $currentTime,
+            
+            // Last message date/time
+            '{{last_message_date}}' => $lastMessageDate,
+            '{{last_message_time}}' => $lastMessageTime,
+            
+            // Statistics
+            '{{message_count}}' => $messageCount,
+            '{{total_messages}}' => $messageCount,
         ];
         
         $processedMessage = $message;
         foreach ($replacements as $placeholder => $value) {
-            $processedMessage = str_replace($placeholder, $value, $processedMessage);
+            $processedMessage = str_replace($placeholder, (string)$value, $processedMessage);
         }
         
         return $processedMessage;
