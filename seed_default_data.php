@@ -16,27 +16,71 @@ echo "🌱 Seeding default data...\n\n";
 
 // Get first valid user ID
 $userId = null;
+$userSource = '';
+
 try {
+    // First, check if users table exists and has data
     if (Capsule::schema()->hasTable('users')) {
-        // Try admin first
-        $firstUser = Capsule::table('users')->where('role', 'admin')->first();
-        if ($firstUser && isset($firstUser->id)) {
-            // Verify user actually exists by checking ID
-            $verified = Capsule::table('users')->where('id', $firstUser->id)->first();
-            if ($verified) {
-                $userId = $firstUser->id;
-            }
-        }
+        $userCount = Capsule::table('users')->count();
+        echo "📊 Found 'users' table with {$userCount} user(s)\n";
         
-        // If no admin, try any user
-        if (!$userId) {
-            $anyUser = Capsule::table('users')->orderBy('id')->first();
-            if ($anyUser && isset($anyUser->id)) {
-                $verified = Capsule::table('users')->where('id', $anyUser->id)->first();
-                if ($verified) {
+        if ($userCount > 0) {
+            // Try admin first
+            $firstUser = Capsule::table('users')->where('role', 'admin')->first();
+            if ($firstUser && isset($firstUser->id)) {
+                $userId = $firstUser->id;
+                $userSource = 'admin user';
+            } else {
+                // Try any user
+                $anyUser = Capsule::table('users')->orderBy('id')->first();
+                if ($anyUser && isset($anyUser->id)) {
                     $userId = $anyUser->id;
+                    $userSource = 'any user';
                 }
             }
+        }
+    }
+    
+    // Fallback to admin_users table if users table is empty
+    if (!$userId && Capsule::schema()->hasTable('admin_users')) {
+        $adminCount = Capsule::table('admin_users')->count();
+        echo "📊 Found 'admin_users' table with {$adminCount} user(s)\n";
+        
+        if ($adminCount > 0) {
+            $adminUser = Capsule::table('admin_users')->orderBy('id')->first();
+            if ($adminUser && isset($adminUser->id)) {
+                // Check if this admin user exists in users table
+                if (Capsule::schema()->hasTable('users')) {
+                    $migratedUser = Capsule::table('users')->where('id', $adminUser->id)->first();
+                    if ($migratedUser) {
+                        $userId = $migratedUser->id;
+                        $userSource = 'migrated admin user';
+                    }
+                }
+            }
+        }
+    }
+    
+    // Last resort: Create a default admin user if no users exist
+    if (!$userId && Capsule::schema()->hasTable('users')) {
+        echo "⚠️  No users found. Creating default admin user...\n";
+        try {
+            $defaultUserId = Capsule::table('users')->insertGetId([
+                'username' => 'admin',
+                'email' => 'admin@example.com',
+                'password' => password_hash('admin123', PASSWORD_DEFAULT),
+                'full_name' => 'System Administrator',
+                'role' => 'admin',
+                'is_active' => true,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+            $userId = $defaultUserId;
+            $userSource = 'default admin (created)';
+            echo "✅ Created default admin user (username: admin, password: admin123)\n";
+            echo "   ⚠️  Please change the password after first login!\n";
+        } catch (Exception $e) {
+            echo "❌ Could not create default user: " . $e->getMessage() . "\n";
         }
     }
 } catch (Exception $e) {
@@ -44,9 +88,9 @@ try {
 }
 
 if (!$userId) {
-    echo "❌ Error: No valid users found in 'users' table.\n";
+    echo "\n❌ Error: No valid users found and could not create default user.\n";
     echo "   Please create a user first by:\n";
-    echo "   1. Logging into the system (first login creates admin user)\n";
+    echo "   1. Logging into the system at login.php\n";
     echo "   2. Or visit users.php to create a user manually\n";
     echo "   3. Then run this seeder again\n\n";
     exit(1);
@@ -59,7 +103,7 @@ if (!$verifyUser) {
     exit(1);
 }
 
-echo "✅ Using user ID: {$userId} (" . ($verifyUser->username ?? 'Unknown') . ")\n\n";
+echo "✅ Using user ID: {$userId} (" . ($verifyUser->username ?? 'Unknown') . ") - Source: {$userSource}\n\n";
 
 // 1. Seed Workflows
 echo "📋 Creating sample workflows...\n";
