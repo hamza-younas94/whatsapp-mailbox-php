@@ -308,8 +308,33 @@ async function openCrmModal(contactId) {
 }
 
 function closeCrmModal() {
-    document.getElementById('crmModal').style.display = 'none';
+    const modal = document.getElementById('crmModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    }
 }
+
+// Close modal when clicking outside (on backdrop)
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('crmModal');
+    if (modal && modal.classList.contains('show') && e.target === modal) {
+        closeCrmModal();
+    }
+});
+
+// Close modal with ESC key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('crmModal');
+        if (modal && modal.classList.contains('show')) {
+            closeCrmModal();
+        }
+    }
+});
 
 async function updateStage(contactId) {
     const stage = document.getElementById('crmStage').value;
