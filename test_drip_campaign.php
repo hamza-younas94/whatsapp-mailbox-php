@@ -182,6 +182,16 @@ $contacts = Contact::orderBy('name')->limit(50)->get();
                             ➕ Add Subscriber & Start Campaign
                         </button>
                     </form>
+                    
+                    <div class="alert alert-info mt-3">
+                        <strong>💡 How it works:</strong><br>
+                        1. Select a campaign and contact<br>
+                        2. Click "Add Subscriber" - this adds the contact to the campaign<br>
+                        3. The first step will send immediately (delay: 0 minutes)<br>
+                        4. Use "Send Next Step" button to manually send the next step, or wait for cron job<br>
+                        <br>
+                        <strong>Automatic Processing:</strong> Run <code>php process_jobs.php</code> every minute via cron to automatically send drip campaign steps when delays are met.
+                    </div>
                 </div>
             </div>
             
