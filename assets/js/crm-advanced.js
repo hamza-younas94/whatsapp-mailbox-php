@@ -360,6 +360,68 @@ async function saveContactTags(contactId) {
 }
 
 /**
+ * Update Company Info
+ */
+async function updateCompanyInfo(contactId) {
+    const form = document.getElementById('companyInfoForm');
+    if (!form) return;
+    
+    const validator = new FormValidator(form);
+    
+    const company_name = document.getElementById('crmCompany').value.trim();
+    const email = document.getElementById('crmEmail').value.trim();
+    const city = document.getElementById('crmCity').value.trim();
+    
+    // Check if all fields are empty
+    if (!company_name && !email && !city) {
+        showToast('Please enter at least one field to update', 'error');
+        return;
+    }
+    
+    const rules = {
+        email: email ? { email: true, maxLength: 255 } : {},
+        company_name: company_name ? { maxLength: 255 } : {},
+        city: city ? { maxLength: 100 } : {}
+    };
+    
+    if (!validator.validate(rules)) {
+        return;
+    }
+    
+    const companyData = {
+        company_name: company_name || null,
+        email: email || null,
+        city: city || null
+    };
+    
+    try {
+        const response = await fetch(`crm.php/contact/${contactId}/crm`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(companyData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            showToast('Company info updated!', 'success');
+            validator.reset();
+            // Reload overview tab
+            switchCrmTab('overview');
+        } else {
+            if (result.errors) {
+                validator.showBackendErrors(result.errors);
+            } else {
+                showToast(result.error || 'Failed to update company info', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error updating company info:', error);
+        showToast('Failed to update company info', 'error');
+    }
+}
+
+/**
  * Escape HTML helper
  */
 function escapeHtml(text) {
