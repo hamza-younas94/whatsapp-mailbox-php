@@ -114,10 +114,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
 }
 
 // Fetch all quick replies
-$replies = QuickReply::with('creator')
-    ->orderBy('priority', 'desc')
-    ->orderBy('usage_count', 'desc')
-    ->get();
+// Check if priority column exists before ordering by it
+$hasPriorityColumn = \Illuminate\Support\Facades\Schema::hasColumn('quick_replies', 'priority');
+$query = QuickReply::with('creator');
+
+if ($hasPriorityColumn) {
+    $query->orderBy('priority', 'desc');
+}
+$query->orderBy('usage_count', 'desc');
+
+$replies = $query->get();
 
 // Fetch tags and contacts for dropdowns
 $tags = Tag::orderBy('name')->get();
