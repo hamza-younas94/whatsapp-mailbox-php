@@ -159,7 +159,17 @@ if (!function_exists('view')) {
      */
     function view($template, $data = [])
     {
-        global $twig;
+        // Get Twig from global or GLOBALS
+        if (isset($GLOBALS['twig'])) {
+            $twig = $GLOBALS['twig'];
+        } else {
+            global $twig;
+        }
+        
+        if (!$twig) {
+            throw new \Exception('Twig not initialized. Make sure bootstrap.php is loaded.');
+        }
+        
         return $twig->render($template, $data);
     }
 }

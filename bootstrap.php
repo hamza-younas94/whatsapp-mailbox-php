@@ -99,6 +99,7 @@ $twig->addGlobal('app_url', env('APP_URL', ''));
 
 // Make Twig available globally
 $GLOBALS['twig'] = $twig;
+global $twig; // Also make it available as global variable for view() function
 
 // Start session (skip for webhooks)
 if (!defined('NO_SESSION') && session_status() === PHP_SESSION_NONE) {
