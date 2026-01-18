@@ -798,6 +798,42 @@ function formatTime(timestamp) {
 }
 
 /**
+ * Update message statuses in the UI
+ */
+function updateMessageStatuses(recentMessages) {
+    if (messages.length === 0) return;
+    
+    recentMessages.forEach(rm => {
+        const existingIndex = messages.findIndex(m => m.id === rm.id);
+        if (existingIndex !== -1 && messages[existingIndex].status !== rm.status) {
+            // Update in memory
+            messages[existingIndex].status = rm.status;
+            
+            // Update the UI element
+            const messageEl = document.querySelector(`[data-message-id="${rm.id}"]`);
+            if (messageEl) {
+                const timeEl = messageEl.querySelector('.message-time');
+                if (timeEl) {
+                    const timeText = timeEl.querySelector('.time-text');
+                    if (timeText) {
+                        const statusHtml = getStatusIcon(rm.status);
+                        const fullTime = timeText.getAttribute('title') || '';
+                        timeEl.innerHTML = timeText.outerHTML + statusHtml;
+                        // Restore title if it was there
+                        if (fullTime) {
+                            const newTimeText = timeEl.querySelector('.time-text');
+                            if (newTimeText) {
+                                newTimeText.setAttribute('title', fullTime);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
  * Get status icon - Modern SVG icons
  */
 function getStatusIcon(status) {
