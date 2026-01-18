@@ -17,11 +17,9 @@ if (!$user) {
 }
 
 // Check if user has admin permissions
-$isAdmin = true; // For now, allow all authenticated users
-// TODO: Add proper role check: $isAdmin = $user->role === 'admin' || $user->role === 'super_admin';
-
-if (!$isAdmin) {
+if (!isAdmin()) {
     header('Location: index.php');
+    $_SESSION['error'] = 'Access denied. Admin privileges required.';
     exit;
 }
 

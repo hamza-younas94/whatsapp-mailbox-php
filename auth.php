@@ -78,11 +78,64 @@ function getCurrentUser() {
     }
     
     try {
-        return AdminUser::find($_SESSION['user_id']);
+        $userId = $_SESSION['user_id'];
+        
+        // Try to get from User model first (new system)
+        $user = \App\Models\User::find($userId);
+        if ($user) {
+            return $user;
+        }
+        
+        // Fallback to AdminUser (legacy)
+        return AdminUser::find($userId);
     } catch (\Exception $e) {
         logger('Get current user error: ' . $e->getMessage(), 'error');
         return null;
     }
+}
+
+/**
+ * Check if current user has permission
+ */
+function hasPermission($permission) {
+    $user = getCurrentUser();
+    if (!$user) {
+        return false;
+    }
+    
+    // If user has can() method (User model)
+    if (method_exists($user, 'can')) {
+        return $user->can($permission);
+    }
+    
+    // AdminUser is always admin (full permissions)
+    if ($user instanceof AdminUser) {
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * Check if current user is admin
+ */
+function isAdmin() {
+    $user = getCurrentUser();
+    if (!$user) {
+        return false;
+    }
+    
+    // Check role property
+    if (isset($user->role)) {
+        return $user->role === 'admin';
+    }
+    
+    // AdminUser is always admin
+    if ($user instanceof AdminUser) {
+        return true;
+    }
+    
+    return false;
 }
 
 /**
