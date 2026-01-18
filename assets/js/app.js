@@ -229,6 +229,27 @@ function renderContacts(contactsList) {
 }
 
 /**
+ * Filter conversations by type (All, Unread, Starred, Archived)
+ */
+let currentConversationFilter = 'all';
+
+function filterConversations(filter) {
+    currentConversationFilter = filter;
+    
+    // Update filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.filter === filter) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Filter contacts
+    const query = document.getElementById('searchContacts')?.value || '';
+    filterContacts(query);
+}
+
+/**
  * Filter contacts by search query and conversation filter
  */
 function filterContacts(query) {
