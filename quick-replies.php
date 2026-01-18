@@ -843,7 +843,12 @@ function editReply(id) {
         // Switch to basic tab
         document.getElementById('basic-tab').click();
         
-        document.getElementById('replyModalTitle').textContent = 'Edit Quick Reply';
+        document.getElementById('replyModalTitle').innerHTML = `
+            <i class="fas fa-edit"></i> Edit Quick Reply
+            <small class="d-block mt-1" style="font-size: 12px; opacity: 0.9;">
+                12 Advanced Features Available • Use tabs below to configure
+            </small>
+        `;
         replyModal.show();
     }
 }
