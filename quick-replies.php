@@ -9,7 +9,7 @@ require_once __DIR__ . '/auth.php';
 use App\Models\QuickReply;
 use App\Models\Tag;
 use App\Models\Contact;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 // Check if user is authenticated
 $user = getCurrentUser();
@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
 
 // Fetch all quick replies
 // Check if priority column exists before ordering by it (for backward compatibility)
-$hasPriorityColumn = Schema::hasColumn('quick_replies', 'priority');
+$hasPriorityColumn = Capsule::schema()->hasColumn('quick_replies', 'priority');
 $query = QuickReply::with('creator');
 
 if ($hasPriorityColumn) {
