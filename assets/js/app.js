@@ -360,27 +360,80 @@ async function loadMessages(contactId) {
 }
 
 /**
- * Poll for new messages without reloading the thread
+ * Poll for new messages and status updates without reloading the thread
  */
 async function pollNewMessages() {
-    if (!currentContactId || !lastMessageId) {
+    if (!currentContactId) {
         return;
     }
     
     try {
-        const response = await fetch(`api.php/messages?contact_id=${currentContactId}&after_id=${lastMessageId}`);
+        // Fetch recent messages (last 50) to get status updates for existing messages
+        const response = await fetch(`api.php/messages?contact_id=${currentContactId}&limit=50&order=desc`);
         if (!response.ok) {
             return;
         }
         
-        const newMessages = await response.json();
-        if (!Array.isArray(newMessages) || newMessages.length === 0) {
+        const allMessages = await response.json();
+        if (!Array.isArray(allMessages) || allMessages.length === 0) {
             return;
         }
         
-        messages = messages.concat(newMessages);
-        lastMessageId = newMessages[newMessages.length - 1].id;
-        renderMessages(newMessages, { replace: false });
+        // Reverse to get chronological order
+        const recentMessages = allMessages.reverse();
+        
+        // Check if we have new messages or status updates
+        const hasNewMessages = lastMessageId ? recentMessages.some(m => m.id > lastMessageId) : true;
+        const hasStatusUpdates = messages.length > 0 && recentMessages.some(rm => {
+            const existingMsg = messages.find(m => m.id === rm.id);
+            return existingMsg && existingMsg.status !== rm.status;
+        });
+        
+        // Update existing messages with status changes
+        if (hasStatusUpdates) {
+            recentMessages.forEach(rm => {
+                const existingIndex = messages.findIndex(m => m.id === rm.id);
+                if (existingIndex !== -1 && messages[existingIndex].status !== rm.status) {
+                    messages[existingIndex].status = rm.status;
+                    // Update the UI element
+                    const messageEl = document.querySelector(`[data-message-id="${rm.id}"]`);
+                    if (messageEl) {
+                        const timeEl = messageEl.querySelector('.message-time');
+                        if (timeEl) {
+                            const timeText = timeEl.querySelector('.time-text');
+                            const statusHtml = getStatusIcon(rm.status);
+                            if (timeText && statusHtml) {
+                                timeEl.innerHTML = timeText.outerHTML + statusHtml;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Add new messages
+        if (hasNewMessages) {
+            const newMessages = lastMessageId 
+                ? recentMessages.filter(m => m.id > lastMessageId)
+                : recentMessages.slice(messages.length);
+            
+            if (newMessages.length > 0) {
+                messages = messages.concat(newMessages);
+                lastMessageId = newMessages[newMessages.length - 1].id;
+                renderMessages(newMessages, { replace: false });
+            } else {
+                // No new messages, but update full list if statuses changed
+                messages = recentMessages;
+            }
+        } else {
+            // No new messages, but keep list updated
+            messages = recentMessages;
+        }
+        
+        // Update lastMessageId
+        if (recentMessages.length > 0) {
+            lastMessageId = recentMessages[recentMessages.length - 1].id;
+        }
     } catch (error) {
         console.error('Error polling new messages:', error);
     }
