@@ -229,18 +229,28 @@ function renderContacts(contactsList) {
 }
 
 /**
- * Filter contacts by search query
+ * Filter contacts by search query and conversation filter
  */
 function filterContacts(query) {
-    if (!query) {
-        renderContacts(contacts);
-        return;
+    let filtered = contacts;
+    
+    // Apply conversation filter first
+    if (currentConversationFilter === 'unread') {
+        filtered = filtered.filter(c => c.unread_count > 0);
+    } else if (currentConversationFilter === 'starred') {
+        filtered = filtered.filter(c => c.is_starred);
+    } else if (currentConversationFilter === 'archived') {
+        filtered = filtered.filter(c => c.is_archived);
     }
     
-    const filtered = contacts.filter(contact => 
-        contact.name.toLowerCase().includes(query) ||
-        contact.phone_number.includes(query)
-    );
+    // Then apply search query
+    if (query) {
+        filtered = filtered.filter(contact => 
+            contact.name.toLowerCase().includes(query) ||
+            contact.phone_number.includes(query) ||
+            (contact.company_name && contact.company_name.toLowerCase().includes(query))
+        );
+    }
     
     renderContacts(filtered);
 }
