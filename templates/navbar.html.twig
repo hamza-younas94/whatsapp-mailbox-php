@@ -33,22 +33,43 @@
             Analytics
         </a>
         <div class="dropdown">
-            <a href="#" class="nav-link {% if currentPage in ['tags', 'auto-tag-rules', 'search', 'segments', 'scheduled', 'notes', 'deals', 'ip-commands'] %}active{% endif %}" title="More Options">
+            <a href="#" class="nav-link {% if currentPage in ['tags', 'auto-tag-rules', 'search', 'segments', 'scheduled', 'notes', 'deals', 'ip-commands', 'workflows', 'drip-campaigns', 'message-templates', 'webhook-manager', 'users'] %}active{% endif %}" title="More Options">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/>
                 </svg>
                 More ▾
             </a>
-            <div class="dropdown-menu">
+            <div class="dropdown-menu" style="min-width: 280px; max-height: 500px; overflow-y: auto;">
+                <h6 class="dropdown-header">CRM & Tools</h6>
                 <a href="tags.php" class="{% if currentPage == 'tags' %}active{% endif %}">🏷️ Tags</a>
                 <a href="auto-tag-rules.php" class="{% if currentPage == 'auto-tag-rules' %}active{% endif %}">🤖 Auto-Tag Rules</a>
                 <a href="search.php" class="{% if currentPage == 'search' %}active{% endif %}">🔍 Advanced Search</a>
                 <a href="segments.php" class="{% if currentPage == 'segments' %}active{% endif %}">📊 Segments</a>
-                <a href="scheduled-messages.php" class="{% if currentPage == 'scheduled' %}active{% endif %}">⏰ Scheduled</a>
+                <a href="scheduled-messages.php" class="{% if currentPage == 'scheduled' %}active{% endif %}">⏰ Scheduled Messages</a>
                 <a href="notes.php" class="{% if currentPage == 'notes' %}active{% endif %}">📝 Notes</a>
                 <a href="deals.php" class="{% if currentPage == 'deals' %}active{% endif %}">💰 Deals</a>
                 <a href="ip-commands.php" class="{% if currentPage == 'ip-commands' %}active{% endif %}">💻 IP Commands</a>
-                <a href="implementation-status.php" class="{% if currentPage == 'implementation' %}active{% endif %}">📈 Implementation</a>
+                
+                <h6 class="dropdown-header mt-2">Automation</h6>
+                <a href="workflows.php" class="{% if currentPage == 'workflows' %}active{% endif %}">
+                    <i class="fas fa-project-diagram"></i> Workflows
+                </a>
+                <a href="drip-campaigns.php" class="{% if currentPage == 'drip-campaigns' %}active{% endif %}">
+                    <i class="fas fa-tint"></i> Drip Campaigns
+                </a>
+
+                <h6 class="dropdown-header mt-2">Templates & Integration</h6>
+                <a href="message-templates.php" class="{% if currentPage == 'message-templates' %}active{% endif %}">
+                    <i class="fas fa-file-alt"></i> Message Templates
+                </a>
+                <a href="webhook-manager.php" class="{% if currentPage == 'webhook-manager' %}active{% endif %}">
+                    <i class="fas fa-webhook"></i> Webhook Manager
+                </a>
+                
+                {% if user.role == 'admin' %}
+                <h6 class="dropdown-header mt-2">Admin</h6>
+                <a href="users.php" class="{% if currentPage == 'users' %}active{% endif %}">👥 Users</a>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -75,6 +75,14 @@ document.addEventListener('DOMContentLoaded', function() {
         filterContacts(query);
     });
     
+    // Load CRM advanced features
+    if (typeof openCrmModal === 'undefined') {
+        // Load crm-advanced.js if not already loaded
+        const script = document.createElement('script');
+        script.src = 'assets/js/crm-advanced.js?v=' + Date.now();
+        document.head.appendChild(script);
+    }
+    
     // Message form submission
     const messageForm = document.getElementById('messageForm');
     const messageInput = document.getElementById('messageInput');
@@ -432,14 +440,27 @@ function renderMessages(messagesList, options = {}) {
             minute: '2-digit'
         });
         
+        // Message actions (star, forward, etc.)
+        const messageActions = direction === 'incoming' ? `
+            <div class="message-actions">
+                <button onclick="starMessage(${message.id}, this)" class="msg-action-btn" title="Star message">
+                    <i class="far fa-star"></i>
+                </button>
+                <button onclick="forwardMessage(${message.id})" class="msg-action-btn" title="Forward">
+                    <i class="fas fa-share"></i>
+                </button>
+            </div>
+        ` : '';
+        
         return `
-            <div class="message ${direction}">
+            <div class="message ${direction}" data-message-id="${message.id}">
                 <div class="message-bubble">
                     ${content}
                     <div class="message-time">
                         <span class="time-text" title="${fullTime}" onclick="showFullTime(this, '${message.timestamp}')">${time}</span>
                         ${status}
                     </div>
+                    ${messageActions}
                 </div>
             </div>
         `;
@@ -756,7 +777,14 @@ function escapeHtml(text) {
 /**
  * Open CRM side panel
  */
+// Use advanced CRM modal if available, otherwise fallback to basic
 function openCrmModal(contactId) {
+    if (typeof window.openCrmModalAdvanced === 'function') {
+        window.openCrmModalAdvanced(contactId);
+        return;
+    }
+    
+    // Fallback to basic modal
     const contact = contacts.find(c => c.id === contactId);
     if (!contact) return;
     
