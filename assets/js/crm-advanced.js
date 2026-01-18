@@ -634,7 +634,7 @@ async function renderTasksTab(contact) {
                     <i class="fas fa-plus-circle"></i>
                     <h3>Create Task</h3>
                 </div>
-                <form id="taskForm" class="needs-validation" novalidate>
+                <form id="taskForm" class="needs-validation" onsubmit="createTask(event, ${contact.id}); return false;" novalidate>
                     <div class="mb-3">
                         <input type="text" id="taskTitle" name="title" class="form-control" placeholder="Task title" required>
                         <div class="invalid-feedback">Please enter a task title (min 2 characters)</div>
