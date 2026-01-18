@@ -15,19 +15,37 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 echo "🌱 Seeding default data...\n\n";
 
 // Get first admin user or create default
-$firstUser = null;
+$userId = null;
 try {
     if (Capsule::schema()->hasTable('users')) {
         $firstUser = Capsule::table('users')->where('role', 'admin')->first();
+        if ($firstUser) {
+            $userId = $firstUser->id;
+        } else {
+            // Try any user
+            $anyUser = Capsule::table('users')->first();
+            if ($anyUser) {
+                $userId = $anyUser->id;
+            }
+        }
     }
-    if (!$firstUser && Capsule::schema()->hasTable('admin_users')) {
-        $firstUser = Capsule::table('admin_users')->first();
+    if (!$userId && Capsule::schema()->hasTable('admin_users')) {
+        $adminUser = Capsule::table('admin_users')->first();
+        if ($adminUser) {
+            $userId = $adminUser->id;
+        }
     }
 } catch (Exception $e) {
-    echo "⚠️  Could not find user, will use ID 1\n";
+    echo "⚠️  Could not find user table: " . $e->getMessage() . "\n";
 }
 
-$userId = $firstUser ? $firstUser->id : 1;
+if (!$userId) {
+    echo "❌ Error: No users found in database. Please create a user first.\n";
+    echo "   You can do this by logging into the system or creating a user via users.php\n";
+    exit(1);
+}
+
+echo "✅ Using user ID: {$userId}\n\n";
 
 // 1. Seed Workflows
 echo "📋 Creating sample workflows...\n";
