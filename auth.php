@@ -51,14 +51,28 @@ function login($username, $password) {
             }
         }
         
-        if ($user && password_verify($password, $user->password)) {
-            $_SESSION['user_id'] = $user->id;
-            $_SESSION['username'] = $user->username;
+        if ($user) {
+            // Check password (User model has verifyPassword method)
+            $passwordValid = false;
+            if (method_exists($user, 'verifyPassword')) {
+                $passwordValid = $user->verifyPassword($password);
+            } else {
+                // Fallback: check password_hash or password field
+                $hash = $user->password_hash ?? $user->password ?? null;
+                $passwordValid = $hash && password_verify($password, $hash);
+            }
             
-            // Update last login
-            $user->update(['last_login' => now()]);
-            
-            return true;
+            if ($passwordValid) {
+                $_SESSION['user_id'] = $user->id;
+                $_SESSION['username'] = $user->username;
+                
+                // Update last login
+                if (method_exists($user, 'update')) {
+                    $user->update(['last_login_at' => now()]);
+                }
+                
+                return true;
+            }
         }
         
         return false;
