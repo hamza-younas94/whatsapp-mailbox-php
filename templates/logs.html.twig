@@ -1,0 +1,193 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Logs Viewer - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="padding: 20px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-file-alt"></i> Logs Viewer</h2>
+        <div class="d-flex gap-2">
+            <button onclick="clearLogs()" class="btn btn-secondary btn-sm">
+                <i class="fas fa-trash"></i> Clear Logs
+            </button>
+            <button onclick="refreshLogs()" class="btn btn-primary btn-sm">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-folder"></i> Log Files</h5>
+                </div>
+                <div class="list-group list-group-flush" style="max-height: 600px; overflow-y: auto;">
+                    {% for file in logFiles %}
+                    <a href="?file={{ file }}&level={{ selectedLevel }}&search={{ searchQuery }}" 
+                       class="list-group-item list-group-item-action {{ file == selectedFile ? 'active' : '' }}">
+                        <i class="fas fa-file-alt"></i> {{ file }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> File Info</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>File:</strong> {{ selectedFile }}</p>
+                    <p><strong>Size:</strong> {{ formattedSize }}</p>
+                    <p><strong>Lines:</strong> {{ logLines|length }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <select id="levelFilter" class="form-select form-select-sm" onchange="filterLogs()">
+                                <option value="all" {{ selectedLevel == 'all' ? 'selected' : '' }}>All Levels</option>
+                                <option value="error" {{ selectedLevel == 'error' ? 'selected' : '' }}>Error</option>
+                                <option value="warning" {{ selectedLevel == 'warning' ? 'selected' : '' }}>Warning</option>
+                                <option value="info" {{ selectedLevel == 'info' ? 'selected' : '' }}>Info</option>
+                                <option value="debug" {{ selectedLevel == 'debug' ? 'selected' : '' }}>Debug</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <input type="text" id="searchInput" class="form-control form-control-sm" 
+                                       placeholder="Search logs..." value="{{ searchQuery }}"
+                                       onkeyup="if(event.key==='Enter') filterLogs()">
+                                <button class="btn btn-primary btn-sm" onclick="filterLogs()">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                                {% if searchQuery %}
+                                <button class="btn btn-secondary btn-sm" onclick="clearSearch()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div style="max-height: 600px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px;">
+                        {% if logLines|length == 0 %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>No log entries found</p>
+                        </div>
+                        {% else %}
+                        <table class="table table-sm table-hover mb-0">
+                            <tbody>
+                                {% for line in logLines %}
+                                <tr class="log-entry log-level-{{ line.level|lower }}">
+                                    <td style="width: 180px; color: #6c757d; white-space: nowrap;">
+                                        {{ line.timestamp }}
+                                    </td>
+                                    <td style="width: 80px;">
+                                        <span class="badge bg-{% if line.level == 'ERROR' or line.level == 'CRITICAL' or line.level == 'EMERGENCY' %}danger{% elseif line.level == 'WARNING' or line.level == 'ALERT' %}warning{% elseif line.level == 'INFO' %}info{% else %}secondary{% endif %}">
+                                            {{ line.level }}
+                                        </span>
+                                    </td>
+                                    <td style="width: 100px; color: #6c757d;">
+                                        {{ line.channel }}
+                                    </td>
+                                    <td>
+                                        <code style="background: transparent; color: inherit; padding: 0;">
+                                            {{ line.message|escape }}
+                                        </code>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.log-entry {
+    border-left: 3px solid transparent;
+}
+.log-entry.log-level-error,
+.log-entry.log-level-critical,
+.log-entry.log-level-emergency {
+    border-left-color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.05);
+}
+.log-entry.log-level-warning,
+.log-entry.log-level-alert {
+    border-left-color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.05);
+}
+.log-entry.log-level-info {
+    border-left-color: #0dcaf0;
+}
+.log-entry.log-level-debug {
+    border-left-color: #6c757d;
+}
+.log-entry:hover {
+    background-color: rgba(0, 0, 0, 0.02) !important;
+}
+</style>
+
+<script>
+function filterLogs() {
+    const level = document.getElementById('levelFilter').value;
+    const search = document.getElementById('searchInput').value;
+    const file = '{{ selectedFile }}';
+    window.location.href = `?file=${file}&level=${level}&search=${encodeURIComponent(search)}`;
+}
+
+function clearSearch() {
+    const level = document.getElementById('levelFilter').value;
+    const file = '{{ selectedFile }}';
+    window.location.href = `?file=${file}&level=${level}`;
+}
+
+function refreshLogs() {
+    window.location.reload();
+}
+
+function clearLogs() {
+    if (!confirm('Are you sure you want to clear all logs? This cannot be undone.')) {
+        return;
+    }
+    
+    fetch('api.php/clear-logs', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Logs cleared successfully', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast('Failed to clear logs', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to clear logs', 'error');
+    });
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+    if (document.visibilityState === 'visible') {
+        refreshLogs();
+    }
+}, 30000);
+</script>
+{% endblock %}
+

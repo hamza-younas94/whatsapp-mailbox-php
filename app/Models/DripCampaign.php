@@ -77,34 +77,3 @@ class DripCampaignStep extends Model
     }
 }
 
-class DripSubscriber extends Model
-{
-    protected $table = 'drip_subscribers';
-    
-    protected $fillable = [
-        'campaign_id',
-        'contact_id',
-        'current_step',
-        'status',
-        'next_send_at',
-        'started_at',
-        'completed_at'
-    ];
-    
-    protected $casts = [
-        'current_step' => 'integer',
-        'next_send_at' => 'datetime',
-        'started_at' => 'datetime',
-        'completed_at' => 'datetime'
-    ];
-    
-    public function campaign()
-    {
-        return $this->belongsTo(DripCampaign::class, 'campaign_id');
-    }
-    
-    public function contact()
-    {
-        return $this->belongsTo(Contact::class);
-    }
-}

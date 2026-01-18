@@ -1169,6 +1169,40 @@ function createTask() {
         response_error('Validation failed', 422, ['errors' => $validation]);
     }
     
+    // Ensure user_id exists
+    $userId = $_SESSION['user_id'] ?? null;
+    if ($userId) {
+        $userExists = \App\Models\User::find($userId);
+        if (!$userExists) {
+            // Try to get first admin user
+            $adminUser = \App\Models\User::where('role', 'admin')->first();
+            if ($adminUser) {
+                $userId = $adminUser->id;
+            } else {
+                // Get any user
+                $anyUser = \App\Models\User::first();
+                if ($anyUser) {
+                    $userId = $anyUser->id;
+                } else {
+                    response_error('No valid user found. Please create a user first.', 422);
+                }
+            }
+        }
+    } else {
+        // Get first admin user
+        $adminUser = \App\Models\User::where('role', 'admin')->first();
+        if ($adminUser) {
+            $userId = $adminUser->id;
+        } else {
+            $anyUser = \App\Models\User::first();
+            if ($anyUser) {
+                $userId = $anyUser->id;
+            } else {
+                response_error('No valid user found. Please create a user first.', 422);
+            }
+        }
+    }
+    
     $task = Task::create([
         'contact_id' => $input['contact_id'] ?? null,
         'title' => sanitize($input['title']),
@@ -1178,7 +1212,7 @@ function createTask() {
         'status' => $input['status'] ?? 'pending',
         'due_date' => $input['due_date'] ? date('Y-m-d H:i:s', strtotime($input['due_date'])) : null,
         'assigned_to' => $input['assigned_to'] ?? null,
-        'created_by' => $_SESSION['user_id'],
+        'created_by' => $userId,
         'notes' => sanitize($input['notes'] ?? '')
     ]);
     
@@ -1383,6 +1417,38 @@ function mergeContacts() {
         'success' => true,
         'merged_data' => $mergedData,
         'target_contact' => $targetContact->fresh()
+    ]);
+}
+
+/**
+ * Clear log files
+ */
+function clearLogs() {
+    // Only admins can clear logs
+    $user = \App\Models\User::find($_SESSION['user_id'] ?? null);
+    if (!$user || $user->role !== 'admin') {
+        response_error('Unauthorized', 403);
+    }
+    
+    $logDir = __DIR__ . '/storage/logs';
+    $cleared = 0;
+    
+    if (is_dir($logDir)) {
+        $files = scandir($logDir);
+        foreach ($files as $file) {
+            if ($file !== '.' && $file !== '..' && pathinfo($file, PATHINFO_EXTENSION) === 'log') {
+                $filePath = $logDir . '/' . $file;
+                if (file_exists($filePath) && is_writable($filePath)) {
+                    file_put_contents($filePath, '');
+                    $cleared++;
+                }
+            }
+        }
+    }
+    
+    response_json([
+        'success' => true,
+        'message' => "Cleared {$cleared} log file(s)"
     ]);
 }
 

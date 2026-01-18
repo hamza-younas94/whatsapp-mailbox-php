@@ -778,9 +778,21 @@ async function createTask(event, contactId) {
         return;
     }
     
+    const title = document.getElementById('taskTitle').value.trim();
+    
+    // Double-check title is not empty
+    if (!title || title.length < 2) {
+        const titleField = document.getElementById('taskTitle');
+        titleField.classList.add('is-invalid');
+        const feedback = titleField.nextElementSibling;
+        if (feedback) feedback.textContent = 'Task title is required (min 2 characters)';
+        showToast('Please enter a valid task title', 'error');
+        return;
+    }
+    
     const taskData = {
         contact_id: parseInt(contactId),
-        title: document.getElementById('taskTitle').value.trim(),
+        title: title,
         description: document.getElementById('taskDescription').value.trim(),
         type: document.getElementById('taskType').value,
         priority: document.getElementById('taskPriority').value,
