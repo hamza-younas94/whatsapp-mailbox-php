@@ -75,11 +75,14 @@ document.addEventListener('DOMContentLoaded', function() {
         filterContacts(query);
     });
     
-    // Load CRM advanced features
-    if (typeof openCrmModal === 'undefined') {
+    // Load CRM advanced features - Always load to ensure tabs are available
+    if (typeof window.openCrmModalAdvanced === 'undefined') {
         // Load crm-advanced.js if not already loaded
         const script = document.createElement('script');
         script.src = 'assets/js/crm-advanced.js?v=' + Date.now();
+        script.onload = function() {
+            console.log('CRM Advanced modal loaded with tabs');
+        };
         document.head.appendChild(script);
     }
     
