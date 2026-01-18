@@ -811,14 +811,24 @@ function escapeHtml(text) {
 /**
  * Open CRM side panel
  */
-// Use advanced CRM modal if available, otherwise fallback to basic
+// Always use advanced CRM modal with tabs (Overview, Timeline, Tasks, Notes, Deals)
 function openCrmModal(contactId) {
+    // Prioritize advanced CRM modal with tabs
     if (typeof window.openCrmModalAdvanced === 'function') {
         window.openCrmModalAdvanced(contactId);
         return;
     }
     
-    // Fallback to basic modal
+    // Wait a moment for script to load if not ready yet
+    setTimeout(() => {
+        if (typeof window.openCrmModalAdvanced === 'function') {
+            window.openCrmModalAdvanced(contactId);
+            return;
+        }
+        console.warn('Advanced CRM modal not available, using fallback');
+    }, 200);
+    
+    // Fallback to basic modal only if advanced fails
     const contact = contacts.find(c => c.id === contactId);
     if (!contact) return;
     
