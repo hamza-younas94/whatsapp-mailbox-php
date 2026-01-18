@@ -10,15 +10,19 @@ return [
     'up' => function() {
         $schema = Capsule::schema();
         
+        // Check if quick_replies table exists
+        if (!$schema->hasTable('quick_replies')) {
+            echo "⚠️  quick_replies table does not exist. Please run migration 005 first.\n";
+            return;
+        }
+        
         if (!$schema->hasTable('quick_replies')) {
             echo "⚠️  quick_replies table does not exist. Please run previous migrations first.\n";
             return;
         }
         
-        $table = $schema->getConnection()->getDoctrineSchemaManager()->listTableDetails('quick_replies');
-        
         // Priority field (for ordering matches)
-        if (!$table->hasColumn('priority')) {
+        if (!$schema->hasColumn('quick_replies', 'priority')) {
             $schema->table('quick_replies', function ($table) {
                 $table->integer('priority')->default(0)->after('is_active');
             });
@@ -26,7 +30,7 @@ return [
         }
         
         // Business hours support
-        if (!$table->hasColumn('business_hours_start')) {
+        if (!$schema->hasColumn('quick_replies', 'business_hours_start')) {
             $schema->table('quick_replies', function ($table) {
                 $table->time('business_hours_start')->nullable()->after('priority');
                 $table->time('business_hours_end')->nullable()->after('business_hours_start');
@@ -37,7 +41,7 @@ return [
         }
         
         // Multiple shortcuts (stored as JSON array)
-        if (!$table->hasColumn('shortcuts')) {
+        if (!$schema->hasColumn('quick_replies', 'shortcuts')) {
             $schema->table('quick_replies', function ($table) {
                 $table->json('shortcuts')->nullable()->after('shortcut');
             });
@@ -55,7 +59,7 @@ return [
         }
         
         // Conditions for conditional replies
-        if (!$table->hasColumn('conditions')) {
+        if (!$schema->hasColumn('quick_replies', 'conditions')) {
             $schema->table('quick_replies', function ($table) {
                 $table->json('conditions')->nullable()->after('shortcuts');
             });
@@ -63,7 +67,7 @@ return [
         }
         
         // Regex pattern matching
-        if (!$table->hasColumn('use_regex')) {
+        if (!$schema->hasColumn('quick_replies', 'use_regex')) {
             $schema->table('quick_replies', function ($table) {
                 $table->boolean('use_regex')->default(false)->after('conditions');
             });
@@ -71,7 +75,7 @@ return [
         }
         
         // Reply delay
-        if (!$table->hasColumn('delay_seconds')) {
+        if (!$schema->hasColumn('quick_replies', 'delay_seconds')) {
             $schema->table('quick_replies', function ($table) {
                 $table->integer('delay_seconds')->default(0)->after('use_regex');
             });
@@ -79,7 +83,7 @@ return [
         }
         
         // Media support
-        if (!$table->hasColumn('media_url')) {
+        if (!$schema->hasColumn('quick_replies', 'media_url')) {
             $schema->table('quick_replies', function ($table) {
                 $table->string('media_url', 500)->nullable()->after('delay_seconds');
                 $table->string('media_type', 50)->nullable()->after('media_url');
@@ -89,7 +93,7 @@ return [
         }
         
         // Contact filtering
-        if (!$table->hasColumn('excluded_contact_ids')) {
+        if (!$schema->hasColumn('quick_replies', 'excluded_contact_ids')) {
             $schema->table('quick_replies', function ($table) {
                 $table->json('excluded_contact_ids')->nullable()->after('media_filename');
                 $table->json('included_contact_ids')->nullable()->after('excluded_contact_ids');
@@ -98,7 +102,7 @@ return [
         }
         
         // Reply sequences (multi-message)
-        if (!$table->hasColumn('sequence_messages')) {
+        if (!$schema->hasColumn('quick_replies', 'sequence_messages')) {
             $schema->table('quick_replies', function ($table) {
                 $table->json('sequence_messages')->nullable()->after('included_contact_ids');
                 $table->integer('sequence_delay_seconds')->default(2)->after('sequence_messages');
@@ -107,7 +111,7 @@ return [
         }
         
         // Analytics
-        if (!$table->hasColumn('success_count')) {
+        if (!$schema->hasColumn('quick_replies', 'success_count')) {
             $schema->table('quick_replies', function ($table) {
                 $table->integer('success_count')->default(0)->after('usage_count');
                 $table->integer('failure_count')->default(0)->after('success_count');
@@ -117,7 +121,7 @@ return [
         }
         
         // Group message support
-        if (!$table->hasColumn('allow_groups')) {
+        if (!$schema->hasColumn('quick_replies', 'allow_groups')) {
             $schema->table('quick_replies', function ($table) {
                 $table->boolean('allow_groups')->default(false)->after('last_used_at');
             });
