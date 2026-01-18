@@ -576,12 +576,7 @@ function escapeHtml(text) {
 }
 
 // Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('crmModal');
-    if (event.target === modal) {
-        closeCrmModal();
-    }
-}
+// Modals should NOT close when clicking outside - removed backdrop click handler
 /**
  * Bulk Operations Functions
  */
@@ -780,10 +775,4 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-// Close delete modal when clicking outside
-document.addEventListener('click', function(event) {
-    const deleteModal = document.getElementById('bulkDeleteModal');
-    if (event.target === deleteModal) {
-        closeBulkDeleteModal();
-    }
-});
+// Modals should NOT close when clicking outside - removed backdrop click handler
