@@ -14,38 +14,52 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 
 echo "🌱 Seeding default data...\n\n";
 
-// Get first admin user or create default
+// Get first valid user ID
 $userId = null;
 try {
     if (Capsule::schema()->hasTable('users')) {
+        // Try admin first
         $firstUser = Capsule::table('users')->where('role', 'admin')->first();
-        if ($firstUser) {
-            $userId = $firstUser->id;
-        } else {
-            // Try any user
-            $anyUser = Capsule::table('users')->first();
-            if ($anyUser) {
-                $userId = $anyUser->id;
+        if ($firstUser && isset($firstUser->id)) {
+            // Verify user actually exists by checking ID
+            $verified = Capsule::table('users')->where('id', $firstUser->id)->first();
+            if ($verified) {
+                $userId = $firstUser->id;
+            }
+        }
+        
+        // If no admin, try any user
+        if (!$userId) {
+            $anyUser = Capsule::table('users')->orderBy('id')->first();
+            if ($anyUser && isset($anyUser->id)) {
+                $verified = Capsule::table('users')->where('id', $anyUser->id)->first();
+                if ($verified) {
+                    $userId = $anyUser->id;
+                }
             }
         }
     }
-    if (!$userId && Capsule::schema()->hasTable('admin_users')) {
-        $adminUser = Capsule::table('admin_users')->first();
-        if ($adminUser) {
-            $userId = $adminUser->id;
-        }
-    }
 } catch (Exception $e) {
-    echo "⚠️  Could not find user table: " . $e->getMessage() . "\n";
+    echo "⚠️  Error finding user: " . $e->getMessage() . "\n";
 }
 
 if (!$userId) {
-    echo "❌ Error: No users found in database. Please create a user first.\n";
-    echo "   You can do this by logging into the system or creating a user via users.php\n";
+    echo "❌ Error: No valid users found in 'users' table.\n";
+    echo "   Please create a user first by:\n";
+    echo "   1. Logging into the system (first login creates admin user)\n";
+    echo "   2. Or visit users.php to create a user manually\n";
+    echo "   3. Then run this seeder again\n\n";
     exit(1);
 }
 
-echo "✅ Using user ID: {$userId}\n\n";
+// Double-check user exists
+$verifyUser = Capsule::table('users')->where('id', $userId)->first();
+if (!$verifyUser) {
+    echo "❌ Error: User ID {$userId} does not exist in database.\n";
+    exit(1);
+}
+
+echo "✅ Using user ID: {$userId} (" . ($verifyUser->username ?? 'Unknown') . ")\n\n";
 
 // 1. Seed Workflows
 echo "📋 Creating sample workflows...\n";
@@ -139,15 +153,21 @@ try {
         $existingCount = DripCampaign::count();
         if ($existingCount == 0) {
             // Campaign 1: Welcome series
-            $campaign1 = DripCampaign::create([
+            $campaign1Data = [
                 'name' => 'Welcome Series',
                 'description' => '3-step welcome sequence for new customers',
                 'is_active' => true,
                 'trigger_conditions' => [
                     'stage' => 'NEW'
-                ],
-                'created_by' => $userId
-            ]);
+                ]
+            ];
+            
+            // Only add created_by if foreign key exists and is not nullable
+            if ($userId) {
+                $campaign1Data['created_by'] = $userId;
+            }
+            
+            $campaign1 = DripCampaign::create($campaign1Data);
             
             DripCampaignStep::create([
                 'campaign_id' => $campaign1->id,
@@ -177,15 +197,20 @@ try {
             ]);
             
             // Campaign 2: Follow-up series
-            $campaign2 = DripCampaign::create([
+            $campaign2Data = [
                 'name' => 'Follow-up Reminder',
                 'description' => 'Remind contacts who haven\'t responded in 3 days',
                 'is_active' => false,
                 'trigger_conditions' => [
                     'tags' => [1] // Assuming tag ID 1
-                ],
-                'created_by' => $userId
-            ]);
+                ]
+            ];
+            
+            if ($userId) {
+                $campaign2Data['created_by'] = $userId;
+            }
+            
+            $campaign2 = DripCampaign::create($campaign2Data);
             
             DripCampaignStep::create([
                 'campaign_id' => $campaign2->id,
@@ -211,38 +236,42 @@ try {
     if (Capsule::schema()->hasTable('message_templates')) {
         $existingCount = MessageTemplate::count();
         if ($existingCount == 0) {
-            MessageTemplate::create([
-                'name' => 'Welcome Template',
-                'whatsapp_template_name' => 'hello_world',
-                'language_code' => 'en',
-                'content' => 'Hello {{1}}, welcome to our service!',
-                'variables' => [1],
-                'category' => 'Welcome',
-                'status' => 'approved',
-                'created_by' => $userId
-            ]);
+            $templateData = [
+                [
+                    'name' => 'Welcome Template',
+                    'whatsapp_template_name' => 'hello_world',
+                    'language_code' => 'en',
+                    'content' => 'Hello {{1}}, welcome to our service!',
+                    'variables' => [1],
+                    'category' => 'Welcome',
+                    'status' => 'approved'
+                ],
+                [
+                    'name' => 'Order Confirmation',
+                    'whatsapp_template_name' => 'order_confirm',
+                    'language_code' => 'en',
+                    'content' => 'Hi {{1}}, your order {{2}} has been confirmed and will be delivered on {{3}}.',
+                    'variables' => [1, 2, 3],
+                    'category' => 'Orders',
+                    'status' => 'pending'
+                ],
+                [
+                    'name' => 'Payment Reminder',
+                    'whatsapp_template_name' => 'payment_reminder',
+                    'language_code' => 'en',
+                    'content' => 'Hello {{1}}, this is a reminder that your payment of {{2}} is due on {{3}}.',
+                    'variables' => [1, 2, 3],
+                    'category' => 'Billing',
+                    'status' => 'approved'
+                ]
+            ];
             
-            MessageTemplate::create([
-                'name' => 'Order Confirmation',
-                'whatsapp_template_name' => 'order_confirm',
-                'language_code' => 'en',
-                'content' => 'Hi {{1}}, your order {{2}} has been confirmed and will be delivered on {{3}}.',
-                'variables' => [1, 2, 3],
-                'category' => 'Orders',
-                'status' => 'pending',
-                'created_by' => $userId
-            ]);
-            
-            MessageTemplate::create([
-                'name' => 'Payment Reminder',
-                'whatsapp_template_name' => 'payment_reminder',
-                'language_code' => 'en',
-                'content' => 'Hello {{1}}, this is a reminder that your payment of {{2}} is due on {{3}}.',
-                'variables' => [1, 2, 3],
-                'category' => 'Billing',
-                'status' => 'approved',
-                'created_by' => $userId
-            ]);
+            foreach ($templateData as $template) {
+                if ($userId) {
+                    $template['created_by'] = $userId;
+                }
+                MessageTemplate::create($template);
+            }
             
             echo "✅ Created 3 sample message templates\n";
         } else {
