@@ -7,7 +7,6 @@ require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/auth.php';
 
 use App\Models\User;
-use App\Models\AdminUser;
 
 // Check if user is authenticated
 $user = getCurrentUser();

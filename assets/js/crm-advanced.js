@@ -394,7 +394,7 @@ async function updateCompanyInfo(contactId) {
     const form = document.getElementById('companyInfoForm');
     if (!form) return;
     
-    const validator = new FormValidator(form);
+    const validator = new FormValidator(form.id || form);
     
     const company_name = document.getElementById('crmCompany').value.trim();
     const email = document.getElementById('crmEmail').value.trim();
@@ -507,7 +507,7 @@ async function saveDeal(event, contactId) {
     event.preventDefault();
     
     const form = event.target;
-    const validator = new FormValidator(form);
+    const validator = new FormValidator(form.id || form);
     
     const rules = {
         deal_name: { required: true, minLength: 2, maxLength: 255 },
@@ -856,7 +856,11 @@ async function createTask(event, contactId) {
     event.preventDefault();
     
     const form = event.target;
-    const validator = new FormValidator(form);
+    if (!form || !form.id) {
+        console.error('Form not found or missing ID');
+        return;
+    }
+    const validator = new FormValidator(form.id || form);
     
     const rules = {
         title: { required: true, minLength: 2, maxLength: 255 },
@@ -966,7 +970,7 @@ async function addNote(event, contactId) {
     event.preventDefault();
     
     const form = event.target;
-    const validator = new FormValidator(form);
+    const validator = new FormValidator(form.id || form);
     
     const rules = {
         content: { required: true, minLength: 2 },

@@ -6,13 +6,21 @@
 // Prevent redeclaration if script is loaded multiple times
 if (typeof FormValidator === 'undefined') {
     class FormValidator {
-    constructor(formId, rules = {}) {
-        this.form = document.getElementById(formId);
+    constructor(formIdOrElement, rules = {}) {
+        // Accept both form ID string or form element
+        if (typeof formIdOrElement === 'string') {
+            this.form = document.getElementById(formIdOrElement);
+        } else if (formIdOrElement && formIdOrElement.tagName === 'FORM') {
+            this.form = formIdOrElement;
+        } else {
+            this.form = formIdOrElement; // Try as-is
+        }
+        
         this.rules = rules;
         this.errors = {};
         
         if (!this.form) {
-            console.error(`Form with id "${formId}" not found`);
+            console.error(`Form not found:`, formIdOrElement);
             return;
         }
         
