@@ -10,45 +10,33 @@
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 
-class Migration_016_Enhance_Message_Types
-{
-    public function up()
-    {
+return [
+    'up' => function() {
         // Check if message_type is ENUM and change to VARCHAR
-        $schema = Capsule::connection()->getDoctrineSchemaManager();
-        $table = $schema->listTableDetails('messages');
-        
-        if ($table->hasColumn('message_type')) {
-            $column = $table->getColumn('message_type');
-            
-            // If it's an ENUM, change to VARCHAR
-            if ($column->getType()->getName() === 'string' && method_exists($column, 'getPlatformOptions')) {
-                // For MySQL, check if it's ENUM by looking at the actual SQL
-                try {
+        // First, check the actual column type using SQL
+        try {
+            $columnInfo = Capsule::select("SHOW COLUMNS FROM `messages` WHERE Field = 'message_type'");
+            if (!empty($columnInfo)) {
+                $type = $columnInfo[0]->Type ?? '';
+                if (stripos($type, 'enum') !== false) {
+                    // It's an ENUM, change it to VARCHAR
                     Capsule::statement("ALTER TABLE `messages` MODIFY COLUMN `message_type` VARCHAR(50) DEFAULT 'text'");
                     echo "✅ Changed message_type from ENUM to VARCHAR(50)\n";
-                } catch (\Exception $e) {
-                    // Column might already be VARCHAR or different error
-                    echo "⚠️  message_type column update: " . $e->getMessage() . "\n";
-                    
-                    // Try alternative approach - check actual column type
-                    $columnInfo = Capsule::select("SHOW COLUMNS FROM `messages` WHERE Field = 'message_type'");
-                    if (!empty($columnInfo)) {
-                        $type = $columnInfo[0]->Type ?? '';
-                        if (stripos($type, 'enum') !== false) {
-                            // It's an ENUM, change it
-                            Capsule::statement("ALTER TABLE `messages` MODIFY COLUMN `message_type` VARCHAR(50) DEFAULT 'text'");
-                            echo "✅ Changed message_type from ENUM to VARCHAR(50)\n";
-                        } else {
-                            echo "✅ message_type is already VARCHAR or compatible type\n";
-                        }
+                } else {
+                    // Check if it's VARCHAR(50) or compatible
+                    if (stripos($type, 'varchar(50)') !== false || stripos($type, 'varchar') !== false) {
+                        echo "✅ message_type is already VARCHAR (type: {$type})\n";
+                    } else {
+                        // Try to change it anyway
+                        Capsule::statement("ALTER TABLE `messages` MODIFY COLUMN `message_type` VARCHAR(50) DEFAULT 'text'");
+                        echo "✅ Changed message_type to VARCHAR(50)\n";
                     }
                 }
             } else {
-                echo "✅ message_type column exists and is not ENUM (likely already VARCHAR)\n";
+                echo "⚠️  message_type column does not exist\n";
             }
-        } else {
-            echo "⚠️  message_type column does not exist\n";
+        } catch (\Exception $e) {
+            echo "⚠️  message_type column update: " . $e->getMessage() . "\n";
         }
         
         // Add index on message_type for better query performance
@@ -63,10 +51,9 @@ class Migration_016_Enhance_Message_Types
         } catch (\Exception $e) {
             echo "⚠️  Index creation: " . $e->getMessage() . "\n";
         }
-    }
+    },
     
-    public function down()
-    {
+    'down' => function() {
         // Revert to ENUM (optional - usually we don't want to lose data)
         try {
             Capsule::statement("ALTER TABLE `messages` MODIFY COLUMN `message_type` ENUM('text', 'image', 'audio', 'video', 'document', 'location', 'template') DEFAULT 'text'");
@@ -83,5 +70,5 @@ class Migration_016_Enhance_Message_Types
             echo "⚠️  Index removal: " . $e->getMessage() . "\n";
         }
     }
-}
+];
 
