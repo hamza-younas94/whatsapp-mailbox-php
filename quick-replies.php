@@ -496,9 +496,14 @@ require_once __DIR__ . '/includes/header.php';
 <div class="modal fade" id="replyModal" tabindex="-1">
     <div class="modal-dialog modal-xl" style="max-width: 900px;">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="replyModalTitle">New Quick Reply</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="replyModalTitle">
+                    <i class="fas fa-plus-circle"></i> New Quick Reply
+                    <small class="d-block mt-1" style="font-size: 12px; opacity: 0.9;">
+                        12 Advanced Features Available • Use tabs below to configure
+                    </small>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="replyForm">
