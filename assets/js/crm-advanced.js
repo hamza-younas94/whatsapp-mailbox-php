@@ -11,10 +11,35 @@ let currentCrmTab = 'overview';
  */
 window.openCrmModalAdvanced = async function openCrmModal(contactId) {
     // Use global contacts array (from crm.js or app.js)
-    const contactsList = window.allContacts || window.contacts || [];
-    const contact = contactsList.find(c => c.id === contactId);
+    let contactsList = window.allContacts || window.contacts || [];
+    let contact = contactsList.find(c => c.id == contactId);
+    
+    // If contact not found, try to fetch all contacts
+    if (!contact) {
+        try {
+            const response = await fetch('api.php/contacts');
+            if (response.ok) {
+                const allContactsData = await response.json();
+                // Update global arrays
+                window.allContacts = allContactsData;
+                window.contacts = allContactsData;
+                // Update local allContacts if it exists (from crm.js)
+                if (typeof allContacts !== 'undefined') {
+                    allContacts = allContactsData;
+                }
+                contactsList = allContactsData;
+                contact = allContactsData.find(c => c.id == contactId);
+            }
+        } catch (e) {
+            console.error('Error fetching contacts:', e);
+        }
+    }
+    
     if (!contact) {
         console.error('Contact not found:', contactId);
+        if (typeof showToast === 'function') {
+            showToast('Contact not found', 'error');
+        }
         return;
     }
     

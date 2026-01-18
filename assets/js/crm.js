@@ -204,17 +204,33 @@ function filterContacts(query) {
  * Open CRM modal with advanced features (tabbed interface)
  */
 async function openCrmModal(contactId) {
-    const contact = allContacts.find(c => c.id === contactId);
-    if (!contact) return;
+    // Ensure contacts are loaded and available globally
+    if (!allContacts || allContacts.length === 0) {
+        await loadCrmData();
+    }
     
-    const modal = document.getElementById('crmModal');
-    const content = document.getElementById('crmModalContent');
+    // Make contacts available globally for advanced modal
+    window.allContacts = allContacts;
+    window.contacts = allContacts;
     
     // Use advanced CRM modal if available
     if (typeof window.openCrmModalAdvanced === 'function') {
         window.openCrmModalAdvanced(contactId);
         return;
     }
+    
+    // Fallback to basic modal
+    const contact = allContacts.find(c => c.id == contactId);
+    if (!contact) {
+        console.error('Contact not found:', contactId);
+        if (typeof showToast === 'function') {
+            showToast('Contact not found', 'error');
+        }
+        return;
+    }
+    
+    const modal = document.getElementById('crmModal');
+    const content = document.getElementById('crmModalContent');
     
     // Fallback to basic modal
     content.innerHTML = `
