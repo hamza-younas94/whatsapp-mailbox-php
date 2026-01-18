@@ -160,6 +160,135 @@ require_once __DIR__ . '/includes/header.php';
         </button>
     </div>
 
+    <!-- Advanced Features Overview -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-rocket"></i> 🚀 Advanced Auto-Reply Features Available
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Your Quick Replies system now supports <strong>12 advanced features</strong> to create powerful, intelligent auto-replies:</p>
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">1</span>
+                                <div>
+                                    <strong>Priority/Ordering</strong>
+                                    <br><small class="text-muted">Control match order with priority field</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">2</span>
+                                <div>
+                                    <strong>Business Hours</strong>
+                                    <br><small class="text-muted">Time-based replies with timezone support</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">3</span>
+                                <div>
+                                    <strong>Conditional Replies</strong>
+                                    <br><small class="text-muted">Tags, stage, metadata, message count conditions</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">4</span>
+                                <div>
+                                    <strong>Multiple Shortcuts</strong>
+                                    <br><small class="text-muted">Link multiple keywords to same response</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">5</span>
+                                <div>
+                                    <strong>Regex Patterns</strong>
+                                    <br><small class="text-muted">Advanced pattern matching support</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">6</span>
+                                <div>
+                                    <strong>Reply Delays</strong>
+                                    <br><small class="text-muted">Simulate human response time</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">7</span>
+                                <div>
+                                    <strong>Media Support</strong>
+                                    <br><small class="text-muted">Images, documents, video in replies</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">8</span>
+                                <div>
+                                    <strong>Contact Filtering</strong>
+                                    <br><small class="text-muted">Blacklist/whitelist specific contacts</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">9</span>
+                                <div>
+                                    <strong>Reply Sequences</strong>
+                                    <br><small class="text-muted">Multi-message sequences with delays</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">10</span>
+                                <div>
+                                    <strong>Advanced Variables</strong>
+                                    <br><small class="text-muted">{{date}}, {{time}}, {{company}}, {{stage}}, etc.</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">11</span>
+                                <div>
+                                    <strong>Enhanced Analytics</strong>
+                                    <br><small class="text-muted">Success/failure tracking, last used date</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-primary">12</span>
+                                <div>
+                                    <strong>Group Support</strong>
+                                    <br><small class="text-muted">Works in group messages too</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Click "New Quick Reply" or edit any existing reply to access all these features in the modal tabs!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Fuzzy Matching Info Banner -->
     <div class="alert alert-info d-flex align-items-start mb-4" style="border-left: 4px solid #3b82f6;">
         <i class="fas fa-magic" style="font-size: 24px; margin-right: 15px; margin-top: 3px;"></i>
