@@ -32,8 +32,27 @@ class User extends Model
     ];
     
     protected $hidden = [
-        'password'
+        'password',
+        'password_hash'
     ];
+    
+    /**
+     * Hash password before saving
+     */
+    public function setPasswordAttribute($password)
+    {
+        if (!empty($password)) {
+            $this->attributes['password'] = password_hash($password, PASSWORD_DEFAULT);
+        }
+    }
+    
+    /**
+     * Verify password
+     */
+    public function verifyPassword($password)
+    {
+        return password_verify($password, $this->password);
+    }
     
     /**
      * Contacts assigned to this agent

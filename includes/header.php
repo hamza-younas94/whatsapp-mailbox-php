@@ -238,6 +238,13 @@
                     <a href="notes.php" class="<?php echo $currentPage === 'notes.php' ? 'active' : ''; ?>">📝 Notes</a>
                     <a href="deals.php" class="<?php echo $currentPage === 'deals.php' ? 'active' : ''; ?>">💰 Deals</a>
                     <a href="ip-commands.php" class="<?php echo $currentPage === 'ip-commands.php' ? 'active' : ''; ?>">💻 IP Commands</a>
+                    <?php 
+                    // Only show Users menu if user is admin
+                    $currentUser = getCurrentUser();
+                    if ($currentUser && ($currentUser->role === 'admin' || isset($currentUser->username))): 
+                    ?>
+                    <a href="users.php" class="<?php echo $currentPage === 'users.php' ? 'active' : ''; ?>">👥 Users</a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

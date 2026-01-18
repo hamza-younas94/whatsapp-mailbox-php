@@ -70,6 +70,14 @@ try {
             }
             break;
             
+        case 'users':
+            if ($method === 'GET' && isset($request[1])) {
+                getUser($request[1]);
+            } elseif ($method === 'GET') {
+                getUsers();
+            }
+            break;
+            
         case 'message-limit':
             if ($method === 'GET') {
                 getMessageLimit();
@@ -584,6 +592,27 @@ function getTemplates() {
     } else {
         response_error('Failed to fetch templates: ' . ($result['error'] ?? 'Unknown error'), 500, $result);
     }
+}
+
+/**
+ * Get all users
+ */
+function getUsers() {
+    $users = \App\Models\User::orderBy('created_at', 'desc')->get();
+    response_json(['success' => true, 'users' => $users]);
+}
+
+/**
+ * Get single user
+ */
+function getUser($userId) {
+    $user = \App\Models\User::find($userId);
+    
+    if (!$user) {
+        response_error('User not found', 404);
+    }
+    
+    response_json(['success' => true, 'user' => $user]);
 }
 
 /**
