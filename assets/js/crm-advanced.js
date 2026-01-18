@@ -10,8 +10,13 @@ let currentCrmTab = 'overview';
  * Open CRM Modal with Tabs (Advanced)
  */
 window.openCrmModalAdvanced = async function openCrmModal(contactId) {
-    const contact = contacts.find(c => c.id === contactId);
-    if (!contact) return;
+    // Use global contacts array (from crm.js or app.js)
+    const contactsList = window.allContacts || window.contacts || [];
+    const contact = contactsList.find(c => c.id === contactId);
+    if (!contact) {
+        console.error('Contact not found:', contactId);
+        return;
+    }
     
     currentCrmContactId = contactId;
     currentCrmTab = 'overview';
@@ -21,6 +26,9 @@ window.openCrmModalAdvanced = async function openCrmModal(contactId) {
     const modalTitle = document.getElementById('crmModalTitle');
     
     modalTitle.textContent = escapeHtml(contact.name);
+    
+    // Load tags for contact
+    await loadTagsForCrm(contact.id, contact);
     
     content.innerHTML = `
         <div class="crm-tabs">
@@ -41,9 +49,15 @@ window.openCrmModalAdvanced = async function openCrmModal(contactId) {
             </button>
         </div>
         <div class="crm-tab-content" id="crmTabContent">
-            ${await renderCrmTab('overview', contact)}
+            <div class="loading">Loading...</div>
         </div>
     `;
+    
+    // Load initial tab content
+    const tabContent = document.getElementById('crmTabContent');
+    if (tabContent) {
+        tabContent.innerHTML = await renderCrmTab('overview', contact);
+    }
     
     if (modal) {
         modal.style.display = 'flex';
@@ -60,34 +74,80 @@ async function switchCrmTab(tab) {
     currentCrmTab = tab;
     
     // Update tab buttons
-    document.querySelectorAll('.crm-tab').forEach(btn => btn.classList.remove('active'));
-    event.target.closest('.crm-tab').classList.add('active');
+    document.querySelectorAll('.crm-tab').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.includes(getTabLabel(tab))) {
+            btn.classList.add('active');
+        }
+    });
     
     // Load tab content
-    const contact = contacts.find(c => c.id === currentCrmContactId);
-    if (!contact) return;
+    const contactsList = window.allContacts || window.contacts || [];
+    const contact = contactsList.find(c => c.id === currentCrmContactId);
+    if (!contact) {
+        console.error('Contact not found for tab switch');
+        return;
+    }
     
     const content = document.getElementById('crmTabContent');
-    content.innerHTML = await renderCrmTab(tab, contact);
+    if (content) {
+        content.innerHTML = '<div class="loading">Loading...</div>';
+        content.innerHTML = await renderCrmTab(tab, contact);
+    }
+}
+
+function getTabLabel(tab) {
+    const labels = {
+        'overview': 'Overview',
+        'timeline': 'Timeline',
+        'tasks': 'Tasks',
+        'notes': 'Notes',
+        'deals': 'Deals'
+    };
+    return labels[tab] || tab;
 }
 
 /**
  * Render CRM Tab Content
  */
 async function renderCrmTab(tab, contact) {
-    switch (tab) {
-        case 'overview':
-            return renderOverviewTab(contact);
-        case 'timeline':
-            return await renderTimelineTab(contact);
-        case 'tasks':
-            return await renderTasksTab(contact);
-        case 'notes':
-            return await renderNotesTab(contact);
-        case 'deals':
-            return await renderDealsTab(contact);
-        default:
-            return '<div>Tab not found</div>';
+    try {
+        switch (tab) {
+            case 'overview':
+                return renderOverviewTab(contact);
+            case 'timeline':
+                return await renderTimelineTab(contact);
+            case 'tasks':
+                return await renderTasksTab(contact);
+            case 'notes':
+                return await renderNotesTab(contact);
+            case 'deals':
+                return await renderDealsTab(contact);
+            default:
+                return '<div>Tab not found</div>';
+        }
+    } catch (error) {
+        console.error('Error rendering tab:', error);
+        return '<div class="empty-state"><p>Error loading tab content</p></div>';
+    }
+}
+
+/**
+ * Load tags for CRM (shared function)
+ */
+async function loadTagsForCrm(contactId, contact) {
+    try {
+        const response = await fetch('tags.php?action=list', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            window.crmTags = result.tags || [];
+            window.crmContactTags = (contact && Array.isArray(contact.tag_ids)) ? contact.tag_ids : [];
+        }
+    } catch (err) {
+        console.error('Error loading tags:', err);
+        window.crmTags = [];
+        window.crmContactTags = [];
     }
 }
 
@@ -95,6 +155,9 @@ async function renderCrmTab(tab, contact) {
  * Overview Tab
  */
 function renderOverviewTab(contact) {
+    const tags = window.crmTags || [];
+    const selectedIds = window.crmContactTags || [];
+    
     return `
         <div class="crm-section">
             <div class="crm-section-header">
@@ -152,11 +215,155 @@ function renderOverviewTab(contact) {
                 <h3>Tags</h3>
             </div>
             <div id="crmTagsList" class="tags-list">
-                <div class="loading">Loading tags...</div>
+                ${tags.length === 0 ? '<div class="empty-state"><p>No tags available</p></div>' : tags.map(tag => {
+                    const checked = selectedIds.includes(tag.id) ? 'checked' : '';
+                    const color = tag.color || '#6b7280';
+                    const name = escapeHtml(tag.name);
+                    return `
+                        <label class="tag-option">
+                            <input type="checkbox" class="tag-checkbox" value="${tag.id}" ${checked}>
+                            <span class="tag-color" style="background-color: ${color};"></span>
+                            <span class="tag-name">${name}</span>
+                        </label>
+                    `;
+                }).join('')}
             </div>
             <button onclick="saveContactTags(${contact.id})" class="btn-primary">Save Tags</button>
         </div>
     `;
+}
+
+/**
+ * Save contact tags
+ */
+async function saveContactTags(contactId) {
+    const checkboxes = document.querySelectorAll('#crmTagsList .tag-checkbox');
+    const tagIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    
+    const formData = new FormData();
+    formData.append('action', 'assign');
+    formData.append('contact_id', contactId);
+    tagIds.forEach(id => formData.append('tag_ids[]', id));
+    
+    try {
+        const response = await fetch('tags.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+            if (typeof showToast === 'function') {
+                showToast('Tags updated successfully!', 'success');
+            }
+            if (typeof loadCrmData === 'function') {
+                loadCrmData();
+            }
+            closeCrmModal();
+        } else {
+            if (typeof showToast === 'function') {
+                showToast('Failed to update tags: ' + (result.error || 'Unknown error'), 'error');
+            }
+        }
+    } catch (err) {
+        console.error('Error saving tags:', err);
+        if (typeof showToast === 'function') {
+            showToast('Failed to update tags', 'error');
+        }
+    }
+}
+
+/**
+ * Escape HTML helper
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * Format time helper
+ */
+function formatTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 86400000) {
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    if (diff < 604800000) {
+        return date.toLocaleDateString('en-US', { weekday: 'short' });
+    }
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/**
+ * Show Add Deal Form
+ */
+function showAddDealForm(contactId) {
+    const form = document.getElementById('addDealForm');
+    if (form) {
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+/**
+ * Hide Add Deal Form
+ */
+function hideAddDealForm() {
+    const form = document.getElementById('addDealForm');
+    if (form) {
+        form.style.display = 'none';
+    }
+}
+
+/**
+ * Save Deal
+ */
+async function saveDeal(event, contactId) {
+    event.preventDefault();
+    
+    const dealData = {
+        deal_name: document.getElementById('dealName').value,
+        amount: parseFloat(document.getElementById('dealAmount').value),
+        status: document.getElementById('dealStatus').value,
+        deal_date: document.getElementById('dealDate').value,
+        notes: document.getElementById('dealNotes').value
+    };
+    
+    try {
+        const response = await fetch(`crm.php/contact/${contactId}/deal`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(dealData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            if (typeof showToast === 'function') {
+                showToast('Deal added successfully!', 'success');
+            }
+            hideAddDealForm();
+            switchCrmTab('deals');
+        } else {
+            if (typeof showToast === 'function') {
+                showToast('Failed to add deal: ' + (result.error || 'Unknown error'), 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error saving deal:', error);
+        if (typeof showToast === 'function') {
+            showToast('Failed to add deal', 'error');
+        }
+    }
 }
 
 /**

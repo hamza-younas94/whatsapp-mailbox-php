@@ -198,15 +198,22 @@ function filterContacts(query) {
 }
 
 /**
- * Open CRM modal (same as mailbox)
+ * Open CRM modal with advanced features (tabbed interface)
  */
-function openCrmModal(contactId) {
+async function openCrmModal(contactId) {
     const contact = allContacts.find(c => c.id === contactId);
     if (!contact) return;
     
     const modal = document.getElementById('crmModal');
     const content = document.getElementById('crmModalContent');
     
+    // Use advanced CRM modal if available
+    if (typeof window.openCrmModalAdvanced === 'function') {
+        window.openCrmModalAdvanced(contactId);
+        return;
+    }
+    
+    // Fallback to basic modal
     content.innerHTML = `
         <div class="modal-header">
             <h2>CRM: ${escapeHtml(contact.name)}</h2>
@@ -271,9 +278,14 @@ function openCrmModal(contactId) {
         </div>
     `;
     
-    modal.style.display = 'block';
-    loadNotes(contactId);
-    loadTagsForCrm(contactId, contact);
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+        document.body.classList.add('modal-open');
+        document.body.style.overflow = 'hidden';
+        loadNotes(contactId);
+        loadTagsForCrm(contactId, contact);
+    }
 }
 
 function closeCrmModal() {

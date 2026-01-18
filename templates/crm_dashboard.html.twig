@@ -148,14 +148,26 @@
     </div>
 </div>
 
-<!-- CRM Modal (same as mailbox) -->
-<div id="crmModal" class="modal">
-    <div class="modal-content" id="crmModalContent">
-        <!-- Content loaded by JavaScript -->
+<!-- CRM Modal with Advanced Features -->
+<div id="crmModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h2 id="crmModalTitle">CRM Details</h2>
+            <button onclick="closeCrmModal()" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body" id="crmModalContent">
+            <!-- Content loaded by JavaScript -->
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="assets/js/crm.js?v={{ "now"|date("U") }}"></script>
+<script src="assets/js/crm-advanced.js?v={{ "now"|date("U") }}"></script>
+<script>
+// Make contacts available to CRM advanced functions
+window.allContacts = allContacts || [];
+window.contacts = allContacts || [];
+</script>
 {% endblock %}
