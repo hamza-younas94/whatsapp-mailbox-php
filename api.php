@@ -177,6 +177,12 @@ try {
             }
             break;
             
+        case 'admin/reassign-user-data':
+            if ($method === 'POST') {
+                reassignUserData();
+            }
+            break;
+            
         default:
             response_error('Endpoint not found', 404);
     }
@@ -1610,4 +1616,58 @@ function findDuplicateContacts() {
         'duplicates' => $duplicates,
         'count' => count($duplicates)
     ]);
+}
+/**
+ * Reassign all data from one user to another (for data migration)
+ */
+function reassignUserData() {
+    global $user;
+    
+    // Only admins can reassign data
+    if ($user->role !== 'admin') {
+        response_error('Only admins can reassign user data', 403);
+    }
+    
+    $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+    $fromUserId = intval($data['from_user_id'] ?? 0);
+    $toUserId = intval($data['to_user_id'] ?? 0);
+    
+    if (!$fromUserId || !$toUserId) {
+        response_error('Missing user IDs', 400);
+    }
+    
+    // Verify both users exist
+    $fromUser = \App\Models\User::find($fromUserId);
+    $toUser = \App\Models\User::find($toUserId);
+    
+    if (!$fromUser || !$toUser) {
+        response_error('User not found', 404);
+    }
+    
+    try {
+        $tables = [
+            'contacts', 'messages', 'quick_replies', 'broadcasts', 'scheduled_messages',
+            'segments', 'tags', 'auto_tag_rules', 'deals', 'workflows', 'internal_notes',
+            'broadcast_recipients', 'contact_tag', 'workflow_executions', 'webhooks',
+            'notes', 'activities', 'tasks', 'message_templates', 'drip_campaigns',
+            'drip_subscribers', 'ip_commands'
+        ];
+        
+        $totalRows = 0;
+        
+        foreach ($tables as $table) {
+            $count = Capsule::table($table)
+                ->where('user_id', $fromUserId)
+                ->update(['user_id' => $toUserId]);
+            $totalRows += $count;
+        }
+        
+        response_json([
+            'success' => true,
+            'message' => "Successfully reassigned {$totalRows} rows from user {$fromUserId} to user {$toUserId}",
+            'rows_updated' => $totalRows
+        ]);
+    } catch (\Exception $e) {
+        response_error('Error reassigning data: ' . $e->getMessage(), 500);
+    }
 }
