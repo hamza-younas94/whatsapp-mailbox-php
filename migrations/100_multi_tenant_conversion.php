@@ -16,29 +16,9 @@ $schema = Capsule::schema();
 echo "🚀 Starting Multi-Tenant Conversion...\n\n";
 
 // ============================================
-// STEP 1: Create user_api_credentials table
+// STEP 1: Skip user_api_credentials - using user_settings from migration 015
 // ============================================
-if (!$schema->hasTable('user_api_credentials')) {
-    $schema->create('user_api_credentials', function ($table) {
-        $table->id();
-        $table->unsignedBigInteger('user_id')->unique();
-        $table->string('api_access_token', 500);
-        $table->string('api_phone_number_id', 100);
-        $table->string('api_version', 20)->default('v18.0');
-        $table->string('webhook_verify_token', 255);
-        $table->string('business_name', 255)->nullable();
-        $table->string('business_phone_number', 50)->nullable();
-        $table->boolean('is_active')->default(true);
-        $table->timestamp('last_webhook_at')->nullable();
-        $table->timestamps();
-        
-        $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-        $table->index(['user_id', 'is_active']);
-    });
-    echo "✅ Created user_api_credentials table\n";
-} else {
-    echo "⚠️  user_api_credentials already exists\n";
-}
+echo "ℹ️  Using user_settings table from migration 015 for API credentials\n";
 
 // ============================================
 // STEP 2: Add user_id to ALL data tables
@@ -87,10 +67,10 @@ foreach ($tables_to_convert as $table => $description) {
 }
 
 // ============================================
-// STEP 3: Create user_settings table
+// STEP 3: Create user_preferences table (separate from user_settings)
 // ============================================
-if (!$schema->hasTable('user_settings')) {
-    $schema->create('user_settings', function ($table) {
+if (!$schema->hasTable('user_preferences')) {
+    $schema->create('user_preferences', function ($table) {
         $table->id();
         $table->unsignedBigInteger('user_id');
         $table->string('timezone', 50)->default('UTC');
@@ -106,9 +86,9 @@ if (!$schema->hasTable('user_settings')) {
         $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         $table->unique('user_id');
     });
-    echo "✅ Created user_settings table\n";
+    echo "✅ Created user_preferences table\n";
 } else {
-    echo "⚠️  user_settings already exists\n";
+    echo "⚠️  user_preferences already exists\n";
 }
 
 // ============================================
@@ -179,16 +159,19 @@ if ($firstUser) {
         }
     }
     
-    // Create API credentials from current .env settings
-    if (!Capsule::table('user_api_credentials')->where('user_id', $userId)->exists()) {
-        Capsule::table('user_api_credentials')->insert([
+    // Create default API credentials in user_settings (migration 015 schema)
+    if (!Capsule::table('user_settings')->where('user_id', $userId)->exists()) {
+        Capsule::table('user_settings')->insert([
             'user_id' => $userId,
-            'api_access_token' => env('API_ACCESS_TOKEN', env('WHATSAPP_ACCESS_TOKEN', '')),
-            'api_phone_number_id' => env('API_PHONE_NUMBER_ID', env('WHATSAPP_PHONE_NUMBER_ID', '')),
-            'api_version' => env('API_VERSION', env('WHATSAPP_API_VERSION', 'v18.0')),
-            'webhook_verify_token' => env('WEBHOOK_VERIFY_TOKEN', ''),
+            'whatsapp_api_version' => env('API_VERSION', env('WHATSAPP_API_VERSION', 'v18.0')),
+            'whatsapp_access_token' => env('API_ACCESS_TOKEN', env('WHATSAPP_ACCESS_TOKEN', '')),
+            'whatsapp_phone_number_id' => env('API_PHONE_NUMBER_ID', env('WHATSAPP_PHONE_NUMBER_ID', '')),
+            'phone_number' => env('PHONE_NUMBER', ''),
             'business_name' => env('APP_NAME', 'MessageHub'),
-            'is_active' => true,
+            'webhook_verify_token' => env('WEBHOOK_VERIFY_TOKEN', ''),
+            'webhook_url' => env('WEBHOOK_URL', ''),
+            'is_configured' => true,
+            'last_verified_at' => date('Y-m-d H:i:s'),
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ]);
@@ -212,18 +195,21 @@ if ($firstUser) {
         echo "  ✅ Created subscription for user {$userId}\n";
     }
     
-    // Create default settings
-    if (!Capsule::table('user_settings')->where('user_id', $userId)->exists()) {
-        Capsule::table('user_settings')->insert([
+    // Create default user preferences
+    if (!Capsule::table('user_preferences')->where('user_id', $userId)->exists()) {
+        Capsule::table('user_preferences')->insert([
             'user_id' => $userId,
             'timezone' => 'Asia/Karachi',
             'date_format' => 'Y-m-d',
             'time_format' => 'H:i:s',
             'language' => 'en',
+            'email_notifications' => true,
+            'browser_notifications' => true,
+            'messages_per_page' => 50,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ]);
-        echo "  ✅ Created settings for user {$userId}\n";
+        echo "  ✅ Created preferences for user {$userId}\n";
     }
 } else {
     echo "⚠️  No admin user found. Please create one first.\n";
