@@ -9,6 +9,7 @@ class AutoTagRule extends Model
     protected $table = 'auto_tag_rules';
     
     protected $fillable = [
+        'user_id',
         'name',
         'keywords',
         'tag_id',
@@ -27,6 +28,14 @@ class AutoTagRule extends Model
         'priority' => 'integer'
     ];
     
+    /**
+     * Owner of this rule
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Tag that will be assigned
      */

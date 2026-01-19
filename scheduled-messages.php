@@ -8,6 +8,7 @@ require_once __DIR__ . '/auth.php';
 
 use App\Models\ScheduledMessage;
 use App\Models\Contact;
+use App\Middleware\TenantMiddleware;
 
 $user = getCurrentUser();
 if (!$user) {
@@ -44,9 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     exit;
                 }
                 
-                // Validate contact exists
+                // Validate contact exists (MULTI-TENANT: must be user's contact)
                 $contactId = intval($_POST['contact_id']);
-                $contact = Contact::find($contactId);
+                $contact = Contact::where('user_id', $user->id)->find($contactId);
                 if (!$contact) {
                     echo json_encode([
                         'success' => false,
@@ -71,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 }
                 
                 $scheduled = ScheduledMessage::create([
+                    'user_id' => $user->id, // MULTI-TENANT: Add user_id
                     'contact_id' => $contactId,
                     'message' => sanitize($_POST['message']),
                     'scheduled_at' => $scheduledAt,
@@ -80,13 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 break;
             
             case 'cancel':
-                $scheduled = ScheduledMessage::findOrFail($_POST['id']);
+                $scheduled = ScheduledMessage::where('user_id', $user->id)->findOrFail($_POST['id']);
                 $scheduled->update(['status' => 'cancelled']);
                 echo json_encode(['success' => true]);
                 break;
             
             case 'delete':
-                $scheduled = ScheduledMessage::findOrFail($_POST['id']);
+                $scheduled = ScheduledMessage::where('user_id', $user->id)->findOrFail($_POST['id']);
                 $scheduled->delete();
                 echo json_encode(['success' => true]);
                 break;
@@ -100,12 +102,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     exit;
 }
 
-// Fetch scheduled messages
+// Fetch scheduled messages (MULTI-TENANT: filter by user)
 $scheduled = ScheduledMessage::with(['contact', 'creator'])
+    ->where('user_id', $user->id)
     ->orderBy('scheduled_at', 'asc')
     ->get();
 
-$contacts = Contact::orderBy('name')->get();
+$contacts = Contact::where('user_id', $user->id)->orderBy('name')->get();
 
 $pageTitle = 'Scheduled Messages';
 require_once __DIR__ . '/includes/header.php';

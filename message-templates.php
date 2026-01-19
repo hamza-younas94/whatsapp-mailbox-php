@@ -65,18 +65,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 ];
                 
                 if ($action === 'create') {
+                    $data['user_id'] = $user->id;  // MULTI-TENANT: add user_id
                     $data['created_by'] = $user->id;
                     $template = MessageTemplate::create($data);
                     echo json_encode(['success' => true, 'template' => $template]);
                 } else {
-                    $template = MessageTemplate::findOrFail($_POST['id']);
+                    // MULTI-TENANT: verify template belongs to user
+                    $template = MessageTemplate::where('user_id', $user->id)->findOrFail($_POST['id']);
                     $template->update($data);
                     echo json_encode(['success' => true, 'template' => $template]);
                 }
                 break;
             
             case 'delete':
-                MessageTemplate::findOrFail($_POST['id'])->delete();
+                // MULTI-TENANT: verify template belongs to user
+                MessageTemplate::where('user_id', $user->id)->findOrFail($_POST['id'])->delete();
                 echo json_encode(['success' => true]);
                 break;
             
@@ -96,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
 }
 
 // Fetch all templates
-$templates = MessageTemplate::with('creator')->orderBy('created_at', 'desc')->get();
+$templates = MessageTemplate::where('user_id', $user->id)->with('creator')->orderBy('created_at', 'desc')->get();  // MULTI-TENANT: filter by user
 
 $pageTitle = 'Message Templates';
 require_once __DIR__ . '/includes/header.php';

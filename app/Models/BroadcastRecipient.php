@@ -9,6 +9,7 @@ class BroadcastRecipient extends Model
     protected $table = 'broadcast_recipients';
     
     protected $fillable = [
+        'user_id',
         'broadcast_id',
         'contact_id',
         'status',
@@ -25,6 +26,14 @@ class BroadcastRecipient extends Model
         'read_at' => 'datetime'
     ];
     
+    /**
+     * Get the user (tenant) that owns this recipient record
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Broadcast
      */

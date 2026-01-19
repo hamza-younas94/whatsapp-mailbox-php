@@ -9,6 +9,7 @@ class DripCampaign extends Model
     protected $table = 'drip_campaigns';
     
     protected $fillable = [
+        'user_id',
         'name',
         'description',
         'is_active',
@@ -25,13 +26,14 @@ class DripCampaign extends Model
         'completed_count' => 'integer'
     ];
     
-    public function steps()
+    /**
+     * Get the user (tenant) that owns this campaign
+     */
+    public function user()
     {
-        return $this->hasMany(DripCampaignStep::class, 'campaign_id')->orderBy('step_number');
+        return $this->belongsTo(User::class);
     }
-    
-    public function subscribers()
-    {
+
         return $this->hasMany(DripSubscriber::class, 'campaign_id');
     }
     

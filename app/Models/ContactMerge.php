@@ -10,6 +10,7 @@ class ContactMerge extends Model
     protected $table = 'contact_merges';
     
     protected $fillable = [
+        'user_id',
         'source_contact_id',
         'target_contact_id',
         'merged_by',
@@ -22,11 +23,14 @@ class ContactMerge extends Model
     ];
     
     /**
-     * Source contact (the one that was merged into)
+     * Get the user (tenant) that owns this merge record
      */
-    public function sourceContact()
+    public function user()
     {
-        return $this->belongsTo(Contact::class, 'source_contact_id');
+        return $this->belongsTo(User::class);
+    }
+
+    /**
     }
     
     /**

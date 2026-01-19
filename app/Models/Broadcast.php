@@ -9,6 +9,7 @@ class Broadcast extends Model
     protected $table = 'broadcasts';
     
     protected $fillable = [
+        'user_id',
         'name',
         'message',
         'message_type',
@@ -31,6 +32,14 @@ class Broadcast extends Model
         'completed_at' => 'datetime'
     ];
     
+    /**
+     * Owner of this broadcast
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Recipients of this broadcast
      */

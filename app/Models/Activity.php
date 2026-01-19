@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Activity extends Model
 {
     protected $fillable = [
+        'user_id',
         'contact_id',
         'type',
         'title',
@@ -20,6 +21,14 @@ class Activity extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
+
+    /**
+     * Get the user (tenant) that owns the activity
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     /**
      * Get the contact that owns the activity

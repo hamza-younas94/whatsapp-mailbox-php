@@ -8,19 +8,25 @@ require_once __DIR__ . '/auth.php';
 
 use App\Models\Deal;
 use App\Models\Contact;
+use App\Middleware\TenantMiddleware;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 if (!isAuthenticated()) {
     redirect('/login.php');
 }
 
+// Get current user
+$user = getCurrentUser();
+
 // Get filter parameters
 $contactId = $_GET['contact_id'] ?? null;
 $status = $_GET['status'] ?? null;
 $search = $_GET['search'] ?? null;
 
-// Build query
-$query = Deal::with(['contact', 'creator'])->orderBy('deal_date', 'desc');
+// Build query (MULTI-TENANT: filter by user)
+$query = Deal::with(['contact', 'creator'])
+    ->where('user_id', $user->id)
+    ->orderBy('deal_date', 'desc');
 
 if ($contactId) {
     $query->where('contact_id', $contactId);
@@ -41,18 +47,17 @@ if ($search) {
 }
 
 $deals = $query->get();
-$contacts = Contact::orderBy('name')->get();
+$contacts = Contact::where('user_id', $user->id)->orderBy('name')->get();
 
-// Stats
-$totalDeals = Deal::count();
-$dealsByStatus = Deal::selectRaw('status, COUNT(*) as count')
+// Stats (MULTI-TENANT: filter by user)
+$totalDeals = Deal::where('user_id', $user->id)->count();
+$dealsByStatus = Deal::where('user_id', $user->id)
+    ->selectRaw('status, COUNT(*) as count')
     ->groupBy('status')
     ->pluck('count', 'status');
 
-$wonDeals = Deal::where('status', 'won')->get();
+$wonDeals = Deal::where('user_id', $user->id)->where('status', 'won')->get();
 $totalRevenue = $wonDeals->sum('amount');
-
-$user = getCurrentUser();
 
 echo render('deals.html.twig', [
     'deals' => $deals,

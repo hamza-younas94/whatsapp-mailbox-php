@@ -13,17 +13,41 @@ class WhatsAppService
     private $accessToken;
     private $phoneNumberId;
     private $apiVersion;
+    private $userId;
+    private $userSettings;
 
-    public function __construct()
+    public function __construct($userId = null)
     {
         $this->client = new Client([
             'timeout' => 30,
             'verify' => true
         ]);
         
-        $this->accessToken = env('WHATSAPP_ACCESS_TOKEN');
-        $this->phoneNumberId = env('WHATSAPP_PHONE_NUMBER_ID');
-        $this->apiVersion = env('WHATSAPP_API_VERSION', 'v18.0');
+        // If userId not provided, use authenticated user
+        if (!$userId && isset($_SESSION['user_id'])) {
+            $userId = $_SESSION['user_id'];
+        }
+        
+        if (!$userId) {
+            throw new \Exception('User ID required for WhatsAppService');
+        }
+        
+        $this->userId = $userId;
+        
+        // Load user-specific API credentials
+        $this->userSettings = \App\Models\UserSettings::where('user_id', $userId)->first();
+        
+        if (!$this->userSettings) {
+            throw new \Exception('User API settings not configured');
+        }
+        
+        if (!$this->userSettings->isValid()) {
+            throw new \Exception('User API credentials not properly configured');
+        }
+        
+        $this->accessToken = $this->userSettings->whatsapp_access_token;
+        $this->phoneNumberId = $this->userSettings->whatsapp_phone_number_id;
+        $this->apiVersion = $this->userSettings->whatsapp_api_version;
     }
 
     /**
@@ -692,6 +716,7 @@ class WhatsAppService
         $message = Message::updateOrCreate(
             ['message_id' => $messageId],
             [
+                'user_id' => $this->userId,
                 'contact_id' => $contact->id,
                 'phone_number' => $from,
                 'message_type' => $messageType,
@@ -809,13 +834,16 @@ class WhatsAppService
     private function getOrCreateContact($phoneNumber, $webhookValue)
     {
         logger("[CONTACT] Looking up contact: {$phoneNumber}");
-        $contact = Contact::where('phone_number', $phoneNumber)->first();
+        $contact = Contact::where('user_id', $this->userId)
+            ->where('phone_number', $phoneNumber)
+            ->first();
 
         if (!$contact) {
             $name = $webhookValue['contacts'][0]['profile']['name'] ?? $phoneNumber;
             logger("[CONTACT] Contact not found. Creating new contact: {$name}");
 
             $contact = Contact::create([
+                'user_id' => $this->userId,
                 'phone_number' => $phoneNumber,
                 'name' => $name,
                 'last_message_time' => now()

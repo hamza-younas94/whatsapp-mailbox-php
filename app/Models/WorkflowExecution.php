@@ -11,6 +11,7 @@ class WorkflowExecution extends Model
     public $timestamps = false;
     
     protected $fillable = [
+        'user_id',
         'workflow_id',
         'contact_id',
         'status',
@@ -24,6 +25,14 @@ class WorkflowExecution extends Model
         'executed_at' => 'datetime'
     ];
     
+    /**
+     * Get the user (tenant) that owns this execution
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Workflow
      */

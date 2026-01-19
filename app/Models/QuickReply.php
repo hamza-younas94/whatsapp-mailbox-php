@@ -9,6 +9,7 @@ class QuickReply extends Model
     protected $table = 'quick_replies';
     
     protected $fillable = [
+        'user_id',
         'shortcut',
         'shortcuts',
         'title',
@@ -57,6 +58,14 @@ class QuickReply extends Model
         'business_hours_end' => 'datetime'
     ];
     
+    /**
+     * Owner of this quick reply
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Creator of this quick reply
      */

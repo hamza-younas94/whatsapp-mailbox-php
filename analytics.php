@@ -22,38 +22,38 @@ if (!$user) {
 $startDate = $_GET['start_date'] ?? date('Y-m-01'); // First day of current month
 $endDate = $_GET['end_date'] ?? date('Y-m-d'); // Today
 
-// Message statistics
-$totalMessages = Message::whereBetween('timestamp', [$startDate, $endDate])->count();
-$incomingMessages = Message::where('direction', 'incoming')->whereBetween('timestamp', [$startDate, $endDate])->count();
-$outgoingMessages = Message::where('direction', 'outgoing')->whereBetween('timestamp', [$startDate, $endDate])->count();
-$avgResponseTime = Message::where('direction', 'outgoing')
+// Message statistics (MULTI-TENANT: filter by user)
+$totalMessages = Message::where('user_id', $user->id)->whereBetween('timestamp', [$startDate, $endDate])->count();
+$incomingMessages = Message::where('user_id', $user->id)->where('direction', 'incoming')->whereBetween('timestamp', [$startDate, $endDate])->count();
+$outgoingMessages = Message::where('user_id', $user->id)->where('direction', 'outgoing')->whereBetween('timestamp', [$startDate, $endDate])->count();
+$avgResponseTime = Message::where('user_id', $user->id)->where('direction', 'outgoing')
     ->whereBetween('timestamp', [$startDate, $endDate])
     ->avg(Capsule::raw('TIMESTAMPDIFF(MINUTE, created_at, timestamp)')) ?? 0;
 
-// Contact statistics
-$totalContacts = Contact::count();
-$newContacts = Contact::whereBetween('created_at', [$startDate, $endDate])->count();
-$activeContacts = Contact::whereBetween('last_message_time', [$startDate, $endDate])->count();
+// Contact statistics (MULTI-TENANT: filter by user)
+$totalContacts = Contact::where('user_id', $user->id)->count();
+$newContacts = Contact::where('user_id', $user->id)->whereBetween('created_at', [$startDate, $endDate])->count();
+$activeContacts = Contact::where('user_id', $user->id)->whereBetween('last_message_time', [$startDate, $endDate])->count();
 
-// Deal statistics
-$totalRevenue = Deal::where('status', 'won')->whereBetween('deal_date', [$startDate, $endDate])->sum('amount');
-$totalDeals = Deal::whereBetween('deal_date', [$startDate, $endDate])->count();
-$wonDeals = Deal::where('status', 'won')->whereBetween('deal_date', [$startDate, $endDate])->count();
+// Deal statistics (MULTI-TENANT: filter by user)
+$totalRevenue = Deal::where('user_id', $user->id)->where('status', 'won')->whereBetween('deal_date', [$startDate, $endDate])->sum('amount');
+$totalDeals = Deal::where('user_id', $user->id)->whereBetween('deal_date', [$startDate, $endDate])->count();
+$wonDeals = Deal::where('user_id', $user->id)->where('status', 'won')->whereBetween('deal_date', [$startDate, $endDate])->count();
 $conversionRate = $totalDeals > 0 ? round(($wonDeals / $totalDeals) * 100, 1) : 0;
 
-// Broadcast statistics
-$broadcastsSent = Broadcast::where('status', 'completed')->whereBetween('completed_at', [$startDate, $endDate])->count();
-$broadcastRecipients = Broadcast::where('status', 'completed')->whereBetween('completed_at', [$startDate, $endDate])->sum('total_recipients');
+// Broadcast statistics (MULTI-TENANT: filter by user)
+$broadcastsSent = Broadcast::where('user_id', $user->id)->where('status', 'completed')->whereBetween('completed_at', [$startDate, $endDate])->count();
+$broadcastRecipients = Broadcast::where('user_id', $user->id)->where('status', 'completed')->whereBetween('completed_at', [$startDate, $endDate])->sum('total_recipients');
 
-// Messages by day (for chart)
-$messagesByDay = Message::selectRaw('DATE(timestamp) as date, COUNT(*) as count')
+// Messages by day (for chart) - MULTI-TENANT: filter by user
+$messagesByDay = Message::where('user_id', $user->id)->selectRaw('DATE(timestamp) as date, COUNT(*) as count')
     ->whereBetween('timestamp', [$startDate, $endDate])
     ->groupBy('date')
     ->orderBy('date')
     ->get();
 
-// Top contacts by message count
-$topContacts = Contact::withCount(['messages' => function($query) use ($startDate, $endDate) {
+// Top contacts by message count - MULTI-TENANT: filter by user
+$topContacts = Contact::where('user_id', $user->id)->withCount(['messages' => function($query) use ($startDate, $endDate) {
         $query->whereBetween('timestamp', [$startDate, $endDate]);
     }])
     ->having('messages_count', '>', 0)
@@ -61,8 +61,8 @@ $topContacts = Contact::withCount(['messages' => function($query) use ($startDat
     ->limit(10)
     ->get();
 
-// Stage distribution
-$stageDistribution = Contact::selectRaw('stage, COUNT(*) as count')
+// Stage distribution - MULTI-TENANT: filter by user
+$stageDistribution = Contact::where('user_id', $user->id)->selectRaw('stage, COUNT(*) as count')
     ->groupBy('stage')
     ->get();
 

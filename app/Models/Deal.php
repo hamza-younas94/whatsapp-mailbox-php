@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Deal extends Model
 {
     protected $fillable = [
+        'user_id',
         'contact_id',
         'deal_name',
         'description',
@@ -26,6 +27,14 @@ class Deal extends Model
         'expected_close_date' => 'date',
         'actual_close_date' => 'date',
     ];
+
+    /**
+     * Get the user that owns the deal
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     /**
      * Get the contact that owns the deal

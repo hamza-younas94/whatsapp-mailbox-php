@@ -9,6 +9,7 @@ class DripSubscriber extends Model
     protected $table = 'drip_subscribers';
     
     protected $fillable = [
+        'user_id',
         'drip_campaign_id',
         'contact_id',
         'current_step',
@@ -25,6 +26,14 @@ class DripSubscriber extends Model
         'current_step' => 'integer'
     ];
     
+    /**
+     * Get the user (tenant) that owns this subscriber
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Get the drip campaign
      */

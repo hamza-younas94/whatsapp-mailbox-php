@@ -5,6 +5,8 @@
 require_once 'bootstrap.php';
 require_once 'auth.php';
 
+use App\Middleware\TenantMiddleware;
+
 // Check authentication
 if (!isAuthenticated()) {
     header('Location: login.php');

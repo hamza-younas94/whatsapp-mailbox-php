@@ -10,6 +10,7 @@ class Task extends Model
     protected $table = 'tasks';
     
     protected $fillable = [
+        'user_id',
         'contact_id',
         'title',
         'description',
@@ -29,12 +30,14 @@ class Task extends Model
     ];
     
     /**
-     * Contact this task belongs to
+     * Get the user (tenant) that owns this task
      */
-    public function contact()
+    public function user()
     {
-        return $this->belongsTo(Contact::class);
+        return $this->belongsTo(User::class);
     }
+
+    /**
     
     /**
      * User assigned to this task

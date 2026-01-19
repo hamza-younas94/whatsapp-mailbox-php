@@ -8,6 +8,7 @@ require_once __DIR__ . '/auth.php';
 
 use App\Models\Note;
 use App\Models\Contact;
+use App\Middleware\TenantMiddleware;
 
 if (!isAuthenticated()) {
     redirect('/login.php');
@@ -18,8 +19,8 @@ $contactId = $_GET['contact_id'] ?? null;
 $type = $_GET['type'] ?? null;
 $search = $_GET['search'] ?? null;
 
-// Build query
-$query = Note::with(['contact', 'creator'])->orderBy('created_at', 'desc');
+// Build query (MULTI-TENANT: filter by user)
+$query = Note::where('user_id', $user->id)->with(['contact', 'creator'])->orderBy('created_at', 'desc');
 
 if ($contactId) {
     $query->where('contact_id', $contactId);
@@ -39,11 +40,11 @@ if ($search) {
 }
 
 $notes = $query->get();
-$contacts = Contact::orderBy('name')->get();
+$contacts = Contact::where('user_id', $user->id)->orderBy('name')->get();
 
-// Stats
-$totalNotes = Note::count();
-$notesByType = Note::selectRaw('type, COUNT(*) as count')
+// Stats (MULTI-TENANT: filter by user)
+$totalNotes = Note::where('user_id', $user->id)->count();
+$notesByType = Note::where('user_id', $user->id)->selectRaw('type, COUNT(*) as count')
     ->groupBy('type')
     ->pluck('count', 'type');
 

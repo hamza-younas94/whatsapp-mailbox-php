@@ -10,6 +10,7 @@ use App\Models\Workflow;
 use App\Models\Segment;
 use App\Models\Tag;
 use App\Models\Contact;
+use App\Middleware\TenantMiddleware;
 
 $user = getCurrentUser();
 if (!$user) {
@@ -82,22 +83,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 
                 if ($action === 'create') {
                     $data['created_by'] = $user->id;
+                    $data['user_id'] = $user->id; // MULTI-TENANT: Add user_id
                     $workflow = Workflow::create($data);
                     echo json_encode(['success' => true, 'workflow' => $workflow]);
                 } else {
-                    $workflow = Workflow::findOrFail($_POST['id']);
+                    $workflow = Workflow::where('user_id', $user->id)->findOrFail($_POST['id']);
                     $workflow->update($data);
                     echo json_encode(['success' => true, 'workflow' => $workflow]);
                 }
                 break;
             
             case 'delete':
-                Workflow::findOrFail($_POST['id'])->delete();
+                Workflow::where('user_id', $user->id)->findOrFail($_POST['id'])->delete();
                 echo json_encode(['success' => true]);
                 break;
             
             case 'toggle':
-                $workflow = Workflow::findOrFail($_POST['id']);
+                $workflow = Workflow::where('user_id', $user->id)->findOrFail($_POST['id']);
                 $workflow->update(['is_active' => !$workflow->is_active]);
                 echo json_encode(['success' => true, 'is_active' => $workflow->is_active]);
                 break;
@@ -111,12 +113,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     exit;
 }
 
-// Fetch all workflows
-$workflows = Workflow::with('creator')->orderBy('created_at', 'desc')->get();
+// Fetch all workflows (MULTI-TENANT: filter by user)
+$workflows = Workflow::where('user_id', $user->id)->with('creator')->orderBy('created_at', 'desc')->get();
 
-// Fetch segments and tags for dropdowns
-$segments = Segment::orderBy('name')->get();
-$tags = Tag::orderBy('name')->get();
+// Fetch segments and tags for dropdowns (MULTI-TENANT: filter by user)
+$segments = Segment::where('user_id', $user->id)->orderBy('name')->get();
+$tags = Tag::where('user_id', $user->id)->orderBy('name')->get();
 
 $pageTitle = 'Workflows';
 require_once __DIR__ . '/includes/header.php';

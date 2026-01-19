@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Note extends Model
 {
     protected $fillable = [
+        'user_id',
         'contact_id',
         'created_by',
         'content',
@@ -17,6 +18,14 @@ class Note extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
+
+    /**
+     * Get the user (tenant) that owns this note
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     /**
      * Get the contact that owns the note

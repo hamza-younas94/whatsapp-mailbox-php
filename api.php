@@ -14,6 +14,7 @@ use App\Models\ContactMerge;
 use App\Models\Activity;
 use App\Models\Note;
 use App\Services\WhatsAppService;
+use App\Middleware\TenantMiddleware;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 // Enable CORS
@@ -33,6 +34,7 @@ if (!isAuthenticated()) {
     response_error('Unauthorized', 401);
 }
 
+$user = getCurrentUser();
 $method = $_SERVER['REQUEST_METHOD'];
 $request = explode('/', trim($_SERVER['PATH_INFO'] ?? '', '/'));
 $action = $request[0] ?? '';
@@ -187,9 +189,11 @@ try {
  * Get all contacts with unread counts
  */
 function getContacts() {
+    global $user;
     $search = sanitize($_GET['search'] ?? '');
     
-    $query = Contact::with(['lastMessage', 'contactTags'])
+    $query = Contact::where('user_id', $user->id)  // MULTI-TENANT: filter by user
+        ->with(['lastMessage', 'contactTags'])
         ->withCount(['unreadMessages as unread_count']);
     
     if ($search) {
@@ -243,17 +247,21 @@ function getContacts() {
  * Get messages for a specific contact
  */
 function getMessages() {
+    global $user;
     $contactId = $_GET['contact_id'] ?? null;
     
     if (!$contactId) {
         response_error('contact_id is required');
     }
     
+    // MULTI-TENANT: verify contact belongs to user
+    $contact = Contact::where('user_id', $user->id)->findOrFail($contactId);
+    
     $limit = intval($_GET['limit'] ?? 50);
     $offset = intval($_GET['offset'] ?? 0);
     $afterId = intval($_GET['after_id'] ?? 0);
     
-    $query = Message::where('contact_id', $contactId);
+    $query = Message::where('user_id', $user->id)->where('contact_id', $contactId);
     
     if ($afterId > 0) {
         $messages = $query
@@ -279,6 +287,7 @@ function getMessages() {
  * Send a WhatsApp message
  */
 function sendMessage() {
+    global $user;
     // Check message limit
     $messagesSent = (int)Capsule::table('config')
         ->where('config_key', 'messages_sent_count')
@@ -311,8 +320,8 @@ function sendMessage() {
         response_error('Validation failed', 422, $validation);
     }
     
-    // Send via WhatsApp API
-    $whatsappService = new WhatsAppService();
+    // Send via WhatsApp API using user's credentials
+    $whatsappService = new WhatsAppService($user->id);  // MULTI-TENANT: pass user_id
     $result = $whatsappService->sendTextMessage($to, $message);
     
     if (!$result['success']) {
@@ -330,14 +339,15 @@ function sendMessage() {
     // Get or create contact
     if (!$contactId) {
         $contact = Contact::firstOrCreate(
-            ['phone_number' => $to],
-            ['name' => $to]
+            ['user_id' => $user->id, 'phone_number' => $to],  // MULTI-TENANT: include user_id
+            ['name' => $to, 'user_id' => $user->id]  // MULTI-TENANT: add user_id
         );
         $contactId = $contact->id;
     }
     
     // Save message to database
     $savedMessage = Message::create([
+        'user_id' => $user->id,  // MULTI-TENANT: add user_id
         'message_id' => $result['message_id'],
         'contact_id' => $contactId,
         'phone_number' => $to,
@@ -378,6 +388,7 @@ function sendMessage() {
  * Send media message (image, video, document, audio)
  */
 function sendMediaMessage() {
+    global $user;
     // Check message limit
     $messagesSent = (int)Capsule::table('config')
         ->where('config_key', 'messages_sent_count')
@@ -446,8 +457,8 @@ function sendMediaMessage() {
     $host = $_SERVER['HTTP_HOST'];
     $mediaUrl = $protocol . '://' . $host . '/uploads/' . $filename;
     
-    // Send via WhatsApp API
-    $whatsappService = new WhatsAppService();
+    // Send via WhatsApp API using user's credentials
+    $whatsappService = new WhatsAppService($user->id);  // MULTI-TENANT: pass user_id
     $result = $whatsappService->sendMediaMessage($to, $mediaUrl, $mediaType, $caption, $filename);
     
     if (!$result['success']) {
@@ -486,14 +497,15 @@ function sendMediaMessage() {
     // Get or create contact
     if (!$contactId) {
         $contact = Contact::firstOrCreate(
-            ['phone_number' => $to],
-            ['name' => $to]
+            ['user_id' => $user->id, 'phone_number' => $to],  // MULTI-TENANT: include user_id
+            ['name' => $to, 'user_id' => $user->id]  // MULTI-TENANT: add user_id
         );
         $contactId = $contact->id;
     }
     
     // Save message to database
     $savedMessage = Message::create([
+        'user_id' => $user->id,  // MULTI-TENANT: add user_id
         'message_id' => $result['message_id'],
         'contact_id' => $contactId,
         'phone_number' => $to,
@@ -540,6 +552,7 @@ function sendMediaMessage() {
  * Send template message (for starting new conversations)
  */
 function sendTemplateMessage() {
+    global $user;
     $input = json_decode(file_get_contents('php://input'), true);
     
     $to = sanitize($input['to'] ?? '');
@@ -582,8 +595,8 @@ function sendTemplateMessage() {
         }
     }
     
-    // Send via WhatsApp API
-    $whatsappService = new WhatsAppService();
+    // Send via WhatsApp API using user's credentials
+    $whatsappService = new WhatsAppService($user->id);  // MULTI-TENANT: pass user_id
     $result = $whatsappService->sendTemplateMessage($to, $templateName, $languageCode, $sanitizedParams);
     
     if (!$result['success']) {
@@ -610,14 +623,15 @@ function sendTemplateMessage() {
     // Get or create contact
     if (!$contactId) {
         $contact = Contact::firstOrCreate(
-            ['phone_number' => $to],
-            ['name' => $to]
+            ['user_id' => $user->id, 'phone_number' => $to],  // MULTI-TENANT: include user_id
+            ['name' => $to, 'user_id' => $user->id]  // MULTI-TENANT: add user_id
         );
         $contactId = $contact->id;
     }
     
     // Save message to database
     $savedMessage = Message::create([
+        'user_id' => $user->id,  // MULTI-TENANT: add user_id
         'message_id' => $result['message_id'],
         'contact_id' => $contactId,
         'phone_number' => $to,
@@ -643,7 +657,9 @@ function sendTemplateMessage() {
  * Get available message templates
  */
 function getTemplates() {
-    $whatsappService = new WhatsAppService();
+    global $user;
+    // Get user's templates from WhatsApp API
+    $whatsappService = new WhatsAppService($user->id);  // MULTI-TENANT: pass user_id
     $result = $whatsappService->getTemplates();
     
     if ($result['success']) {
@@ -704,6 +720,7 @@ function markAsRead() {
  * Search messages with advanced filters
  */
 function searchMessages() {
+    global $user;
     $query = sanitize($_GET['q'] ?? '');
     $stage = sanitize($_GET['stage'] ?? '');
     $tags = explode(',', sanitize($_GET['tags'] ?? ''));
@@ -720,7 +737,7 @@ function searchMessages() {
     }
     
     // Build query
-    $qb = Message::with(['contact', 'contact.contactTags']);
+    $qb = Message::where('user_id', $user->id)->with(['contact', 'contact.contactTags']);  // MULTI-TENANT: filter by user
     
     // Text search
     $qb->where(function($q) use ($query) {
@@ -850,7 +867,9 @@ function getMessageLimit() {
  * Get all auto-tag rules
  */
 function getAutoTagRules() {
+    global $user;
     $rules = Capsule::table('auto_tag_rules as r')
+        ->where('r.user_id', $user->id)  // MULTI-TENANT: filter by user
         ->leftJoin('tags as t', 'r.tag_id', '=', 't.id')
         ->select('r.*', 't.name as tag_name', 't.color as tag_color')
         ->orderBy('r.priority', 'desc')
@@ -863,6 +882,7 @@ function getAutoTagRules() {
  * Create new auto-tag rule
  */
 function createAutoTagRule() {
+    global $user;
     $input = json_decode(file_get_contents('php://input'), true);
     
     $ruleName = sanitize($input['rule_name'] ?? '');
@@ -877,6 +897,7 @@ function createAutoTagRule() {
     }
     
     $ruleId = Capsule::table('auto_tag_rules')->insertGetId([
+        'user_id' => $user->id,  // MULTI-TENANT: add user_id
         'rule_name' => $ruleName,
         'tag_id' => $tagId,
         'keywords' => $keywords,
@@ -894,7 +915,18 @@ function createAutoTagRule() {
  * Update auto-tag rule
  */
 function updateAutoTagRule($ruleId) {
+    global $user;
     $input = json_decode(file_get_contents('php://input'), true);
+    
+    // MULTI-TENANT: verify rule belongs to user
+    $rule = Capsule::table('auto_tag_rules')
+        ->where('id', $ruleId)
+        ->where('user_id', $user->id)
+        ->first();
+    
+    if (!$rule) {
+        response_error('Rule not found or access denied', 404);
+    }
     
     $updateData = ['updated_at' => now()];
     
@@ -928,7 +960,17 @@ function updateAutoTagRule($ruleId) {
  * Delete auto-tag rule
  */
 function deleteAutoTagRule($ruleId) {
-    Capsule::table('auto_tag_rules')->where('id', $ruleId)->delete();
+    global $user;
+    // MULTI-TENANT: verify rule belongs to user before deleting
+    $deleted = Capsule::table('auto_tag_rules')
+        ->where('id', $ruleId)
+        ->where('user_id', $user->id)
+        ->delete();
+    
+    if ($deleted === 0) {
+        response_error('Rule not found or access denied', 404);
+    }
+    
     response_json(['success' => true]);
 }
 
@@ -936,7 +978,9 @@ function deleteAutoTagRule($ruleId) {
  * Get all tags
  */
 function getTags() {
+    global $user;
     $tags = Capsule::table('tags')
+        ->where('user_id', $user->id)  // MULTI-TENANT: filter by user
         ->orderBy('name')
         ->get();
     
@@ -947,6 +991,7 @@ function getTags() {
  * Bulk add tag to multiple contacts
  */
 function bulkAddTag() {
+    global $user;
     $input = json_decode(file_get_contents('php://input'), true);
     
     $contactIds = $input['contact_ids'] ?? [];
@@ -956,8 +1001,8 @@ function bulkAddTag() {
         response_error('contact_ids and tag_id are required', 422);
     }
     
-    // Validate contacts exist
-    $contacts = Contact::whereIn('id', $contactIds)->get();
+    // MULTI-TENANT: Validate contacts exist and belong to user
+    $contacts = Contact::where('user_id', $user->id)->whereIn('id', $contactIds)->get();
     if ($contacts->isEmpty()) {
         response_error('No contacts found', 404);
     }
@@ -977,6 +1022,7 @@ function bulkAddTag() {
  * Bulk update stage for multiple contacts
  */
 function bulkUpdateStage() {
+    global $user;
     $input = json_decode(file_get_contents('php://input'), true);
     
     $contactIds = $input['contact_ids'] ?? [];
@@ -992,7 +1038,7 @@ function bulkUpdateStage() {
         response_error('Invalid stage value', 422);
     }
     
-    $updated = Contact::whereIn('id', $contactIds)->update([
+    $updated = Contact::where('user_id', $user->id)->whereIn('id', $contactIds)->update([  // MULTI-TENANT: filter by user
         'stage' => $stage,
         'updated_at' => date('Y-m-d H:i:s')
     ]);
@@ -1007,6 +1053,7 @@ function bulkUpdateStage() {
  * Bulk delete contacts
  */
 function bulkDeleteContacts() {
+    global $user;
     $input = json_decode(file_get_contents('php://input'), true);
     
     $contactIds = $input['contact_ids'] ?? [];
@@ -1015,8 +1062,8 @@ function bulkDeleteContacts() {
         response_error('contact_ids are required', 422);
     }
     
-    // Delete contacts (cascade will handle related records)
-    $deleted = Contact::whereIn('id', $contactIds)->delete();
+    // MULTI-TENANT: Delete only user's contacts
+    $deleted = Contact::where('user_id', $user->id)->whereIn('id', $contactIds)->delete();
     
     response_json([
         'success' => true,
@@ -1028,18 +1075,19 @@ function bulkDeleteContacts() {
  * Get unified contact timeline (messages, notes, activities, tasks)
  */
 function getContactTimeline($contactId) {
-    $contact = Contact::findOrFail($contactId);
-    $userId = $_SESSION['user_id'];
+    global $user;
+    // MULTI-TENANT: verify contact belongs to user
+    $contact = Contact::where('user_id', $user->id)->findOrFail($contactId);
     
     // Get all timeline items
     $timeline = [];
     
     // Messages
-    $messages = Message::where('contact_id', $contactId)
+    $messages = Message::where('user_id', $user->id)->where('contact_id', $contactId)  // MULTI-TENANT: filter by user
         ->orderBy('timestamp', 'desc')
         ->limit(100)
         ->get()
-        ->map(function($msg) use ($userId) {
+        ->map(function($msg) use ($user) {
             return [
                 'type' => 'message',
                 'id' => $msg->id,
@@ -1048,13 +1096,13 @@ function getContactTimeline($contactId) {
                 'description' => substr($msg->message_body, 0, 200),
                 'direction' => $msg->direction,
                 'message_type' => $msg->message_type,
-                'is_starred' => MessageAction::isStarred($msg->id, $userId),
+                'is_starred' => MessageAction::isStarred($msg->id, $user->id),
                 'data' => $msg
             ];
         });
     
     // Notes
-    $notes = Note::where('contact_id', $contactId)
+    $notes = Note::where('user_id', $user->id)->where('contact_id', $contactId)  // MULTI-TENANT: filter by user
         ->with('creator')
         ->orderBy('created_at', 'desc')
         ->limit(50)
@@ -1073,7 +1121,7 @@ function getContactTimeline($contactId) {
         });
     
     // Activities
-    $activities = Activity::where('contact_id', $contactId)
+    $activities = Activity::where('user_id', $user->id)->where('contact_id', $contactId)  // MULTI-TENANT: filter by user
         ->with('creator')
         ->orderBy('created_at', 'desc')
         ->limit(50)
@@ -1092,7 +1140,7 @@ function getContactTimeline($contactId) {
         });
     
     // Tasks
-    $tasks = Task::where('contact_id', $contactId)
+    $tasks = Task::where('user_id', $user->id)->where('contact_id', $contactId)  // MULTI-TENANT: filter by user
         ->with(['assignedUser', 'creator'])
         ->orderBy('created_at', 'desc')
         ->limit(50)
@@ -1132,8 +1180,8 @@ function getContactTimeline($contactId) {
  * Get tasks (with filters)
  */
 function getTasks() {
-    $userId = $_SESSION['user_id'];
-    $query = Task::with(['contact', 'assignedUser', 'creator']);
+    global $user;
+    $query = Task::where('user_id', $user->id)->with(['contact', 'assignedUser', 'creator']);  // MULTI-TENANT: filter by user
     
     // Filters
     $contactId = $_GET['contact_id'] ?? null;
@@ -1235,6 +1283,7 @@ function createTask() {
     }
     
     $task = Task::create([
+        'user_id' => $user->id,  // MULTI-TENANT: add user_id
         'contact_id' => $input['contact_id'] ?? null,
         'title' => sanitize($input['title']),
         'description' => sanitize($input['description'] ?? ''),
@@ -1243,7 +1292,7 @@ function createTask() {
         'status' => $input['status'] ?? 'pending',
         'due_date' => $input['due_date'] ? date('Y-m-d H:i:s', strtotime($input['due_date'])) : null,
         'assigned_to' => $input['assigned_to'] ?? null,
-        'created_by' => $userId,
+        'created_by' => $user->id,  // MULTI-TENANT: use current user
         'notes' => sanitize($input['notes'] ?? '')
     ]);
     
@@ -1257,7 +1306,9 @@ function createTask() {
  * Update task
  */
 function updateTask($taskId) {
-    $task = Task::findOrFail($taskId);
+    global $user;
+    // MULTI-TENANT: verify task belongs to user
+    $task = Task::where('user_id', $user->id)->findOrFail($taskId);
     $input = json_decode(file_get_contents('php://input'), true);
     
     $updateData = [];
@@ -1296,7 +1347,9 @@ function updateTask($taskId) {
  * Delete task
  */
 function deleteTask($taskId) {
-    $task = Task::findOrFail($taskId);
+    global $user;
+    // MULTI-TENANT: verify task belongs to user
+    $task = Task::where('user_id', $user->id)->findOrFail($taskId);
     $task->delete();
     
     response_json(['success' => true]);
@@ -1306,8 +1359,8 @@ function deleteTask($taskId) {
  * Handle message action (star, forward, delete)
  */
 function handleMessageAction() {
+    global $user;
     $input = json_decode(file_get_contents('php://input'), true);
-    $userId = $_SESSION['user_id'];
     
     $messageId = $input['message_id'] ?? null;
     $actionType = $input['action_type'] ?? 'star';
@@ -1317,28 +1370,31 @@ function handleMessageAction() {
         response_error('message_id is required', 422);
     }
     
-    $message = Message::findOrFail($messageId);
+    // MULTI-TENANT: verify message belongs to user
+    $message = Message::where('user_id', $user->id)->findOrFail($messageId);
     
     switch ($actionType) {
         case 'star':
-            MessageAction::star($messageId, $userId);
+            MessageAction::star($messageId, $user->id);
             break;
             
         case 'forward':
             if (!$forwardToContactId) {
                 response_error('forward_to_contact_id is required for forward action', 422);
             }
+            // MULTI-TENANT: verify forward contact belongs to user
+            $forwardToContact = Contact::where('user_id', $user->id)->findOrFail($forwardToContactId);
+            
             MessageAction::create([
                 'message_id' => $messageId,
-                'user_id' => $userId,
+                'user_id' => $user->id,
                 'action_type' => 'forward',
                 'forwarded_to_contact_id' => $forwardToContactId,
                 'notes' => sanitize($input['notes'] ?? '')
             ]);
             
-            // Actually forward the message
-            $whatsappService = new WhatsAppService();
-            $forwardToContact = Contact::findOrFail($forwardToContactId);
+            // Actually forward the message using user's WhatsApp service
+            $whatsappService = new WhatsAppService($user->id);  // MULTI-TENANT: pass user_id
             $forwardMessage = $message->message_body;
             if ($message->media_url) {
                 $whatsappService->sendMediaMessage(
@@ -1365,7 +1421,9 @@ function handleMessageAction() {
  * Remove message action
  */
 function removeMessageAction($actionId) {
-    $action = MessageAction::findOrFail($actionId);
+    global $user;
+    // MULTI-TENANT: verify action belongs to user
+    $action = MessageAction::where('user_id', $user->id)->findOrFail($actionId);
     $action->delete();
     
     response_json(['success' => true]);
@@ -1375,8 +1433,8 @@ function removeMessageAction($actionId) {
  * Merge duplicate contacts
  */
 function mergeContacts() {
+    global $user;
     $input = json_decode(file_get_contents('php://input'), true);
-    $userId = $_SESSION['user_id'];
     
     $sourceContactId = $input['source_contact_id'] ?? null;
     $targetContactId = $input['target_contact_id'] ?? null;
@@ -1390,24 +1448,25 @@ function mergeContacts() {
         response_error('Cannot merge contact with itself', 422);
     }
     
-    $sourceContact = Contact::findOrFail($sourceContactId);
-    $targetContact = Contact::findOrFail($targetContactId);
+    // MULTI-TENANT: verify both contacts belong to user
+    $sourceContact = Contact::where('user_id', $user->id)->findOrFail($sourceContactId);
+    $targetContact = Contact::where('user_id', $user->id)->findOrFail($targetContactId);
     
     // Merge data
     $mergedData = [];
     
     // Merge messages
-    $messagesMoved = Message::where('contact_id', $sourceContactId)
+    $messagesMoved = Message::where('user_id', $user->id)->where('contact_id', $sourceContactId)
         ->update(['contact_id' => $targetContactId]);
     $mergedData['messages'] = $messagesMoved;
     
     // Merge notes
-    $notesMoved = Note::where('contact_id', $sourceContactId)
+    $notesMoved = Note::where('user_id', $user->id)->where('contact_id', $sourceContactId)
         ->update(['contact_id' => $targetContactId]);
     $mergedData['notes'] = $notesMoved;
     
     // Merge activities
-    $activitiesMoved = Activity::where('contact_id', $sourceContactId)
+    $activitiesMoved = Activity::where('user_id', $user->id)->where('contact_id', $sourceContactId)
         ->update(['contact_id' => $targetContactId]);
     $mergedData['activities'] = $activitiesMoved;
     
@@ -1434,9 +1493,10 @@ function mergeContacts() {
     
     // Log merge
     ContactMerge::create([
+        'user_id' => $user->id,  // MULTI-TENANT: add user_id
         'source_contact_id' => $sourceContactId,
         'target_contact_id' => $targetContactId,
-        'merged_by' => $userId,
+        'merged_by' => $user->id,
         'merge_reason' => $mergeReason,
         'merged_data' => $mergedData
     ]);
@@ -1487,6 +1547,7 @@ function clearLogs() {
  * Find duplicate contacts
  */
 function findDuplicateContacts() {
+    global $user;
     // Find contacts with similar phone numbers or names
     $phonePattern = $_GET['phone_pattern'] ?? null;
     $nameSimilarity = isset($_GET['name_similarity']) ? (float)$_GET['name_similarity'] : 0.8;
@@ -1495,7 +1556,8 @@ function findDuplicateContacts() {
     
     if ($phonePattern) {
         // Find by phone number pattern (same country code, similar numbers)
-        $contacts = Contact::all();
+        // MULTI-TENANT: filter by user
+        $contacts = Contact::where('user_id', $user->id)->get();
         $grouped = [];
         
         foreach ($contacts as $contact) {
@@ -1520,7 +1582,8 @@ function findDuplicateContacts() {
         }
     } else {
         // Find by name similarity
-        $contacts = Contact::whereNotNull('name')->get();
+        // MULTI-TENANT: filter by user
+        $contacts = Contact::where('user_id', $user->id)->whereNotNull('name')->get();
         
         foreach ($contacts as $i => $contact1) {
             for ($j = $i + 1; $j < count($contacts); $j++) {

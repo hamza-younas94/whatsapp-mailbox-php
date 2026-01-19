@@ -1,0 +1,142 @@
+{%extends 'base.html.twig' %}
+
+{% block title %}API Settings - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="mb-4">WhatsApp API Settings</h1>
+            
+            {% if message %}
+                <div class="alert alert-{{ messageType }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endif %}
+            
+            <!-- API Configuration Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">API Credentials</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Business Name</label>
+                            <input type="text" name="business_name" class="form-control" 
+                                   value="{{ settings.business_name ?? '' }}" 
+                                   placeholder="Your business name">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" name="phone_number" class="form-control" 
+                                   value="{{ settings.phone_number ?? '' }}" 
+                                   placeholder="+1234567890">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">WhatsApp Access Token *</label>
+                            <input type="password" name="whatsapp_access_token" class="form-control" 
+                                   value="{{ settings.whatsapp_access_token ?? '' }}" 
+                                   placeholder="Your access token">
+                            <small class="text-muted">Get this from Meta Business Manager</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number ID *</label>
+                            <input type="text" name="whatsapp_phone_number_id" class="form-control" 
+                                   value="{{ settings.whatsapp_phone_number_id ?? '' }}" 
+                                   placeholder="Your phone number ID">
+                            <small class="text-muted">WhatsApp Business API phone number identifier</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">API Version</label>
+                            <select name="whatsapp_api_version" class="form-select">
+                                <option value="v18.0" {% if settings.whatsapp_api_version == 'v18.0' %}selected{% endif %}>v18.0</option>
+                                <option value="v17.0" {% if settings.whatsapp_api_version == 'v17.0' %}selected{% endif %}>v17.0</option>
+                                <option value="v16.0" {% if settings.whatsapp_api_version == 'v16.0' %}selected{% endif %}>v16.0</option>
+                            </select>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>Status:</strong>
+                            {% if settings.is_configured %}
+                                <span class="badge bg-success">✓ Configured</span>
+                            {% else %}
+                                <span class="badge bg-warning">⚠ Not Configured</span>
+                            {% endif %}
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Webhook Configuration Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Webhook Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Configure this webhook URL in your Meta Business Manager to receive messages:</p>
+                    
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" readonly 
+                               value="https://{{ webhookUrl }}" id="webhookUrl">
+                        <button class="btn btn-outline-secondary" type="button" 
+                                onclick="copyToClipboard('webhookUrl')">Copy</button>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Webhook Verify Token</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" readonly 
+                                   value="{{ settings.webhook_verify_token }}" id="webhookToken">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="copyToClipboard('webhookToken')">Copy</button>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" style="display: inline;">
+                        <button type="submit" name="generate_token" class="btn btn-warning btn-sm" 
+                                onclick="return confirm('Generate a new token? You\'ll need to update it in Meta Business Manager.')">
+                            Generate New Token
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Instructions Card -->
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Setup Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li>Go to <a href="https://developers.facebook.com" target="_blank">Meta Developers</a></li>
+                        <li>Create or select your app</li>
+                        <li>Go to WhatsApp > API Setup</li>
+                        <li>Copy your <strong>Access Token</strong> and <strong>Phone Number ID</strong></li>
+                        <li>Paste them above and save</li>
+                        <li>Go to WhatsApp > Webhook Settings</li>
+                        <li>Paste the webhook URL and verify token above</li>
+                        <li>Subscribe to "messages" and "message_status" events</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    document.execCommand('copy');
+    alert('Copied to clipboard!');
+}
+</script>
+{% endblock %}

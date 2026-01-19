@@ -10,6 +10,7 @@ class Workflow extends Model
     protected $table = 'workflows';
     
     protected $fillable = [
+        'user_id',
         'name',
         'description',
         'trigger_type',
@@ -28,6 +29,14 @@ class Workflow extends Model
         'last_executed_at' => 'datetime'
     ];
     
+    /**
+     * Get the user (tenant) that owns this workflow
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Executions
      */

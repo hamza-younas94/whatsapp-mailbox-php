@@ -11,6 +11,7 @@ use App\Models\BroadcastRecipient;
 use App\Models\Contact;
 use App\Models\Tag;
 use App\Models\Segment;
+use App\Middleware\TenantMiddleware;
 
 // Check if user is authenticated
 $user = getCurrentUser();
@@ -49,15 +50,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     exit;
                 }
                 
-                // Check if recipients exist
+                // Check if recipients exist (MULTI-TENANT: filter by user)
                 $recipientFilter = sanitize($_POST['recipient_filter']);
                 $recipientCount = 0;
                 
                 if ($recipientFilter === 'all') {
-                    $recipientCount = Contact::count();
+                    $recipientCount = Contact::where('user_id', $user->id)->count();
                 } elseif (str_starts_with($recipientFilter, 'tag_')) {
                     $tagId = str_replace('tag_', '', $recipientFilter);
-                    $tag = Tag::find($tagId);
+                    $tag = Tag::where('user_id', $user->id)->find($tagId);
                     if (!$tag) {
                         echo json_encode([
                             'success' => false,
@@ -69,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     $recipientCount = $tag->contacts()->count();
                 } elseif (str_starts_with($recipientFilter, 'segment_')) {
                     $segmentId = str_replace('segment_', '', $recipientFilter);
-                    $segment = Segment::find($segmentId);
+                    $segment = Segment::where('user_id', $user->id)->find($segmentId);
                     if (!$segment) {
                         echo json_encode([
                             'success' => false,
@@ -81,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     $recipientCount = $segment->getContacts()->count();
                 } elseif (str_starts_with($recipientFilter, 'stage_')) {
                     $stage = str_replace('stage_', '', $recipientFilter);
-                    $recipientCount = Contact::where('stage', $stage)->count();
+                    $recipientCount = Contact::where('user_id', $user->id)->where('stage', $stage)->count();
                 }
                 
                 if ($recipientCount === 0) {
@@ -95,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 
                 if ($action === 'create') {
                     $broadcast = Broadcast::create([
+                        'user_id' => $user->id, // MULTI-TENANT: Add user_id
                         'name' => sanitize($_POST['name']),
                         'message' => sanitize($_POST['message']),
                         'message_type' => $_POST['message_type'] ?? 'text',
@@ -106,6 +108,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     ]);
                 } else {
                     $broadcast = Broadcast::findOrFail($_POST['id']);
+                    // Verify user owns this broadcast
+                    if (!TenantMiddleware::canAccess($broadcast, $user->id)) {
+                        throw new Exception('Access denied');
+                    }
                     
                     if ($broadcast->status !== 'draft' && $broadcast->status !== 'scheduled') {
                         echo json_encode([
@@ -124,28 +130,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     ]);
                 }
                 
-                // Add recipients based on filters (only for new broadcasts)
+                // Add recipients based on filters (only for new broadcasts) - MULTI-TENANT
                 if ($action === 'create') {
                     $recipients = [];
                     $filter = $recipientFilter;
                     
                     if ($filter === 'all') {
-                        $contacts = Contact::all();
+                        $contacts = Contact::where('user_id', $user->id)->get();
                     } elseif (str_starts_with($filter, 'tag_')) {
                         $tagId = str_replace('tag_', '', $filter);
-                        $contacts = Tag::find($tagId)->contacts;
+                        $contacts = Tag::where('user_id', $user->id)->find($tagId)->contacts;
                     } elseif (str_starts_with($filter, 'segment_')) {
                         $segmentId = str_replace('segment_', '', $filter);
-                        $contacts = Segment::find($segmentId)->getContacts();
+                        $contacts = Segment::where('user_id', $user->id)->find($segmentId)->getContacts();
                     } elseif (str_starts_with($filter, 'stage_')) {
                         $stage = str_replace('stage_', '', $filter);
-                        $contacts = Contact::where('stage', $stage)->get();
+                        $contacts = Contact::where('user_id', $user->id)->where('stage', $stage)->get();
                     } else {
                         $contacts = collect();
                     }
                     
                     foreach ($contacts as $contact) {
                         BroadcastRecipient::create([
+                            'user_id' => $user->id, // MULTI-TENANT: Add user_id
                             'broadcast_id' => $broadcast->id,
                             'contact_id' => $contact->id,
                             'status' => 'pending'
@@ -157,12 +164,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 break;
             
             case 'get':
-                $broadcast = Broadcast::findOrFail($_POST['id']);
+                // MULTI-TENANT: verify broadcast belongs to user
+                $broadcast = Broadcast::where('user_id', $user->id)->findOrFail($_POST['id']);
                 echo json_encode(['success' => true, 'broadcast' => $broadcast]);
                 break;
             
             case 'send':
-                $broadcast = Broadcast::findOrFail($_POST['id']);
+                // MULTI-TENANT: verify broadcast belongs to user
+                $broadcast = Broadcast::where('user_id', $user->id)->findOrFail($_POST['id']);
                 
                 if ($broadcast->status !== 'draft' && $broadcast->status !== 'scheduled') {
                     throw new Exception('Broadcast has already been sent or is in progress');
@@ -178,13 +187,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 break;
             
             case 'cancel':
-                $broadcast = Broadcast::findOrFail($_POST['id']);
+                // MULTI-TENANT: verify broadcast belongs to user
+                $broadcast = Broadcast::where('user_id', $user->id)->findOrFail($_POST['id']);
                 $broadcast->update(['status' => 'cancelled']);
                 echo json_encode(['success' => true]);
                 break;
             
             case 'delete':
-                $broadcast = Broadcast::findOrFail($_POST['id']);
+                // MULTI-TENANT: verify broadcast belongs to user
+                $broadcast = Broadcast::where('user_id', $user->id)->findOrFail($_POST['id']);
                 if ($broadcast->status === 'sending') {
                     throw new Exception('Cannot delete a broadcast that is currently sending');
                 }
@@ -201,16 +212,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     exit;
 }
 
-// Fetch broadcasts
+// Fetch broadcasts (MULTI-TENANT: filter by user)
 $broadcasts = Broadcast::with('creator')
+    ->where('user_id', $user->id)
     ->orderBy('created_at', 'desc')
     ->get();
 
-// Get filters data
-$tags = Tag::orderBy('name')->get();
-$segments = Segment::orderBy('name')->get();
+// Get filters data (MULTI-TENANT: filter by user)
+$tags = Tag::where('user_id', $user->id)->orderBy('name')->get();
+$segments = Segment::where('user_id', $user->id)->orderBy('name')->get();
 // Get all unique stages from contacts
-$stages = Contact::select('stage')
+$stages = Contact::where('user_id', $user->id)
+    ->select('stage')
     ->distinct()
     ->whereNotNull('stage')
     ->pluck('stage')

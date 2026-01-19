@@ -7,6 +7,7 @@ require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/auth.php';
 
 use App\Models\Segment;
+use App\Middleware\TenantMiddleware;
 
 $user = getCurrentUser();
 if (!$user) {
@@ -64,11 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 
                 if ($action === 'create') {
                     $data['created_by'] = $user->id;
+                    $data['user_id'] = $user->id; // MULTI-TENANT: Add user_id
                     $segment = Segment::create($data);
                     $segment->updateContactCount();
                     echo json_encode(['success' => true, 'segment' => $segment]);
                 } else {
-                    $segment = Segment::findOrFail($_POST['id']);
+                    $segment = Segment::where('user_id', $user->id)->findOrFail($_POST['id']);
                     $segment->update($data);
                     $segment->updateContactCount();
                     echo json_encode(['success' => true, 'segment' => $segment]);
@@ -76,12 +78,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 break;
             
             case 'delete':
-                Segment::findOrFail($_POST['id'])->delete();
+                Segment::where('user_id', $user->id)->findOrFail($_POST['id'])->delete();
                 echo json_encode(['success' => true]);
                 break;
             
             case 'refresh':
-                $segment = Segment::findOrFail($_POST['id']);
+                $segment = Segment::where('user_id', $user->id)->findOrFail($_POST['id']);
                 $segment->updateContactCount();
                 echo json_encode(['success' => true, 'count' => $segment->contact_count]);
                 break;
@@ -95,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     exit;
 }
 
-$segments = Segment::with('creator')->get();
+$segments = Segment::where('user_id', $user->id)->with('creator')->get();
 
 $pageTitle = 'Contact Segments';
 require_once __DIR__ . '/includes/header.php';

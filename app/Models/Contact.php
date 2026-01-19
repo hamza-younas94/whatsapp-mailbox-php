@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Contact extends Model
 {
     protected $fillable = [
+        'user_id', // MULTI-TENANT: Each contact belongs to a user
         'phone_number',
         'name',
         'profile_picture_url',
@@ -40,6 +41,14 @@ class Contact extends Model
         'custom_fields' => 'array'
     ];
 
+    /**
+     * Get the user (tenant) that owns this contact
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    
     /**
      * Get all messages for this contact
      */

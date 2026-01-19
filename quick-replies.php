@@ -9,6 +9,7 @@ require_once __DIR__ . '/auth.php';
 use App\Models\QuickReply;
 use App\Models\Tag;
 use App\Models\Contact;
+use App\Middleware\TenantMiddleware;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 // Check if user is authenticated
@@ -84,10 +85,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 
                 if ($action === 'create') {
                     $data['created_by'] = $user->id;
+                    $data['user_id'] = $user->id; // MULTI-TENANT: Add tenant (user) ID
                     $reply = QuickReply::create($data);
                     echo json_encode(['success' => true, 'reply' => $reply]);
                 } else {
                     $reply = QuickReply::findOrFail($_POST['id']);
+                    // Verify user owns this reply
+                    if (!TenantMiddleware::canAccess($reply, $user->id)) {
+                        throw new Exception('Access denied');
+                    }
                     $reply->update($data);
                     echo json_encode(['success' => true, 'reply' => $reply]);
                 }
@@ -95,12 +101,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
             
             case 'delete':
                 $reply = QuickReply::findOrFail($_POST['id']);
+                // Verify user owns this reply
+                if (!TenantMiddleware::canAccess($reply, $user->id)) {
+                    throw new Exception('Access denied');
+                }
                 $reply->delete();
                 echo json_encode(['success' => true]);
                 break;
             
             case 'toggle':
                 $reply = QuickReply::findOrFail($_POST['id']);
+                // Verify user owns this reply
+                if (!TenantMiddleware::canAccess($reply, $user->id)) {
+                    throw new Exception('Access denied');
+                }
                 $reply->update(['is_active' => !$reply->is_active]);
                 echo json_encode(['success' => true, 'is_active' => $reply->is_active]);
                 break;
@@ -114,10 +128,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     exit;
 }
 
-// Fetch all quick replies
+// Fetch all quick replies for current user (MULTI-TENANT)
 // Check if priority column exists before ordering by it (for backward compatibility)
 $hasPriorityColumn = Capsule::schema()->hasColumn('quick_replies', 'priority');
-$query = QuickReply::with('creator');
+$query = QuickReply::with('creator')
+    ->where('user_id', $user->id); // MULTI-TENANT: Filter by current user
 
 if ($hasPriorityColumn) {
     $query->orderBy('priority', 'desc');
@@ -126,9 +141,9 @@ $query->orderBy('usage_count', 'desc');
 
 $replies = $query->get();
 
-// Fetch tags and contacts for dropdowns
-$tags = Tag::orderBy('name')->get();
-$contacts = Contact::orderBy('name')->limit(1000)->get(); // Limit for performance
+// Fetch tags and contacts for current user only (MULTI-TENANT)
+$tags = Tag::where('user_id', $user->id)->orderBy('name')->get();
+$contacts = Contact::where('user_id', $user->id)->orderBy('name')->limit(1000)->get(); // Limit for performance
 
 // Render page
 $pageTitle = 'Quick Replies';

@@ -9,11 +9,19 @@ use App\Models\Contact;
 use App\Models\Note;
 use App\Models\Activity;
 use App\Models\Deal;
+use App\Middleware\TenantMiddleware;
 
 header('Content-Type: application/json');
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
+
+$user = getCurrentUser();
+if (!$user) {
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
@@ -60,7 +68,7 @@ try {
             exit;
         }
         
-        $contact = Contact::findOrFail($contactId);
+        $contact = Contact::where('user_id', $user->id)->findOrFail($contactId);
         
         $updateFields = [];
         $allowedFields = ['stage', 'lead_score', 'assigned_to', 'source', 'company_name', 
@@ -120,10 +128,11 @@ try {
         }
         
         $note = Note::create([
+            'user_id' => $user->id,
             'contact_id' => $contactId,
             'content' => sanitize($data['content']),
             'type' => sanitize($data['type'] ?? 'general'),
-            'created_by' => $_SESSION['user_id']
+            'created_by' => $user->id
         ]);
         
         // Add activity
@@ -142,7 +151,8 @@ try {
     if ($method === 'GET' && preg_match('/^\/contact\/(\d+)\/notes$/', $path, $matches)) {
         $contactId = $matches[1];
         
-        $notes = Note::where('contact_id', $contactId)
+        $notes = Note::where('user_id', $user->id)
+            ->where('contact_id', $contactId)
             ->with('creator')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -155,7 +165,8 @@ try {
     if ($method === 'GET' && preg_match('/^\/contact\/(\d+)\/activities$/', $path, $matches)) {
         $contactId = $matches[1];
         
-        $activities = Activity::where('contact_id', $contactId)
+        $activities = Activity::where('user_id', $user->id)
+            ->where('contact_id', $contactId)
             ->with('creator')
             ->orderBy('created_at', 'desc')
             ->limit(50)
@@ -169,7 +180,8 @@ try {
     if ($method === 'GET' && preg_match('/^\/contact\/(\d+)\/deals$/', $path, $matches)) {
         $contactId = $matches[1];
         
-        $deals = Deal::where('contact_id', $contactId)
+        $deals = Deal::where('user_id', $user->id)
+            ->where('contact_id', $contactId)
             ->with('creator')
             ->orderBy('deal_date', 'desc')
             ->orderBy('created_at', 'desc')
@@ -232,6 +244,7 @@ try {
         }
         
         $deal = Deal::create([
+            'user_id' => $user->id,
             'contact_id' => $contactId,
             'deal_name' => sanitize($data['deal_name']),
             'amount' => $amount,
@@ -239,7 +252,7 @@ try {
             'status' => sanitize($data['status'] ?? 'pending'),
             'deal_date' => $dealDate,
             'notes' => !empty($data['notes']) ? sanitize($data['notes']) : null,
-            'created_by' => $_SESSION['user_id']
+            'created_by' => $user->id
         ]);
         
         // Add activity
@@ -262,16 +275,19 @@ try {
     // Get CRM statistics
     if ($method === 'GET' && $path === '/stats') {
         $stats = [
-            'total_contacts' => Contact::count(),
-            'by_stage' => Contact::selectRaw('stage, COUNT(*) as count')
+            'total_contacts' => Contact::where('user_id', $user->id)->count(),
+            'by_stage' => Contact::where('user_id', $user->id)
+                ->selectRaw('stage, COUNT(*) as count')
                 ->groupBy('stage')
                 ->pluck('count', 'stage'),
-            'avg_lead_score' => Contact::avg('lead_score'),
-            'total_deal_value' => Contact::sum('deal_value'),
-            'contacts_this_month' => Contact::whereMonth('created_at', date('m'))
+            'avg_lead_score' => Contact::where('user_id', $user->id)->avg('lead_score'),
+            'total_deal_value' => Contact::where('user_id', $user->id)->sum('deal_value'),
+            'contacts_this_month' => Contact::where('user_id', $user->id)
+                ->whereMonth('created_at', date('m'))
                 ->whereYear('created_at', date('Y'))
                 ->count(),
-            'hot_leads' => Contact::where('lead_score', '>=', 70)
+            'hot_leads' => Contact::where('user_id', $user->id)
+                ->where('lead_score', '>=', 70)
                 ->where('stage', '!=', 'customer')
                 ->where('stage', '!=', 'lost')
                 ->count()
@@ -285,7 +301,8 @@ try {
     if ($method === 'GET' && preg_match('/^\/contacts\/stage\/([a-z_]+)$/', $path, $matches)) {
         $stage = $matches[1];
         
-        $contacts = Contact::where('stage', $stage)
+        $contacts = Contact::where('user_id', $user->id)
+            ->where('stage', $stage)
             ->with(['lastMessage', 'assignedUser'])
             ->withCount('unreadMessages')
             ->orderBy('lead_score', 'desc')
@@ -298,7 +315,9 @@ try {
     
     // Search contacts with CRM filters
     if ($method === 'GET' && $path === '/search') {
-        $query = Contact::query()->with(['lastMessage', 'assignedUser'])->withCount('unreadMessages');
+        $query = Contact::where('user_id', $user->id)
+            ->with(['lastMessage', 'assignedUser'])
+            ->withCount('unreadMessages');
         
         // Filter by stage
         if (isset($_GET['stage']) && $_GET['stage'] !== 'all') {

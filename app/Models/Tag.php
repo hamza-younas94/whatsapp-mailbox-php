@@ -9,11 +9,20 @@ class Tag extends Model
     protected $table = 'tags';
     
     protected $fillable = [
+        'user_id',
         'name',
         'color',
         'description'
     ];
     
+    /**
+     * Owner of this tag
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Contacts that have this tag
      */

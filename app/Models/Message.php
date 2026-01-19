@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Message extends Model
 {
     protected $fillable = [
+        'user_id',
         'message_id',
         'contact_id',
         'phone_number',
@@ -28,6 +29,14 @@ class Message extends Model
         'is_read' => 'boolean',
         'timestamp' => 'datetime'
     ];
+
+    /**
+     * Get the user (tenant) that owns this message
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     /**
      * Get the contact that owns this message

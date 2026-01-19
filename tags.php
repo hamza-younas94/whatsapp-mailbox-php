@@ -8,6 +8,7 @@ require_once __DIR__ . '/auth.php';
 
 use App\Models\Tag;
 use App\Models\Contact;
+use App\Middleware\TenantMiddleware;
 
 // Check if user is authenticated
 if (!isAuthenticated()) {
@@ -24,13 +25,17 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
         try {
             if ($_GET['action'] === 'getTag' && isset($_GET['id'])) {
-                $tag = Tag::findOrFail($_GET['id']);
+                $tag = Tag::where('user_id', $user->id)->findOrFail($_GET['id']);
                 echo json_encode(['success' => true, 'tag' => $tag]);
                 exit;
             }
             
             if ($_GET['action'] === 'list') {
-                $tags = Tag::withCount('contacts')->orderBy('name')->get()->map(function($tag){
+                $tags = Tag::where('user_id', $user->id)
+                    ->withCount('contacts')
+                    ->orderBy('name')
+                    ->get()
+                    ->map(function($tag){
                     return [
                         'id' => $tag->id,
                         'name' => $tag->name,
@@ -81,17 +86,18 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                 ];
                 
                 if ($action === 'create') {
+                    $data['user_id'] = $user->id; // MULTI-TENANT: Add user_id
                     $tag = Tag::create($data);
                     echo json_encode(['success' => true, 'tag' => $tag]);
                 } else {
-                    $tag = Tag::findOrFail($_POST['id']);
+                    $tag = Tag::where('user_id', $user->id)->findOrFail($_POST['id']);
                     $tag->update($data);
                     echo json_encode(['success' => true, 'tag' => $tag]);
                 }
                 break;
             
             case 'delete':
-                $tag = Tag::findOrFail($_POST['id']);
+                $tag = Tag::where('user_id', $user->id)->findOrFail($_POST['id']);
                 $tag->delete();
                 echo json_encode(['success' => true]);
                 break;
@@ -124,12 +130,15 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     }
 }
 
-// Fetch all tags with contact counts
-$tags = Tag::withCount('contacts')->orderBy('name')->get();
+// Fetch all tags with contact counts (MULTI-TENANT: filter by user)
+$tags = Tag::where('user_id', $user->id)
+    ->withCount('contacts')
+    ->orderBy('name')
+    ->get();
 
-// Get stats
+// Get stats (MULTI-TENANT: filter by user)
 $totalTags = $tags->count();
-$totalTaggedContacts = Contact::has('contactTags')->count();
+$totalTaggedContacts = Contact::where('user_id', $user->id)->has('contactTags')->count();
 
 // Render page
 $pageTitle = 'Tags Management';

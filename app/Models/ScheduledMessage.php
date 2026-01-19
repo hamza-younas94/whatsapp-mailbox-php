@@ -9,6 +9,7 @@ class ScheduledMessage extends Model
     protected $table = 'scheduled_messages';
     
     protected $fillable = [
+        'user_id',
         'contact_id',
         'message',
         'message_type',
@@ -29,6 +30,14 @@ class ScheduledMessage extends Model
         'is_recurring' => 'boolean'
     ];
     
+    /**
+     * Owner of this scheduled message
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Contact this message is for
      */

@@ -105,6 +105,7 @@ function processScheduledMessages($client, $phoneNumberId, $accessToken) {
                 \App\Models\Message::updateOrCreate(
                     ['message_id' => $whatsappMessageId],
                     [
+                        'user_id' => $msg->contact->user_id,  // MULTI-TENANT: add user_id
                         'contact_id' => $msg->contact->id,
                         'phone_number' => $msg->contact->phone_number,
                         'direction' => 'outgoing',
@@ -214,6 +215,7 @@ function processBroadcasts($client, $phoneNumberId, $accessToken) {
                     \App\Models\Message::updateOrCreate(
                         ['message_id' => $whatsappMessageId],
                         [
+                            'user_id' => $recipient->contact->user_id,  // MULTI-TENANT: add user_id
                             'contact_id' => $recipient->contact->id,
                             'phone_number' => $recipient->contact->phone_number,
                             'direction' => 'outgoing',
@@ -264,6 +266,7 @@ function scheduleNextRecurrence($originalMsg) {
     
     if ($nextScheduledAt) {
         ScheduledMessage::create([
+            'user_id' => $originalMsg->user_id,  // MULTI-TENANT: add user_id
             'contact_id' => $originalMsg->contact_id,
             'message' => $originalMsg->message,
             'message_type' => $originalMsg->message_type,

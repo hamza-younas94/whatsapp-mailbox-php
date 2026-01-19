@@ -9,6 +9,7 @@ class Segment extends Model
     protected $table = 'segments';
     
     protected $fillable = [
+        'user_id',
         'name',
         'description',
         'conditions',
@@ -22,6 +23,14 @@ class Segment extends Model
         'is_dynamic' => 'boolean'
     ];
     
+    /**
+     * Owner of this segment
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Creator
      */

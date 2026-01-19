@@ -81,11 +81,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     ];
                     
                     if ($action === 'create') {
+                        $data['user_id'] = $user->id;  // MULTI-TENANT: add user_id
                         $data['created_by'] = $user->id;
                         $campaign = DripCampaign::create($data);
                         $campaignId = $campaign->id;
                     } else {
-                        $campaign = DripCampaign::findOrFail($_POST['id']);
+                        // MULTI-TENANT: verify campaign belongs to user
+                        $campaign = DripCampaign::where('user_id', $user->id)->findOrFail($_POST['id']);
                         $campaign->update($data);
                         $campaignId = $campaign->id;
                         
@@ -115,12 +117,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 break;
             
             case 'delete':
-                DripCampaign::findOrFail($_POST['id'])->delete();
+                // MULTI-TENANT: verify campaign belongs to user
+                DripCampaign::where('user_id', $user->id)->findOrFail($_POST['id'])->delete();
                 echo json_encode(['success' => true]);
                 break;
             
             case 'toggle':
-                $campaign = DripCampaign::findOrFail($_POST['id']);
+                // MULTI-TENANT: verify campaign belongs to user
+                $campaign = DripCampaign::where('user_id', $user->id)->findOrFail($_POST['id']);
                 $campaign->update(['is_active' => !$campaign->is_active]);
                 echo json_encode(['success' => true, 'is_active' => $campaign->is_active]);
                 break;
@@ -135,11 +139,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
 }
 
 // Fetch all campaigns with steps
-$campaigns = DripCampaign::with(['steps', 'creator'])->orderBy('created_at', 'desc')->get();
+$campaigns = DripCampaign::where('user_id', $user->id)->with(['steps', 'creator'])->orderBy('created_at', 'desc')->get();  // MULTI-TENANT: filter by user
 
 // Fetch segments and tags for dropdowns
-$segments = Segment::orderBy('name')->get();
-$tags = Tag::orderBy('name')->get();
+$segments = Segment::where('user_id', $user->id)->orderBy('name')->get();  // MULTI-TENANT: filter by user
+$tags = Tag::where('user_id', $user->id)->orderBy('name')->get();  // MULTI-TENANT: filter by user
 
 $pageTitle = 'Drip Campaigns';
 require_once __DIR__ . '/includes/header.php';
