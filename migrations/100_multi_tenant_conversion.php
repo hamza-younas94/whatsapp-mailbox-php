@@ -189,8 +189,8 @@ if ($firstUser) {
             'webhook_verify_token' => env('WEBHOOK_VERIFY_TOKEN', ''),
             'business_name' => env('APP_NAME', 'MessageHub'),
             'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now()
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
         ]);
         echo "  ✅ Created API credentials for user {$userId}\n";
     }
@@ -204,10 +204,10 @@ if ($firstUser) {
             'message_limit' => 999999,
             'messages_used' => 0,
             'contact_limit' => 999999,
-            'current_period_start' => now(),
-            'current_period_end' => now()->addYear(),
-            'created_at' => now(),
-            'updated_at' => now()
+            'current_period_start' => date('Y-m-d H:i:s'),
+            'current_period_end' => date('Y-m-d H:i:s', strtotime('+1 year')),
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
         ]);
         echo "  ✅ Created subscription for user {$userId}\n";
     }
@@ -220,8 +220,8 @@ if ($firstUser) {
             'date_format' => 'Y-m-d',
             'time_format' => 'H:i:s',
             'language' => 'en',
-            'created_at' => now(),
-            'updated_at' => now()
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
         ]);
         echo "  ✅ Created settings for user {$userId}\n";
     }
