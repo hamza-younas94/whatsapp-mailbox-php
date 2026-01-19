@@ -6,6 +6,7 @@
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 
+// Run the migration immediately (before return statement)
 $schema = Capsule::schema();
 
 // Get or create a default admin user for existing data
@@ -227,3 +228,31 @@ if (!$schema->hasColumn('ip_commands', 'user_id')) {
 }
 
 echo "\n✅ All tenant support migrations completed!\n";
+
+// Return migration structure for migrate.php
+return [
+    'up' => function() {
+        echo "Tenant support migration completed\n";
+    },
+    'down' => function() {
+        $schema = Capsule::schema();
+        
+        // Remove user_id columns from all tables
+        $tables = ['contacts', 'messages', 'quick_replies', 'broadcasts', 'scheduled_messages', 
+                   'segments', 'tags', 'auto_tag_rules', 'deals', 'workflows', 'internal_notes', 'ip_commands'];
+        
+        foreach ($tables as $table) {
+            if ($schema->hasTable($table) && $schema->hasColumn($table, 'user_id')) {
+                $schema->table($table, function ($t) {
+                    $t->dropForeign(['user_id']);
+                    $t->dropColumn('user_id');
+                });
+            }
+        }
+        
+        // Drop user_settings table
+        $schema->dropIfExists('user_settings');
+        
+        echo "Tenant support rolled back\n";
+    }
+];
