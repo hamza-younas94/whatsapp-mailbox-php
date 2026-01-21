@@ -294,17 +294,10 @@ function getMessages() {
  */
 function sendMessage() {
     global $user;
-    // Check message limit
-    $messagesSent = (int)Capsule::table('config')
-        ->where('config_key', 'messages_sent_count')
-        ->value('config_value') ?? 0;
-    
-    $messageLimit = (int)Capsule::table('config')
-        ->where('config_key', 'message_limit')
-        ->value('config_value') ?? 500;
-    
+    // Check per-tenant message limit
+    [$messagesSent, $messageLimit] = getUserMessageCounters($user->id);
     if ($messagesSent >= $messageLimit) {
-        response_error('Message limit reached. You have sent ' . $messagesSent . ' out of ' . $messageLimit . ' free messages. Please upgrade your plan to continue.', 429);
+        response_error('Message limit reached. You have sent ' . $messagesSent . ' out of ' . $messageLimit . ' messages for this tenant. Please upgrade your plan to continue.', 429);
     }
     
     $input = json_decode(file_get_contents('php://input'), true);
@@ -368,19 +361,9 @@ function sendMessage() {
     // Update contact last message time
     Contact::find($contactId)->update(['last_message_time' => now()]);
     
-    // Increment message counter
-    Capsule::table('config')
-        ->where('config_key', 'messages_sent_count')
-        ->increment('config_value');
-    
-    // Get updated count
-    $newCount = (int)Capsule::table('config')
-        ->where('config_key', 'messages_sent_count')
-        ->value('config_value') ?? 0;
-    
-    $limit = (int)Capsule::table('config')
-        ->where('config_key', 'message_limit')
-        ->value('config_value') ?? 500;
+    // Increment per-tenant message counter
+    $newCount = incrementUserMessagesSent($user->id);
+    $limit = $messageLimit;
     
     response_json([
         'success' => true,
@@ -396,16 +379,9 @@ function sendMessage() {
 function sendMediaMessage() {
     global $user;
     // Check message limit
-    $messagesSent = (int)Capsule::table('config')
-        ->where('config_key', 'messages_sent_count')
-        ->value('config_value') ?? 0;
-    
-    $messageLimit = (int)Capsule::table('config')
-        ->where('config_key', 'message_limit')
-        ->value('config_value') ?? 500;
-    
+    [$messagesSent, $messageLimit] = getUserMessageCounters($user->id);
     if ($messagesSent >= $messageLimit) {
-        response_error('Message limit reached', 429);
+        response_error('Message limit reached for this tenant', 429);
     }
     
     // Get form data
@@ -531,19 +507,9 @@ function sendMediaMessage() {
     // Update contact last message time
     Contact::find($contactId)->update(['last_message_time' => now()]);
     
-    // Increment message counter
-    Capsule::table('config')
-        ->where('config_key', 'messages_sent_count')
-        ->increment('config_value');
-    
-    // Get updated count
-    $newCount = (int)Capsule::table('config')
-        ->where('config_key', 'messages_sent_count')
-        ->value('config_value') ?? 0;
-    
-    $limit = (int)Capsule::table('config')
-        ->where('config_key', 'message_limit')
-        ->value('config_value') ?? 500;
+    // Increment per-tenant message counter
+    $newCount = incrementUserMessagesSent($user->id);
+    $limit = $messageLimit;
     
     response_json([
         'success' => true,
@@ -601,6 +567,12 @@ function sendTemplateMessage() {
         }
     }
     
+    // Check per-tenant message limit
+    [$messagesSent, $messageLimit] = getUserMessageCounters($user->id);
+    if ($messagesSent >= $messageLimit) {
+        response_error('Message limit reached for this tenant', 429);
+    }
+
     // Send via WhatsApp API using user's credentials
     $whatsappService = new WhatsAppService($user->id);  // MULTI-TENANT: pass user_id
     $result = $whatsappService->sendTemplateMessage($to, $templateName, $languageCode, $sanitizedParams);
@@ -652,10 +624,14 @@ function sendTemplateMessage() {
     // Update contact last message time
     Contact::find($contactId)->update(['last_message_time' => now()]);
     
+    // Increment per-tenant message counter
+    incrementUserMessagesSent($user->id);
+    
     response_json([
         'success' => true,
         'message_id' => $result['message_id'],
-        'message' => $savedMessage
+        'message' => $savedMessage,
+        'messages_remaining' => max(0, $messageLimit - ($messagesSent + 1))
     ]);
 }
 
@@ -683,6 +659,10 @@ function getTemplates() {
  * Get all users
  */
 function getUsers() {
+    global $user;
+    if ($user->role !== 'admin') {
+        response_error('Forbidden', 403);
+    }
     $users = \App\Models\User::orderBy('created_at', 'desc')->get();
     response_json(['success' => true, 'users' => $users]);
 }
@@ -691,19 +671,24 @@ function getUsers() {
  * Get single user
  */
 function getUser($userId) {
-    $user = \App\Models\User::find($userId);
+    global $user;
+    if ($user->role !== 'admin' && $user->id != $userId) {
+        response_error('Forbidden', 403);
+    }
+    $record = \App\Models\User::find($userId);
     
-    if (!$user) {
+    if (!$record) {
         response_error('User not found', 404);
     }
     
-    response_json(['success' => true, 'user' => $user]);
+    response_json(['success' => true, 'user' => $record]);
 }
 
 /**
  * Mark messages as read
  */
 function markAsRead() {
+    global $user;
     $input = json_decode(file_get_contents('php://input'), true);
     $contactId = $input['contact_id'] ?? null;
     
@@ -711,7 +696,7 @@ function markAsRead() {
         response_error('contact_id is required');
     }
     
-    $contact = Contact::find($contactId);
+    $contact = Contact::where('user_id', $user->id)->find($contactId);
     
     if (!$contact) {
         response_error('Contact not found', 404);
@@ -822,42 +807,10 @@ function searchMessages() {
  * Get message limit and current count
  */
 function getMessageLimit() {
+    global $user;
     try {
-        // Check if config records exist, create if not
-        $messagesSent = Capsule::table('config')
-            ->where('config_key', 'messages_sent_count')
-            ->value('config_value');
-        
-        if ($messagesSent === null) {
-            // Create the record if it doesn't exist
-            Capsule::table('config')->insert([
-                'config_key' => 'messages_sent_count',
-                'config_value' => '0',
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ]);
-            $messagesSent = 0;
-        } else {
-            $messagesSent = (int)$messagesSent;
-        }
-        
-        $messageLimit = Capsule::table('config')
-            ->where('config_key', 'message_limit')
-            ->value('config_value');
-        
-        if ($messageLimit === null) {
-            // Create the record if it doesn't exist
-            Capsule::table('config')->insert([
-                'config_key' => 'message_limit',
-                'config_value' => '500',
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ]);
-            $messageLimit = 500;
-        } else {
-            $messageLimit = (int)$messageLimit;
-        }
-        
+        [$messagesSent, $messageLimit] = getUserMessageCounters($user->id);
+
         response_json([
             'sent' => $messagesSent,
             'limit' => $messageLimit,
@@ -868,6 +821,63 @@ function getMessageLimit() {
         logger('Message limit error: ' . $e->getMessage(), 'error');
         response_error('Failed to get message limit: ' . $e->getMessage(), 500);
     }
+}
+
+/**
+ * Get per-tenant message counters (sent, limit)
+ */
+function getUserMessageCounters($userId) {
+    $sentKey = 'messages_sent_count_user_' . $userId;
+    $limitKey = 'message_limit_user_' . $userId;
+    
+    $sent = Capsule::table('config')->where('config_key', $sentKey)->value('config_value');
+    if ($sent === null) {
+        Capsule::table('config')->insert([
+            'config_key' => $sentKey,
+            'config_value' => '0',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+        $sent = 0;
+    } else {
+        $sent = (int)$sent;
+    }
+    
+    $limit = Capsule::table('config')->where('config_key', $limitKey)->value('config_value');
+    if ($limit === null) {
+        Capsule::table('config')->insert([
+            'config_key' => $limitKey,
+            'config_value' => '500',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+        $limit = 500;
+    } else {
+        $limit = (int)$limit;
+    }
+    
+    return [$sent, $limit];
+}
+
+/**
+ * Increment per-tenant sent counter and return updated count
+ */
+function incrementUserMessagesSent($userId) {
+    $sentKey = 'messages_sent_count_user_' . $userId;
+    $exists = Capsule::table('config')->where('config_key', $sentKey)->exists();
+    
+    if ($exists) {
+        Capsule::table('config')->where('config_key', $sentKey)->increment('config_value');
+    } else {
+        Capsule::table('config')->insert([
+            'config_key' => $sentKey,
+            'config_value' => '1',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+    }
+    
+    return (int) Capsule::table('config')->where('config_key', $sentKey)->value('config_value');
 }
 /**
  * Get all auto-tag rules
@@ -1227,6 +1237,7 @@ function getTasks() {
  * Create task
  */
 function createTask() {
+    global $user;
     $input = json_decode(file_get_contents('php://input'), true);
     
     $validation = validate([
@@ -1243,49 +1254,9 @@ function createTask() {
         response_error('Validation failed', 422, ['errors' => $validation]);
     }
     
-    // Ensure user_id exists
-    $userId = $_SESSION['user_id'] ?? null;
-    if ($userId) {
-        $userExists = \App\Models\User::find($userId);
-        if (!$userExists) {
-            // Try to get first admin user
-            $adminUser = \App\Models\User::where('role', 'admin')->first();
-            if ($adminUser) {
-                $userId = $adminUser->id;
-            } else {
-                // Get any user
-                $anyUser = \App\Models\User::first();
-                if ($anyUser) {
-                    $userId = $anyUser->id;
-                } else {
-                    response_error('No valid user found. Please create a user first.', 422);
-                }
-            }
-        }
-    } else {
-        // If no user_id in session, try to get current user from session
-        if (isset($_SESSION['user_id'])) {
-            $sessionUser = \App\Models\User::find($_SESSION['user_id']);
-            if ($sessionUser) {
-                $userId = $sessionUser->id;
-            }
-        }
-        
-        // If still no user, try to get first admin user
-        if (!$userId) {
-            $adminUser = \App\Models\User::where('role', 'admin')->first();
-            if ($adminUser) {
-                $userId = $adminUser->id;
-            } else {
-                // Get any user as last resort
-                $anyUser = \App\Models\User::first();
-                if ($anyUser) {
-                    $userId = $anyUser->id;
-                } else {
-                    response_error('No valid user found. Please create a user first.', 422);
-                }
-            }
-        }
+    // MULTI-TENANT: verify contact belongs to current user if provided
+    if (!empty($input['contact_id'])) {
+        Contact::where('user_id', $user->id)->findOrFail($input['contact_id']);
     }
     
     $task = Task::create([

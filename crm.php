@@ -127,6 +127,8 @@ try {
             exit;
         }
         
+        $contact = Contact::where('user_id', $user->id)->findOrFail($contactId);
+
         $note = Note::create([
             'user_id' => $user->id,
             'contact_id' => $contactId,
@@ -136,7 +138,6 @@ try {
         ]);
         
         // Add activity
-        $contact = Contact::find($contactId);
         $contact->addActivity('note_added', 'Note added', substr($data['content'], 0, 100));
         $contact->touch('last_activity_at');
         
@@ -243,6 +244,8 @@ try {
             exit;
         }
         
+        $contact = Contact::where('user_id', $user->id)->findOrFail($contactId);
+
         $deal = Deal::create([
             'user_id' => $user->id,
             'contact_id' => $contactId,
@@ -256,7 +259,6 @@ try {
         ]);
         
         // Add activity
-        $contact = Contact::find($contactId);
         $contact->addActivity('deal_added', "Deal added: {$data['deal_name']} - PKR " . number_format($amount, 0));
         $contact->touch('last_activity_at');
         

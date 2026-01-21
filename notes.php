@@ -14,6 +14,8 @@ if (!isAuthenticated()) {
     redirect('/login.php');
 }
 
+$user = getCurrentUser();
+
 // Get filter parameters
 $contactId = $_GET['contact_id'] ?? null;
 $type = $_GET['type'] ?? null;
