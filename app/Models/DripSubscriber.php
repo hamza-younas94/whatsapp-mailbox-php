@@ -10,7 +10,7 @@ class DripSubscriber extends Model
     
     protected $fillable = [
         'user_id',
-        'drip_campaign_id',
+        'campaign_id',
         'contact_id',
         'current_step',
         'status',
@@ -39,7 +39,7 @@ class DripSubscriber extends Model
      */
     public function campaign()
     {
-        return $this->belongsTo(DripCampaign::class, 'drip_campaign_id');
+          return $this->belongsTo(DripCampaign::class, 'campaign_id');
     }
     
     /**
