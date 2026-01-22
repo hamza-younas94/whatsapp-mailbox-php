@@ -19,10 +19,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     header('Content-Type: application/json');
     
     try {
-        $ipAddress = $_POST['ip_address'] ?? '';
-        
+        $ipAddress = trim($_POST['ip_address'] ?? '');
+
         if (empty($ipAddress)) {
             echo json_encode(['success' => false, 'error' => 'IP address is required']);
+            exit;
+        }
+
+        // Basic validation for IPv4/IPv6
+        if (!filter_var($ipAddress, FILTER_VALIDATE_IP)) {
+            echo json_encode(['success' => false, 'error' => 'Invalid IP address']);
             exit;
         }
         
@@ -34,11 +40,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         $apiResponse = curl_exec($ch);
+        $curlErr = curl_error($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+
+        if ($apiResponse === false && $curlErr) {
+            $apiResponse = $curlErr;
+            $httpCode = 0;
+        }
         
         // Save to database
         $ipCommand = IpCommand::create([
+            'user_id' => $user->id,
             'ip_address' => $ipAddress,
             'contact_name' => 'Admin Manual',
             'phone_number' => null,
@@ -59,13 +72,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     exit;
 }
 
-// Get all IP commands
-$ipCommands = IpCommand::orderBy('created_at', 'desc')->limit(100)->get();
+// Get all IP commands (scoped to user)
+$ipCommands = IpCommand::where('user_id', $user->id)
+    ->orderBy('created_at', 'desc')
+    ->limit(100)
+    ->get();
 
-// Stats
-$totalCommands = IpCommand::count();
-$successCount = IpCommand::where('status', 'success')->count();
-$failedCount = IpCommand::where('status', 'failed')->count();
+// Stats (scoped to user)
+$totalCommands = IpCommand::where('user_id', $user->id)->count();
+$successCount = IpCommand::where('user_id', $user->id)->where('status', 'success')->count();
+$failedCount = IpCommand::where('user_id', $user->id)->where('status', 'failed')->count();
 
 echo render('ip_commands.html.twig', [
     'ipCommands' => $ipCommands,
