@@ -26,7 +26,9 @@ class Encryption
         if ($value === null || $value === '') {
             return $value;
         }
-        if (str_starts_with($value, self::PREFIX)) {
+
+        // PHP 7/8 compatible prefix check (avoid str_starts_with on PHP<8)
+        if (substr($value, 0, strlen(self::PREFIX)) === self::PREFIX) {
             $payload = substr($value, strlen(self::PREFIX));
             $decoded = base64_decode($payload, true);
             if ($decoded === false) {
