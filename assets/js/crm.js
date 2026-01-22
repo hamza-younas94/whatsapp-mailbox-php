@@ -50,7 +50,12 @@ async function loadCrmData() {
             throw new Error('Failed to load contacts');
         }
         
-        allContacts = await response.json();
+        const payload = await response.json();
+        // API returns { data: [...], pagination: {...} }
+        allContacts = Array.isArray(payload) ? payload : (payload.data || []);
+        if (!Array.isArray(allContacts)) {
+            allContacts = [];
+        }
         // Make contacts available globally for advanced CRM modal
         window.allContacts = allContacts;
         window.contacts = allContacts;
@@ -66,6 +71,9 @@ async function loadCrmData() {
  * Update statistics cards
  */
 function updateStats(contacts) {
+    if (!Array.isArray(contacts)) {
+        contacts = [];
+    }
     // Total contacts
     document.getElementById('totalContacts').textContent = contacts.length || '0';
     
@@ -93,6 +101,9 @@ function updateStats(contacts) {
  * Render CRM table
  */
 function renderCrmTable(contacts) {
+    if (!Array.isArray(contacts)) {
+        contacts = [];
+    }
     const tbody = document.getElementById('crmTableBody');
     
     if (contacts.length === 0) {
