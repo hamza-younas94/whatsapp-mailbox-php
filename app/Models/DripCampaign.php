@@ -34,6 +34,8 @@ class DripCampaign extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function subscribers()
+    {
         return $this->hasMany(DripSubscriber::class, 'campaign_id');
     }
     
