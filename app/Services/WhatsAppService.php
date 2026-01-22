@@ -688,26 +688,43 @@ class WhatsAppService
 
             case 'unsupported':
             default:
-                // For unsupported or unknown types, save what we can
-                $messageBody = 'Unsupported message type: ' . $messageType;
+                // For unsupported or unknown types, save what we can but keep it user-visible as a system notice
                 logger("[SAVE] ⚠️  Unsupported message type received: {$messageType}", 'warning');
-                
+
+                // Prefer provider error details if present
+                $errorDetails = '';
+                if (!empty($messageData['errors']) && is_array($messageData['errors'])) {
+                    $errorDetails = $messageData['errors'][0]['message'] ?? '';
+                    if (empty($errorDetails) && isset($messageData['errors'][0]['error_data']['details'])) {
+                        $errorDetails = $messageData['errors'][0]['error_data']['details'];
+                    }
+                }
+
                 // Try to extract any available text content
                 if (isset($messageData['body'])) {
                     $messageBody = $messageData['body'];
                 } elseif (isset($messageData['text'])) {
-                    $messageBody = is_array($messageData['text']) ? ($messageData['text']['body'] ?? $messageBody) : $messageData['text'];
+                    $messageBody = is_array($messageData['text']) ? ($messageData['text']['body'] ?? '') : $messageData['text'];
                 }
-                
-                // Store full message data in message_body as JSON for debugging
-                $messageBody = $messageBody . ' | Raw data: ' . json_encode($messageData, JSON_UNESCAPED_UNICODE);
+
+                // Fallback message body with raw payload
+                if (empty($messageBody)) {
+                    $messageBody = 'Message type not supported by provider.';
+                }
+                if (!empty($errorDetails)) {
+                    $messageBody .= ' (' . $errorDetails . ')';
+                }
+                $messageBody .= ' | Raw data: ' . json_encode($messageData, JSON_UNESCAPED_UNICODE);
+
+                // Normalize unsupported to system so it renders instead of showing “unsupported”
+                $messageType = 'system';
                 break;
         }
         
         // Normalize message_type - ensure it's a valid string
         $messageType = strtolower(trim($messageType));
         if (empty($messageType)) {
-            $messageType = 'unsupported';
+            $messageType = 'system';
         }
 
         // Save message
