@@ -4,6 +4,17 @@
  * Run this as a cron job every minute: * * * * * php /path/to/process_jobs.php
  */
 
+// This script MUST be run via CLI, not HTTP
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    header('Content-Type: text/plain');
+    echo "ERROR: This script must be run via CLI, not HTTP\n\n";
+    echo "Correct cron setup:\n";
+    echo "* * * * * cd " . __DIR__ . " && /usr/bin/php process_jobs.php >> /path/to/cron.log 2>&1\n\n";
+    echo "DO NOT use wget or curl to call this script.\n";
+    exit(1);
+}
+
 // Prevent session from starting in CLI mode
 define('NO_SESSION', true);
 
