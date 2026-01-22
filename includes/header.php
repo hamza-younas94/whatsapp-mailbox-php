@@ -220,49 +220,71 @@
                 <i class="fas fa-clipboard"></i>
                 CRM
             </a>
+            <?php if (hasFeature('broadcasts')): ?>
             <a href="broadcasts.php" class="nav-link <?php echo $currentPage === 'broadcasts.php' ? 'active' : ''; ?>">
                 <i class="fas fa-broadcast-tower"></i>
                 Broadcasts
             </a>
+            <?php endif; ?>
+            <?php if (hasFeature('quick_replies')): ?>
             <a href="quick-replies.php" class="nav-link <?php echo $currentPage === 'quick-replies.php' ? 'active' : ''; ?>">
                 <i class="fas fa-bolt"></i>
                 Quick Replies
             </a>
+            <?php endif; ?>
+            <?php if (hasFeature('analytics')): ?>
             <a href="analytics.php" class="nav-link <?php echo $currentPage === 'analytics.php' ? 'active' : ''; ?>">
                 <i class="fas fa-chart-bar"></i>
                 Analytics
             </a>
+            <?php endif; ?>
             <div class="dropdown">
                 <a href="#" class="nav-link <?php echo in_array($currentPage, $morePages, true) ? 'active' : ''; ?>">
                     <i class="fas fa-ellipsis-h"></i>
                     More ▾
                 </a>
                 <div class="dropdown-menu">
+                    <?php if (hasFeature('tags')): ?>
                     <a href="tags.php" class="<?php echo $currentPage === 'tags.php' ? 'active' : ''; ?>">🏷️ Tags</a>
+                    <?php endif; ?>
                     <a href="auto-tag-rules.php" class="<?php echo $currentPage === 'auto-tag-rules.php' ? 'active' : ''; ?>">🤖 Auto-Tag Rules</a>
                     <a href="search.php" class="<?php echo $currentPage === 'search.php' ? 'active' : ''; ?>">🔍 Advanced Search</a>
+                    <?php if (hasFeature('segments')): ?>
                     <a href="segments.php" class="<?php echo $currentPage === 'segments.php' ? 'active' : ''; ?>">📊 Segments</a>
+                    <?php endif; ?>
+                    <?php if (hasFeature('scheduled_messages')): ?>
                     <a href="scheduled-messages.php" class="<?php echo $currentPage === 'scheduled-messages.php' ? 'active' : ''; ?>">⏰ Scheduled</a>
+                    <?php endif; ?>
+                    <?php if (hasFeature('notes')): ?>
                     <a href="notes.php" class="<?php echo $currentPage === 'notes.php' ? 'active' : ''; ?>">📝 Notes</a>
+                    <?php endif; ?>
                     <a href="deals.php" class="<?php echo $currentPage === 'deals.php' ? 'active' : ''; ?>">💰 Deals</a>
+                    <?php if (hasFeature('dcmb_ip_commands')): ?>
                     <a href="ip-commands.php" class="<?php echo $currentPage === 'ip-commands.php' ? 'active' : ''; ?>">💻 IP Commands</a>
+                    <?php endif; ?>
                     
                     <!-- Automation Section -->
+                    <?php if (hasFeature('workflows') || hasFeature('drip_campaigns')): ?>
                     <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
                         <div style="padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Automation</div>
+                        <?php if (hasFeature('workflows')): ?>
                         <a href="workflows.php" class="<?php echo $currentPage === 'workflows.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../workflows.php') ? '1' : '0.6'; ?>;">
                             🔄 Workflows
                             <?php if (!file_exists(__DIR__ . '/../workflows.php')): ?>
                                 <span style="font-size: 0.7rem; color: #f59e0b; margin-left: auto;">(Coming Soon)</span>
                             <?php endif; ?>
                         </a>
+                        <?php endif; ?>
+                        <?php if (hasFeature('drip_campaigns')): ?>
                         <a href="drip-campaigns.php" class="<?php echo $currentPage === 'drip-campaigns.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../drip-campaigns.php') ? '1' : '0.6'; ?>;">
                             💧 Drip Campaigns
                             <?php if (!file_exists(__DIR__ . '/../drip-campaigns.php')): ?>
                                 <span style="font-size: 0.7rem; color: #f59e0b; margin-left: auto;">(Coming Soon)</span>
                             <?php endif; ?>
                         </a>
+                        <?php endif; ?>
                     </div>
+                    <?php endif; ?>
                     
                     <!-- Templates & Integration Section -->
                     <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">

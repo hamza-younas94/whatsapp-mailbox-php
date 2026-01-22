@@ -15,6 +15,9 @@ if (!$user) {
     exit;
 }
 
+// Check if user has access to segments feature
+requireFeature('segments', 'index.php');
+
 // Handle AJAX
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     header('Content-Type: application/json');

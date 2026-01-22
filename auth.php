@@ -164,6 +164,46 @@ function isAdmin() {
 }
 
 /**
+ * Get current user's subscription
+ */
+function getUserSubscription() {
+    $user = getCurrentUser();
+    if (!$user) {
+        return null;
+    }
+    
+    return \App\Models\UserSubscription::where('user_id', $user->id)->first();
+}
+
+/**
+ * Check if current user has access to a feature
+ */
+function hasFeature($featureName) {
+    // Admin always has all features
+    if (isAdmin()) {
+        return true;
+    }
+    
+    $subscription = getUserSubscription();
+    if (!$subscription) {
+        return false;
+    }
+    
+    return $subscription->hasFeature($featureName);
+}
+
+/**
+ * Require feature access (redirect if not available)
+ */
+function requireFeature($featureName, $redirectUrl = 'index.php') {
+    if (!hasFeature($featureName)) {
+        $_SESSION['error'] = 'This feature is not available in your subscription plan.';
+        header('Location: ' . $redirectUrl);
+        exit;
+    }
+}
+
+/**
  * Change password
  */
 function changePassword($userId, $newPassword) {

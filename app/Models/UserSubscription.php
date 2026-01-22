@@ -15,6 +15,7 @@ class UserSubscription extends Model
         'message_limit',
         'messages_used',
         'contact_limit',
+        'features',
         'trial_ends_at',
         'current_period_start',
         'current_period_end'
@@ -24,6 +25,7 @@ class UserSubscription extends Model
         'message_limit' => 'integer',
         'messages_used' => 'integer',
         'contact_limit' => 'integer',
+        'features' => 'array',
         'trial_ends_at' => 'datetime',
         'current_period_start' => 'datetime',
         'current_period_end' => 'datetime'
@@ -79,5 +81,31 @@ class UserSubscription extends Model
     public function remainingMessages()
     {
         return max(0, $this->message_limit - $this->messages_used);
+    }
+    
+    /**
+     * Check if user has access to a specific feature
+     */
+    public function hasFeature($featureName)
+    {
+        if (empty($this->features)) {
+            return false;
+        }
+        
+        return isset($this->features[$featureName]) && $this->features[$featureName] === true;
+    }
+    
+    /**
+     * Get all enabled features
+     */
+    public function getEnabledFeatures()
+    {
+        if (empty($this->features)) {
+            return [];
+        }
+        
+        return array_keys(array_filter($this->features, function($value) {
+            return $value === true;
+        }));
     }
 }

@@ -65,11 +65,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
             
             case 'update_subscription':
                 $sub = UserSubscription::firstOrCreate(['user_id' => $userId]);
+                
+                // Parse features from form checkboxes
+                $features = [
+                    'mailbox' => isset($_POST['feature_mailbox']),
+                    'quick_replies' => isset($_POST['feature_quick_replies']),
+                    'broadcasts' => isset($_POST['feature_broadcasts']),
+                    'segments' => isset($_POST['feature_segments']),
+                    'drip_campaigns' => isset($_POST['feature_drip_campaigns']),
+                    'scheduled_messages' => isset($_POST['feature_scheduled_messages']),
+                    'auto_reply' => isset($_POST['feature_auto_reply']),
+                    'tags' => isset($_POST['feature_tags']),
+                    'notes' => isset($_POST['feature_notes']),
+                    'message_templates' => isset($_POST['feature_message_templates']),
+                    'crm' => isset($_POST['feature_crm']),
+                    'analytics' => isset($_POST['feature_analytics']),
+                    'workflows' => isset($_POST['feature_workflows']),
+                    'dcmb_ip_commands' => isset($_POST['feature_dcmb_ip_commands'])
+                ];
+                
                 $sub->update([
                     'plan' => sanitize($_POST['plan'] ?? 'free'),
                     'status' => sanitize($_POST['status'] ?? 'active'),
                     'message_limit' => (int) ($_POST['message_limit'] ?? 1000),
                     'contact_limit' => (int) ($_POST['contact_limit'] ?? 100),
+                    'features' => $features,
                     'current_period_start' => $_POST['current_period_start'] ?? date('Y-m-d H:i:s'),
                     'current_period_end' => $_POST['current_period_end'] ?? date('Y-m-d H:i:s', strtotime('+30 days'))
                 ]);
@@ -319,6 +339,39 @@ require_once __DIR__ . '/includes/header.php';
                         <label>Period End</label>
                         <input type="datetime-local" name="current_period_end" value="<?php echo date('Y-m-d\TH:i', strtotime($userSubscription->current_period_end ?? '+30 days')); ?>">
                     </div>
+                    
+                    <div class="form-group">
+                        <label style="font-weight: 700; margin-top: 15px; display: block;">Feature Access</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                            <?php 
+                            $features = $userSubscription->features ?? [];
+                            $featureLabels = [
+                                'mailbox' => '📨 Mailbox',
+                                'quick_replies' => '⚡ Quick Replies',
+                                'broadcasts' => '📢 Broadcasts',
+                                'segments' => '🎯 Segments',
+                                'drip_campaigns' => '💧 Drip Campaigns',
+                                'scheduled_messages' => '⏰ Scheduled Messages',
+                                'auto_reply' => '🤖 Auto Reply',
+                                'tags' => '🏷️ Tags',
+                                'notes' => '📝 Notes',
+                                'message_templates' => '📋 Message Templates',
+                                'crm' => '👥 CRM',
+                                'analytics' => '📊 Analytics',
+                                'workflows' => '⚙️ Workflows',
+                                'dcmb_ip_commands' => '🌐 DCMB IP Commands'
+                            ];
+                            foreach ($featureLabels as $key => $label): 
+                                $checked = !empty($features[$key]) ? 'checked' : '';
+                            ?>
+                                <label style="font-weight: normal; font-size: 14px;">
+                                    <input type="checkbox" name="feature_<?php echo $key; ?>" <?php echo $checked; ?>>
+                                    <?php echo $label; ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    
                     <div style="margin-top: 15px;">
                         <button type="button" class="btn-primary" onclick="saveSubscription()">💾 Save</button>
                         <button type="button" class="btn-secondary" onclick="cancelEdit('sub')">Cancel</button>

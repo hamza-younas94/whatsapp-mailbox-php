@@ -103,6 +103,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     
                     $limits = $planLimits[$subscriptionPlan] ?? $planLimits['starter'];
                     
+                    // Default features per plan
+                    $planFeatures = [
+                        'free' => [
+                            'mailbox' => true, 'quick_replies' => false, 'broadcasts' => false,
+                            'segments' => false, 'drip_campaigns' => false, 'scheduled_messages' => false,
+                            'auto_reply' => true, 'tags' => true, 'notes' => true,
+                            'message_templates' => false, 'crm' => false, 'analytics' => false,
+                            'workflows' => false, 'dcmb_ip_commands' => true
+                        ],
+                        'starter' => [
+                            'mailbox' => true, 'quick_replies' => true, 'broadcasts' => true,
+                            'segments' => false, 'drip_campaigns' => false, 'scheduled_messages' => true,
+                            'auto_reply' => true, 'tags' => true, 'notes' => true,
+                            'message_templates' => true, 'crm' => true, 'analytics' => false,
+                            'workflows' => false, 'dcmb_ip_commands' => true
+                        ],
+                        'professional' => [
+                            'mailbox' => true, 'quick_replies' => true, 'broadcasts' => true,
+                            'segments' => true, 'drip_campaigns' => true, 'scheduled_messages' => true,
+                            'auto_reply' => true, 'tags' => true, 'notes' => true,
+                            'message_templates' => true, 'crm' => true, 'analytics' => true,
+                            'workflows' => true, 'dcmb_ip_commands' => true
+                        ],
+                        'enterprise' => [
+                            'mailbox' => true, 'quick_replies' => true, 'broadcasts' => true,
+                            'segments' => true, 'drip_campaigns' => true, 'scheduled_messages' => true,
+                            'auto_reply' => true, 'tags' => true, 'notes' => true,
+                            'message_templates' => true, 'crm' => true, 'analytics' => true,
+                            'workflows' => true, 'dcmb_ip_commands' => true
+                        ]
+                    ];
+                    
                     \App\Models\UserSubscription::create([
                         'user_id' => $newUser->id,
                         'plan' => $subscriptionPlan,
@@ -110,6 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                         'message_limit' => $limits['message_limit'],
                         'messages_used' => 0,
                         'contact_limit' => $limits['contact_limit'],
+                        'features' => $planFeatures[$subscriptionPlan] ?? $planFeatures['starter'],
                         'trial_ends_at' => date('Y-m-d H:i:s', strtotime('+14 days')),
                         'current_period_start' => date('Y-m-d H:i:s'),
                         'current_period_end' => date('Y-m-d H:i:s', strtotime('+30 days'))
