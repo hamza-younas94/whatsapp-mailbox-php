@@ -15,6 +15,7 @@ use App\Models\Activity;
 use App\Models\Note;
 use App\Services\WhatsAppService;
 use App\Middleware\TenantMiddleware;
+use App\Middleware\RateLimitMiddleware;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 // Enable CORS
@@ -39,6 +40,9 @@ $method = $_SERVER['REQUEST_METHOD'];
 $request = explode('/', trim($_SERVER['PATH_INFO'] ?? '', '/'));
 $action = $request[0] ?? '';
 
+// Global per-tenant API throttle to prevent abuse
+RateLimitMiddleware::throttle('api:all', (int) env('RATE_LIMIT_API_PER_MINUTE', 300), 60, $user->id ?? null);
+
 try {
     switch ($action) {
         case 'contacts':
@@ -55,18 +59,21 @@ try {
             
         case 'send':
             if ($method === 'POST') {
+                RateLimitMiddleware::throttle('api:send', (int) env('RATE_LIMIT_SEND_PER_MINUTE', 60), 60, $user->id ?? null);
                 sendMessage();
             }
             break;
             
         case 'send-media':
             if ($method === 'POST') {
+                RateLimitMiddleware::throttle('api:send-media', (int) env('RATE_LIMIT_SEND_MEDIA_PER_MINUTE', 30), 60, $user->id ?? null);
                 sendMediaMessage();
             }
             break;
             
         case 'send-template':
             if ($method === 'POST') {
+                RateLimitMiddleware::throttle('api:send-template', (int) env('RATE_LIMIT_SEND_TEMPLATE_PER_MINUTE', 30), 60, $user->id ?? null);
                 sendTemplateMessage();
             }
             break;
@@ -99,6 +106,7 @@ try {
             
         case 'search':
             if ($method === 'GET') {
+                RateLimitMiddleware::throttle('api:search', (int) env('RATE_LIMIT_SEARCH_PER_MINUTE', 60), 60, $user->id ?? null);
                 searchMessages();
             }
             break;
@@ -161,18 +169,21 @@ try {
             
         case 'bulk-tag':
             if ($method === 'POST') {
+                RateLimitMiddleware::throttle('api:bulk-tag', (int) env('RATE_LIMIT_BULK_OPS_PER_MINUTE', 20), 60, $user->id ?? null);
                 bulkAddTag();
             }
             break;
             
         case 'bulk-stage':
             if ($method === 'POST') {
+                RateLimitMiddleware::throttle('api:bulk-stage', (int) env('RATE_LIMIT_BULK_OPS_PER_MINUTE', 20), 60, $user->id ?? null);
                 bulkUpdateStage();
             }
             break;
             
         case 'bulk-delete':
             if ($method === 'POST') {
+                RateLimitMiddleware::throttle('api:bulk-delete', (int) env('RATE_LIMIT_BULK_OPS_PER_MINUTE', 10), 60, $user->id ?? null);
                 bulkDeleteContacts();
             }
             break;
@@ -197,6 +208,10 @@ try {
 function getContacts() {
     global $user;
     $search = sanitize($_GET['search'] ?? '');
+    $limit = (int) ($_GET['limit'] ?? 50);
+    $page = (int) ($_GET['page'] ?? 1);
+    $limit = max(1, min($limit, 100));
+    $offset = max(0, ($page - 1) * $limit);
     
     $query = Contact::where('user_id', $user->id)  // MULTI-TENANT: filter by user
         ->with(['lastMessage', 'contactTags'])
@@ -209,7 +224,11 @@ function getContacts() {
         });
     }
     
-    $contacts = $query->orderBy('last_message_time', 'desc')->get();
+    $total = (clone $query)->count();
+    $contacts = $query->orderBy('last_message_time', 'desc')
+        ->limit($limit)
+        ->offset($offset)
+        ->get();
     
     // Format for response
     $formatted = $contacts->map(function($contact) {
@@ -246,7 +265,15 @@ function getContacts() {
         ];
     });
     
-    response_json($formatted);
+    response_json([
+        'data' => $formatted,
+        'pagination' => [
+            'page' => $page,
+            'limit' => $limit,
+            'total' => $total,
+            'pages' => (int) ceil($total / $limit)
+        ]
+    ]);
 }
 
 /**
@@ -265,6 +292,8 @@ function getMessages() {
     
     $limit = intval($_GET['limit'] ?? 50);
     $offset = intval($_GET['offset'] ?? 0);
+    $limit = max(1, min($limit, 200));
+    $offset = max(0, $offset);
     $afterId = intval($_GET['after_id'] ?? 0);
     
     $query = Message::where('user_id', $user->id)->where('contact_id', $contactId);
@@ -721,6 +750,9 @@ function searchMessages() {
     $toDate = sanitize($_GET['to_date'] ?? '');
     $direction = sanitize($_GET['direction'] ?? '');
     $minScore = (int)($_GET['min_score'] ?? 0);
+    $limit = max(1, min((int) ($_GET['limit'] ?? 50), 200));
+    $page = max(1, (int) ($_GET['page'] ?? 1));
+    $offset = ($page - 1) * $limit;
     
     if (!$query) {
         response_json([]);
@@ -775,8 +807,11 @@ function searchMessages() {
         });
     }
     
+    $total = (clone $qb)->count();
+
     $results = $qb->orderBy('timestamp', 'desc')
-        ->limit(100)
+        ->limit($limit)
+        ->offset($offset)
         ->get()
         ->map(function($message) {
             return [
@@ -800,7 +835,15 @@ function searchMessages() {
             ];
         });
     
-    response_json($results);
+    response_json([
+        'data' => $results,
+        'pagination' => [
+            'page' => $page,
+            'limit' => $limit,
+            'total' => $total,
+            'pages' => (int) ceil($total / $limit)
+        ]
+    ]);
 }
 
 /**
@@ -1011,10 +1054,26 @@ function bulkAddTag() {
     $input = json_decode(file_get_contents('php://input'), true);
     
     $contactIds = $input['contact_ids'] ?? [];
-    $tagId = $input['tag_id'] ?? null;
-    
+    $tagId = isset($input['tag_id']) ? (int) $input['tag_id'] : null;
+
+    if (!is_array($contactIds)) {
+        response_error('contact_ids must be an array of IDs', 422);
+    }
+
+    $contactIds = array_values(array_filter(array_map('intval', $contactIds), fn($id) => $id > 0));
+
     if (empty($contactIds) || !$tagId) {
         response_error('contact_ids and tag_id are required', 422);
+    }
+
+    if (count($contactIds) > 500) {
+        response_error('Too many contacts in one request (max 500)', 422);
+    }
+
+    // Validate tag belongs to user
+    $tagExists = Capsule::table('tags')->where('user_id', $user->id)->where('id', $tagId)->exists();
+    if (!$tagExists) {
+        response_error('Tag not found', 404);
     }
     
     // MULTI-TENANT: Validate contacts exist and belong to user
@@ -1043,9 +1102,19 @@ function bulkUpdateStage() {
     
     $contactIds = $input['contact_ids'] ?? [];
     $stage = sanitize($input['stage'] ?? '');
+
+    if (!is_array($contactIds)) {
+        response_error('contact_ids must be an array of IDs', 422);
+    }
+
+    $contactIds = array_values(array_filter(array_map('intval', $contactIds), fn($id) => $id > 0));
     
     if (empty($contactIds) || !$stage) {
         response_error('contact_ids and stage are required', 422);
+    }
+
+    if (count($contactIds) > 500) {
+        response_error('Too many contacts in one request (max 500)', 422);
     }
     
     // Valid stages
@@ -1073,9 +1142,19 @@ function bulkDeleteContacts() {
     $input = json_decode(file_get_contents('php://input'), true);
     
     $contactIds = $input['contact_ids'] ?? [];
+
+    if (!is_array($contactIds)) {
+        response_error('contact_ids must be an array of IDs', 422);
+    }
+
+    $contactIds = array_values(array_filter(array_map('intval', $contactIds), fn($id) => $id > 0));
     
     if (empty($contactIds)) {
         response_error('contact_ids are required', 422);
+    }
+
+    if (count($contactIds) > 500) {
+        response_error('Too many contacts in one request (max 500)', 422);
     }
     
     // MULTI-TENANT: Delete only user's contacts

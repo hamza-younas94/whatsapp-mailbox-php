@@ -140,6 +140,31 @@ if (!function_exists('sanitize')) {
     }
 }
 
+if (!function_exists('audit_log')) {
+    /**
+     * Write an audit log entry (best-effort)
+     */
+    function audit_log(string $action, string $entityType, $entityId = null, array $metadata = [])
+    {
+        try {
+            $userId = $_SESSION['user_id'] ?? null;
+            $ip = $_SERVER['REMOTE_ADDR'] ?? null;
+            \Illuminate\Database\Capsule\Manager::table('audit_logs')->insert([
+                'user_id' => $userId,
+                'action' => $action,
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+                'metadata' => json_encode($metadata),
+                'ip_address' => $ip,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+        } catch (\Exception $e) {
+            // best-effort; do not block user action
+        }
+    }
+}
+
 if (!function_exists('logger')) {
     /**
      * Log message

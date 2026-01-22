@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Services\Encryption;
 
 class Webhook extends Model
 {
@@ -45,7 +46,8 @@ class Webhook extends Model
         }
         
         try {
-            $signature = hash_hmac('sha256', json_encode($payload), $this->secret ?? '');
+            $secret = Encryption::decrypt($this->secret ?? '');
+            $signature = hash_hmac('sha256', json_encode($payload), $secret ?? '');
             
             $ch = curl_init($this->url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

@@ -124,6 +124,56 @@ if (!defined('NO_SESSION') && session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Session idle timeout enforcement
+if (!defined('NO_SESSION') && session_status() === PHP_SESSION_ACTIVE) {
+    $maxIdle = (int) env('SESSION_IDLE_TIMEOUT', 1800); // default 30 minutes
+    $now = time();
+
+    if (isset($_SESSION['last_activity']) && ($now - (int) $_SESSION['last_activity']) > $maxIdle) {
+        $_SESSION = [];
+        session_destroy();
+
+        if (php_sapi_name() !== 'cli') {
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                http_response_code(440);
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Session expired']);
+                exit;
+            }
+
+            header('Location: /login.php?timeout=1');
+            exit;
+        }
+    }
+
+    $_SESSION['last_activity'] = $now;
+}
+
+// Security headers and HTTPS enforcement (web requests only)
+if (php_sapi_name() !== 'cli') {
+    $isHttps = (
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+        (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+    );
+
+    if (env('FORCE_HTTPS', true) && !$isHttps) {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+        header('Location: https://' . $host . $uri, true, 301);
+        exit;
+    }
+
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-Content-Type-Options: nosniff');
+    header('X-XSS-Protection: 1; mode=block');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header("Content-Security-Policy: default-src 'self' data: https:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' https: wss:;");
+
+    if ($isHttps) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }
+}
+
 // Error handling
 if (env('APP_DEBUG', false)) {
     ini_set('display_errors', 1);

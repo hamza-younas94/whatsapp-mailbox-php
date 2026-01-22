@@ -10,6 +10,7 @@ use App\Models\Note;
 use App\Models\Activity;
 use App\Models\Deal;
 use App\Middleware\TenantMiddleware;
+use App\Middleware\RateLimitMiddleware;
 
 header('Content-Type: application/json');
 
@@ -41,6 +42,9 @@ if ($path === '' || $path[0] !== '/') {
     $path = '/' . $path;
 }
 
+// Global throttle for CRM endpoints per tenant
+RateLimitMiddleware::throttle('crm:all', (int) env('RATE_LIMIT_CRM_PER_MINUTE', 120), 60, $user->id ?? null);
+
 try {
     // Update contact CRM fields
     if ($method === 'PUT' && preg_match('/^\/contact\/(\d+)\/crm$/', $path, $matches)) {
@@ -67,6 +71,8 @@ try {
             ]);
             exit;
         }
+
+        RateLimitMiddleware::throttle('crm:update-contact', (int) env('RATE_LIMIT_CRM_WRITE_PER_MINUTE', 60), 60, $user->id ?? null);
         
         $contact = Contact::where('user_id', $user->id)->findOrFail($contactId);
         
@@ -126,6 +132,8 @@ try {
             ]);
             exit;
         }
+
+        RateLimitMiddleware::throttle('crm:add-note', (int) env('RATE_LIMIT_CRM_WRITE_PER_MINUTE', 60), 60, $user->id ?? null);
         
         $contact = Contact::where('user_id', $user->id)->findOrFail($contactId);
 
@@ -219,6 +227,8 @@ try {
             ]);
             exit;
         }
+
+        RateLimitMiddleware::throttle('crm:add-deal', (int) env('RATE_LIMIT_CRM_WRITE_PER_MINUTE', 60), 60, $user->id ?? null);
         
         // Validate amount is positive
         $amount = floatval($data['amount']);

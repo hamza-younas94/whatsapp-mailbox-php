@@ -4,6 +4,7 @@
  */
 
 require_once __DIR__ . '/bootstrap.php';
+use App\Services\Encryption;
 
 // Require authentication
 if (!isset($_SESSION['user_id'])) {
@@ -26,14 +27,18 @@ $userSettings = \App\Models\UserSettings::firstOrCreate(
     ]
 );
 
+// Decrypt sensitive fields for display (backward compatible)
+$userSettings->whatsapp_access_token = Encryption::decrypt($userSettings->whatsapp_access_token);
+$userSettings->whatsapp_phone_number_id = Encryption::decrypt($userSettings->whatsapp_phone_number_id);
+
 // Handle form submission
 $message = '';
 $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = [
-        'whatsapp_access_token' => $_POST['whatsapp_access_token'] ?? '',
-        'whatsapp_phone_number_id' => $_POST['whatsapp_phone_number_id'] ?? '',
+        'whatsapp_access_token' => Encryption::encrypt(trim($_POST['whatsapp_access_token'] ?? '')),
+        'whatsapp_phone_number_id' => Encryption::encrypt(trim($_POST['whatsapp_phone_number_id'] ?? '')),
         'phone_number' => $_POST['phone_number'] ?? '',
         'business_name' => $_POST['business_name'] ?? '',
         'whatsapp_api_version' => $_POST['whatsapp_api_version'] ?? 'v18.0'

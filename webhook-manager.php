@@ -7,6 +7,7 @@ require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/auth.php';
 
 use App\Models\Webhook;
+use App\Services\Encryption;
 
 $user = getCurrentUser();
 if (!$user) {
@@ -56,7 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 }
                 
                 // Generate secret if not provided
-                $secret = !empty($_POST['secret']) ? sanitize($_POST['secret']) : bin2hex(random_bytes(16));
+                $secretPlain = !empty($_POST['secret']) ? sanitize($_POST['secret']) : bin2hex(random_bytes(16));
+                $secret = Encryption::encrypt($secretPlain);
                 
                 $data = [
                     'name' => sanitize($_POST['name']),
@@ -68,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 
                 if ($action === 'create') {
                     $webhook = Webhook::create($data);
+                    audit_log('webhook.create', 'webhook', $webhook->id, ['name' => $webhook->name]);
                     echo json_encode(['success' => true, 'webhook' => $webhook]);
                 } else {
                     // Don't update secret if not provided
@@ -76,12 +79,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     }
                     $webhook = Webhook::findOrFail($_POST['id']);
                     $webhook->update($data);
+                    audit_log('webhook.update', 'webhook', $webhook->id, ['name' => $webhook->name]);
                     echo json_encode(['success' => true, 'webhook' => $webhook]);
                 }
                 break;
             
             case 'delete':
                 Webhook::findOrFail($_POST['id'])->delete();
+                audit_log('webhook.delete', 'webhook', $_POST['id']);
                 echo json_encode(['success' => true]);
                 break;
             

@@ -1,9 +1,10 @@
 # Enable URL Rewriting
 RewriteEngine On
 
-# Redirect to HTTPS (uncomment if you have SSL certificate)
-# RewriteCond %{HTTPS} off
-# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# Redirect to HTTPS (handles direct and proxied requests)
+RewriteCond %{HTTPS} off [OR]
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # API Routing for clean URLs
 RewriteCond %{REQUEST_FILENAME} !-f
@@ -30,6 +31,7 @@ ErrorDocument 500 /login.php
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 </IfModule>
 
 # PHP Settings

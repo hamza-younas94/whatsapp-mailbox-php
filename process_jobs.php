@@ -14,6 +14,8 @@ use App\Models\Broadcast;
 use App\Models\BroadcastRecipient;
 use App\Models\DripSubscriber;
 use App\Services\WhatsAppService;
+use App\Services\JobQueue;
+use Illuminate\Database\Capsule\Manager as Capsule;
 use GuzzleHttp\Client;
 
 echo "[" . date('Y-m-d H:i:s') . "] Job processor started\n";
@@ -35,13 +37,15 @@ $client = new Client([
 ]);
 
 // Process scheduled messages
-processScheduledMessages($client, $phoneNumberId, $accessToken);
+enqueueScheduledMessageJobs();
+enqueueBroadcastRecipientJobs();
+processJobQueue($client, $phoneNumberId, $accessToken);
 
-// Process broadcasts
-processBroadcasts($client, $phoneNumberId, $accessToken);
-
-// Process drip campaigns
+// Process drip campaigns (existing flow)
 processDripCampaigns($phoneNumberId, $accessToken);
+
+// Retry failed webhooks with backoff
+processWebhookRetries();
 
 echo "[" . date('Y-m-d H:i:s') . "] Job processor completed\n\n";
 
@@ -242,6 +246,315 @@ function processBroadcasts($client, $phoneNumberId, $accessToken) {
             }
             
             usleep(500000); // 500ms delay between messages
+        }
+    }
+}
+
+/**
+ * Enqueue scheduled messages that are due into durable job queue
+ */
+function enqueueScheduledMessageJobs() {
+    $due = ScheduledMessage::with('contact')
+        ->where('status', 'pending')
+        ->where('scheduled_at', '<=', now())
+        ->limit(200)
+        ->get();
+
+    foreach ($due as $msg) {
+        $userId = $msg->contact->user_id ?? $msg->user_id ?? null;
+        if (!$userId) {
+            continue;
+        }
+        JobQueue::enqueue('scheduled_message', $msg->id, [], $userId, $msg->scheduled_at?->format('Y-m-d H:i:s'));
+        $msg->update(['status' => 'queued']);
+    }
+}
+
+/**
+ * Enqueue broadcast recipients into durable job queue
+ */
+function enqueueBroadcastRecipientJobs() {
+    // Move scheduled broadcasts to sending when due
+    $scheduledBroadcasts = Broadcast::where('status', 'scheduled')
+        ->where('scheduled_at', '<=', now())
+        ->get();
+    foreach ($scheduledBroadcasts as $broadcast) {
+        $broadcast->update(['status' => 'sending', 'started_at' => now()]);
+    }
+
+    $pendingRecipients = BroadcastRecipient::with(['contact', 'broadcast'])
+        ->where('status', 'pending')
+        ->limit(500)
+        ->get();
+
+    foreach ($pendingRecipients as $recipient) {
+        if (!$recipient->broadcast || !$recipient->contact) {
+            continue;
+        }
+        if ($recipient->broadcast->status !== 'sending') {
+            $recipient->broadcast->update(['status' => 'sending', 'started_at' => now()]);
+        }
+        $userId = $recipient->contact->user_id ?? null;
+        if (!$userId) {
+            continue;
+        }
+        JobQueue::enqueue('broadcast_recipient', $recipient->id, ['broadcast_id' => $recipient->broadcast_id], $userId);
+        $recipient->update(['status' => 'queued']);
+    }
+}
+
+/**
+ * Process durable job queue for scheduled messages and broadcasts
+ */
+function processJobQueue($client, $phoneNumberId, $accessToken) {
+    $processed = 0;
+    while (true) {
+        $batch = JobQueue::reserveBatch(50);
+        if (empty($batch)) {
+            break;
+        }
+
+        foreach ($batch as $job) {
+            $payload = $job->payload ? json_decode($job->payload, true) : [];
+            try {
+                switch ($job->type) {
+                    case 'scheduled_message':
+                        handleScheduledMessageJob($job, $client, $phoneNumberId, $accessToken);
+                        break;
+                    case 'broadcast_recipient':
+                        handleBroadcastRecipientJob($job, $client, $phoneNumberId, $accessToken, $payload);
+                        break;
+                    default:
+                        JobQueue::markSucceeded($job->id);
+                        break;
+                }
+                $processed++;
+            } catch (\Exception $e) {
+                JobQueue::markFailed($job->id, $e->getMessage());
+            }
+        }
+    }
+    if ($processed > 0) {
+        echo "Processed {$processed} queued jobs\n";
+    }
+}
+
+function handleScheduledMessageJob($job, $client, $phoneNumberId, $accessToken) {
+    $msg = ScheduledMessage::with('contact')->find($job->reference_id);
+    if (!$msg || !$msg->contact) {
+        JobQueue::markSucceeded($job->id);
+        return;
+    }
+    if ($msg->status === 'sent') {
+        JobQueue::markSucceeded($job->id);
+        return;
+    }
+    if ($msg->scheduled_at && $msg->scheduled_at > now()) {
+        JobQueue::markFailed($job->id, 'Not due yet', 3, 300);
+        return;
+    }
+
+    try {
+        $response = $client->post("{$phoneNumberId}/messages", [
+            'headers' => [
+                'Authorization' => "Bearer {$accessToken}",
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                'messaging_product' => 'whatsapp',
+                'to' => $msg->contact->phone_number,
+                'type' => 'text',
+                'text' => ['body' => $msg->message]
+            ]
+        ]);
+
+        $result = json_decode($response->getBody(), true);
+        $whatsappMessageId = $result['messages'][0]['id'] ?? null;
+
+        $msg->update([
+            'status' => 'sent',
+            'sent_at' => now(),
+            'whatsapp_message_id' => $whatsappMessageId
+        ]);
+
+        // Persist to history (best-effort)
+        try {
+            \App\Models\Message::updateOrCreate(
+                ['message_id' => $whatsappMessageId],
+                [
+                    'user_id' => $msg->contact->user_id,
+                    'contact_id' => $msg->contact->id,
+                    'phone_number' => $msg->contact->phone_number,
+                    'direction' => 'outgoing',
+                    'message_type' => 'text',
+                    'message_body' => $msg->message,
+                    'timestamp' => now(),
+                    'is_read' => true
+                ]
+            );
+        } catch (\Exception $e) {
+            // ignore
+        }
+
+        JobQueue::markSucceeded($job->id);
+    } catch (\Exception $e) {
+        $msg->update([
+            'status' => 'failed',
+            'error_message' => $e->getMessage()
+        ]);
+        JobQueue::markFailed($job->id, $e->getMessage());
+    }
+}
+
+function handleBroadcastRecipientJob($job, $client, $phoneNumberId, $accessToken, array $payload) {
+    $recipient = BroadcastRecipient::with(['contact', 'broadcast'])->find($job->reference_id);
+    if (!$recipient || !$recipient->contact || !$recipient->broadcast) {
+        JobQueue::markSucceeded($job->id);
+        return;
+    }
+    if ($recipient->status === 'sent') {
+        JobQueue::markSucceeded($job->id);
+        return;
+    }
+
+    try {
+        $response = $client->post("{$phoneNumberId}/messages", [
+            'headers' => [
+                'Authorization' => "Bearer {$accessToken}",
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                'messaging_product' => 'whatsapp',
+                'to' => $recipient->contact->phone_number,
+                'type' => 'text',
+                'text' => ['body' => $recipient->broadcast->message]
+            ]
+        ]);
+
+        $result = json_decode($response->getBody(), true);
+        $whatsappMessageId = $result['messages'][0]['id'] ?? null;
+
+        $recipient->update([
+            'status' => 'sent',
+            'sent_at' => now(),
+            'whatsapp_message_id' => $whatsappMessageId
+        ]);
+        $recipient->broadcast->increment('sent_count');
+
+        try {
+            \App\Models\Message::updateOrCreate(
+                ['message_id' => $whatsappMessageId],
+                [
+                    'user_id' => $recipient->contact->user_id,
+                    'contact_id' => $recipient->contact->id,
+                    'phone_number' => $recipient->contact->phone_number,
+                    'direction' => 'outgoing',
+                    'message_type' => 'text',
+                    'message_body' => $recipient->broadcast->message,
+                    'timestamp' => now(),
+                    'is_read' => true
+                ]
+            );
+        } catch (\Exception $e) {
+            // ignore
+        }
+
+        JobQueue::markSucceeded($job->id);
+    } catch (\Exception $e) {
+        $recipient->update([
+            'status' => 'failed',
+            'error_message' => $e->getMessage()
+        ]);
+        $recipient->broadcast->increment('failed_count');
+        JobQueue::markFailed($job->id, $e->getMessage());
+    }
+}
+
+/**
+ * Retry failed webhook deliveries with backoff (best-effort)
+ */
+function processWebhookRetries() {
+    if (!Capsule::schema()->hasTable('webhook_deliveries')) {
+        return;
+    }
+
+    $now = date('Y-m-d H:i:s');
+    $hasPayload = Capsule::schema()->hasColumn('webhook_deliveries', 'payload');
+
+    $rows = Capsule::table('webhook_deliveries as wd')
+        ->join('webhooks as wh', 'wd.webhook_id', '=', 'wh.id')
+        ->where('wh.is_active', true)
+        ->where('wd.retry_count', '<', 3)
+        ->where(function($q) use ($now) {
+            $q->whereNull('wd.next_retry_at')->orWhere('wd.next_retry_at', '<=', $now);
+        })
+        ->where(function($q){
+            $q->where('wd.status', 'failed')->orWhere('wd.status', 'error')->orWhere('wd.status_code', '>=', 400);
+        })
+        ->limit(50)
+        ->get(['wd.*', 'wh.url as webhook_url', 'wh.secret as webhook_secret']);
+
+    if ($rows->isEmpty()) {
+        return;
+    }
+
+    foreach ($rows as $row) {
+        $payload = [];
+        if ($hasPayload && isset($row->payload)) {
+            $decoded = json_decode($row->payload, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $payload = $decoded;
+            }
+        }
+
+        // Fallback payload
+        if (empty($payload)) {
+            $payload = [
+                'event' => $row->event ?? 'webhook.retry',
+                'delivery_id' => $row->id,
+                'timestamp' => date('c')
+            ];
+        }
+
+        $secret = \App\Services\Encryption::decrypt($row->webhook_secret ?? '');
+        $signature = hash_hmac('sha256', json_encode($payload), $secret ?? '');
+
+        try {
+            $client = new \GuzzleHttp\Client(['timeout' => 10]);
+            $response = $client->post($row->webhook_url, [
+                'json' => $payload,
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'X-Webhook-Signature' => $signature,
+                    'X-Webhook-Event' => $payload['event'] ?? 'webhook.retry'
+                ]
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            Capsule::table('webhook_deliveries')
+                ->where('id', $row->id)
+                ->update([
+                    'status' => $statusCode >= 200 && $statusCode < 300 ? 'success' : 'failed',
+                    'status_code' => $statusCode,
+                    'retry_count' => $row->retry_count,
+                    'last_error' => null,
+                    'next_retry_at' => null,
+                    'attempted_at' => date('Y-m-d H:i:s'),
+                    'response_body' => method_exists($response, 'getBody') ? (string) $response->getBody() : null,
+                    'updated_at' => date('Y-m-d H:i:s')
+                ]);
+        } catch (\Exception $e) {
+            $retryCount = $row->retry_count + 1;
+            $backoff = min(pow(2, $retryCount) * 60, 3600); // max 1h
+            Capsule::table('webhook_deliveries')
+                ->where('id', $row->id)
+                ->update([
+                    'status' => 'failed',
+                    'retry_count' => $retryCount,
+                    'last_error' => $e->getMessage(),
+                    'next_retry_at' => date('Y-m-d H:i:s', time() + $backoff),
+                    'updated_at' => date('Y-m-d H:i:s')
+                ]);
         }
     }
 }

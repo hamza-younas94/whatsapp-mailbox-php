@@ -85,22 +85,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     $data['created_by'] = $user->id;
                     $data['user_id'] = $user->id; // MULTI-TENANT: Add user_id
                     $workflow = Workflow::create($data);
+                    audit_log('workflow.create', 'workflow', $workflow->id, ['name' => $workflow->name]);
                     echo json_encode(['success' => true, 'workflow' => $workflow]);
                 } else {
                     $workflow = Workflow::where('user_id', $user->id)->findOrFail($_POST['id']);
                     $workflow->update($data);
+                    audit_log('workflow.update', 'workflow', $workflow->id, ['name' => $workflow->name]);
                     echo json_encode(['success' => true, 'workflow' => $workflow]);
                 }
                 break;
             
             case 'delete':
                 Workflow::where('user_id', $user->id)->findOrFail($_POST['id'])->delete();
+                audit_log('workflow.delete', 'workflow', $_POST['id']);
                 echo json_encode(['success' => true]);
                 break;
             
             case 'toggle':
                 $workflow = Workflow::where('user_id', $user->id)->findOrFail($_POST['id']);
                 $workflow->update(['is_active' => !$workflow->is_active]);
+                audit_log('workflow.toggle', 'workflow', $workflow->id, ['is_active' => $workflow->is_active]);
                 echo json_encode(['success' => true, 'is_active' => $workflow->is_active]);
                 break;
             
