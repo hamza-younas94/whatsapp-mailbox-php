@@ -38,6 +38,11 @@ class DripCampaign extends Model
     {
         return $this->hasMany(DripSubscriber::class, 'campaign_id');
     }
+
+    public function steps()
+    {
+        return $this->hasMany(DripCampaignStep::class, 'campaign_id');
+    }
     
     public function creator()
     {
