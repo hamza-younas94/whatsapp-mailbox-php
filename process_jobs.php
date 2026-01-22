@@ -599,8 +599,9 @@ function scheduleNextRecurrence($originalMsg) {
  * Process drip campaigns - send next steps to subscribers
  */
 function processDripCampaigns($phoneNumberId, $accessToken) {
-    $whatsappService = new WhatsAppService();
-    
+    // Cache per-user WhatsAppService to avoid repeated init
+    $serviceCache = [];
+
     // Get subscribers whose next_send_at is due
     $dueSubscribers = DripSubscriber::with(['campaign', 'contact'])
         ->where('status', 'active')
@@ -630,7 +631,27 @@ function processDripCampaigns($phoneNumberId, $accessToken) {
     
     foreach ($dueSubscribers as $subscriber) {
         try {
-            $result = $whatsappService->sendDripCampaignStep($subscriber);
+            $userId = $subscriber->user_id ?? null;
+
+            if (!$userId) {
+                echo "  ❌ Skipping subscriber {$subscriber->id}: missing user_id\n";
+                continue;
+            }
+
+            if (!isset($serviceCache[$userId])) {
+                try {
+                    $serviceCache[$userId] = new WhatsAppService($userId);
+                } catch (Exception $e) {
+                    echo "  ❌ Skipping subscriber {$subscriber->id}: " . $e->getMessage() . "\n";
+                    $serviceCache[$userId] = null;
+                }
+            }
+
+            if (!$serviceCache[$userId]) {
+                continue;
+            }
+
+            $result = $serviceCache[$userId]->sendDripCampaignStep($subscriber);
             
             if ($result['success']) {
                 if (isset($result['completed']) && $result['completed']) {
