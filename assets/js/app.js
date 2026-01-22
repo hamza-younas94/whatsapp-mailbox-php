@@ -171,8 +171,10 @@ async function loadContacts() {
             throw new Error('Failed to load contacts');
         }
         
-        contacts = await response.json();
-        renderContacts(contacts);
+        const payload = await response.json();
+        // API returns { data: [...], pagination: {...} }
+        contacts = Array.isArray(payload) ? payload : (payload.data || []);
+        renderContacts(Array.isArray(contacts) ? contacts : []);
         
         // Don't reload messages - that causes the loop
         
@@ -186,6 +188,10 @@ async function loadContacts() {
  */
 function renderContacts(contactsList) {
     const container = document.getElementById('contactsList');
+    // Defensive: ensure we have an array before mapping
+    if (!Array.isArray(contactsList)) {
+        contactsList = [];
+    }
     
     if (contactsList.length === 0) {
         container.innerHTML = '<div class="loading">No contacts yet</div>';
