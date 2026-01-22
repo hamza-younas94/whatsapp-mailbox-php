@@ -240,6 +240,7 @@ require_once __DIR__ . '/includes/header.php';
                         </td>
                         <td>
                             <div style="display: flex; gap: 5px;">
+                                <a href="user-profile.php?user_id=<?php echo $u->id; ?>" class="btn-secondary btn-sm" title="View Profile">👁️</a>
                                 <button onclick="editUser(<?php echo $u->id; ?>)" class="btn-secondary btn-sm" title="Edit">
                                     ✏️
                                 </button>
