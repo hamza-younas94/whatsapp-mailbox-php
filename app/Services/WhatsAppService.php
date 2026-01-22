@@ -936,6 +936,7 @@ class WhatsAppService
                     
                     // Save IP command to database
                     \App\Models\IpCommand::create([
+                        'user_id' => $this->userId,
                         'ip_address' => $ipAddress,
                         'contact_name' => $contact->name,
                         'phone_number' => $phoneNumber,
@@ -951,6 +952,7 @@ class WhatsAppService
                     if ($response['success']) {
                         // Save the outgoing message to database
                         Message::create([
+                            'user_id' => $this->userId,
                             'contact_id' => $contact->id,
                             'phone_number' => $phoneNumber,
                             'message_id' => $response['message_id'],
@@ -970,6 +972,7 @@ class WhatsAppService
                     
                     // Save failed command
                     \App\Models\IpCommand::create([
+                        'user_id' => $this->userId,
                         'ip_address' => $ipAddress,
                         'contact_name' => $contact->name,
                         'phone_number' => $phoneNumber,
