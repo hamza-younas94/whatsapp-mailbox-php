@@ -91,6 +91,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     }
                     
                     $newUser = User::create($data);
+                    
+                    // Create subscription based on selected plan
+                    $subscriptionPlan = sanitize($_POST['subscription_plan'] ?? 'starter');
+                    $planLimits = [
+                        'free' => ['message_limit' => 100, 'contact_limit' => 50],
+                        'starter' => ['message_limit' => 1000, 'contact_limit' => 500],
+                        'professional' => ['message_limit' => 10000, 'contact_limit' => 5000],
+                        'enterprise' => ['message_limit' => 999999, 'contact_limit' => 999999]
+                    ];
+                    
+                    $limits = $planLimits[$subscriptionPlan] ?? $planLimits['starter'];
+                    
+                    \App\Models\UserSubscription::create([
+                        'user_id' => $newUser->id,
+                        'plan' => $subscriptionPlan,
+                        'status' => 'trial',
+                        'message_limit' => $limits['message_limit'],
+                        'messages_used' => 0,
+                        'contact_limit' => $limits['contact_limit'],
+                        'trial_ends_at' => date('Y-m-d H:i:s', strtotime('+14 days')),
+                        'current_period_start' => date('Y-m-d H:i:s'),
+                        'current_period_end' => date('Y-m-d H:i:s', strtotime('+30 days'))
+                    ]);
+                    
+                    // Create default user settings
+                    \App\Models\UserSettings::create([
+                        'user_id' => $newUser->id,
+                        'whatsapp_api_version' => 'v18.0',
+                        'is_configured' => false
+                    ]);
+                    
                     echo json_encode(['success' => true, 'user' => $newUser]);
                 } else {
                     $userToUpdate = User::findOrFail($_POST['id']);
@@ -314,6 +345,17 @@ require_once __DIR__ . '/includes/header.php';
                     </select>
                 </div>
                 
+                <div class="form-group" id="subscriptionPlanGroup">
+                    <label>Subscription Plan <span class="text-danger">*</span></label>
+                    <select id="subscriptionPlan" name="subscription_plan" class="crm-select">
+                        <option value="free">Free (100 msgs/month, 50 contacts)</option>
+                        <option value="starter" selected>Starter (1,000 msgs/month, 500 contacts)</option>
+                        <option value="professional">Professional (10,000 msgs/month, 5,000 contacts)</option>
+                        <option value="enterprise">Enterprise (Unlimited)</option>
+                    </select>
+                    <small class="text-muted">Select subscription plan for new organization</small>
+                </div>
+                
                 <div class="form-group">
                     <label id="passwordLabel">Password <span class="text-danger">*</span></label>
                     <input type="password" id="password" name="password" class="crm-input">
@@ -411,12 +453,15 @@ function openUserModal(userId = null) {
     const modal = document.getElementById('userModal');
     const title = document.getElementById('userModalTitle');
     const form = document.getElementById('userForm');
+    const subscriptionGroup = document.getElementById('subscriptionPlanGroup');
     
     if (userId) {
         title.textContent = 'Edit User';
+        subscriptionGroup.style.display = 'none'; // Hide subscription on edit
         loadUser(userId);
     } else {
         title.textContent = 'Add User';
+        subscriptionGroup.style.display = 'block'; // Show subscription on create
         form.reset();
         document.getElementById('userId').value = '';
         document.getElementById('passwordLabel').innerHTML = 'Password <span class="text-danger">*</span>';
