@@ -716,6 +716,9 @@ async function renderTasksTab(contact) {
 async function renderNotesTab(contact) {
     try {
         const response = await fetch(`crm.php/contact/${contact.id}/notes`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         
         const notes = data.notes || [];
@@ -775,6 +778,9 @@ async function renderNotesTab(contact) {
 async function renderDealsTab(contact) {
     try {
         const response = await fetch(`crm.php/contact/${contact.id}/deals`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         
         const deals = data.deals || [];
