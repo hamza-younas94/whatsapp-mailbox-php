@@ -2,7 +2,7 @@
 
 This document outlines all supported WhatsApp message types in the mailbox application with backend handling and frontend rendering.
 
-## Supported Message Types (18 Total)
+## Supported Message Types (20 Total)
 
 ### 1. **Text**
 - **Status**: ✅ Fully Supported
@@ -108,7 +108,23 @@ This document outlines all supported WhatsApp message types in the mailbox appli
 - **UI**: "View Once Message" label
 - **Data**: `"View once message"`
 
-### 16. **System**
+### 16. **Poll**
+- **Status**: ✅ Fully Supported
+- **Backend**: Extracts question, options → builds `message_body`
+- **Frontend**: Styled box with teal border, poll icon (🗳️)
+- **UI**: Question with numbered options, up to 4 options displayed
+- **Data**: `"Poll: What's your favorite color?\n1. Red\n2. Blue\n3. Green\n4. Yellow"`
+- **Styling**: Teal background (#ecfdf5), numbered option pills
+
+### 17. **Vote**
+- **Status**: ✅ Fully Supported
+- **Backend**: Extracts poll response, selected option → builds `message_body`
+- **Frontend**: Styled box with gray border, vote icon (✅)
+- **UI**: "Vote" label with selected option display
+- **Data**: `"Vote: Poll Response\nSelected option: 2"`
+- **Styling**: Gray background (#f3f4f6), shows which option was selected
+
+### 18. **System**
 - **Status**: ✅ Fully Supported with Group Events
 - **Backend**: Detects system type (group_invite, group_participant_added/removed)
 - **Frontend**: Info icon (ℹ️) with info-colored background
@@ -118,14 +134,14 @@ This document outlines all supported WhatsApp message types in the mailbox appli
   - `"➕ Participant added to group"`
   - `"➖ Participant removed from group"`
 
-### 17. **Notification**
+### 19. **Notification**
 - **Status**: ✅ Fully Supported
 - **Backend**: Extracts notification body
 - **Frontend**: Info icon (ℹ️) with subtle styling
 - **UI**: Gray background, notification text
 - **Data**: `"Notification message from WhatsApp"`
 
-### 18. **Unsupported/Unknown**
+### 20. **Unsupported/Unknown**
 - **Status**: ✅ Gracefully Handled
 - **Backend**: Normalizes to 'system' type, captures error details
 - **Frontend**: Warning icon (⚠️) with warning-colored background
@@ -153,6 +169,8 @@ Each message type has distinct visual treatment:
 | Template | 📋 | #fef3c7 | Box | Display template |
 | Order | 🛒 | #dcfce7 | Box | Display order |
 | Ephemeral | 👁️ | #fce7f3 | Box | Display notice |
+| Poll | 🗳️ | #ecfdf5 | Box | Display options |
+| Vote | ✅ | #f3f4f6 | Box | Display selection |
 | System | ℹ️ | #dbeafe | Box | Display event |
 | Notification | ℹ️ | #f3f4f6 | Box | Display notification |
 | Unsupported | ⚠️ | #fef08a | Box | Display warning |
