@@ -137,6 +137,12 @@ try {
             }
             break;
             
+        case 'contact-action':
+            if ($method === 'POST') {
+                handleContactAction();
+            }
+            break;
+            
         case 'contact-merge':
             if ($method === 'POST') {
                 mergeContacts();
@@ -1521,6 +1527,43 @@ function removeMessageAction($actionId) {
     $action->delete();
     
     response_json(['success' => true]);
+}
+
+/**
+ * Handle contact actions (star/archive at conversation level)
+ */
+function handleContactAction() {
+    global $user;
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    $contactId = $input['contact_id'] ?? null;
+    $action = $input['action'] ?? null;
+    
+    if (!$contactId || !$action) {
+        response_error('contact_id and action are required', 422);
+    }
+    
+    // MULTI-TENANT: verify contact belongs to user
+    $contact = Contact::where('user_id', $user->id)->where('id', $contactId)->firstOrFail();
+    
+    switch ($action) {
+        case 'star':
+            // Toggle starred status
+            $isStarred = $contact->is_starred;
+            $contact->update(['is_starred' => !$isStarred]);
+            response_json(['success' => true, 'starred' => !$isStarred]);
+            break;
+            
+        case 'archive':
+            // Toggle archived status
+            $isArchived = $contact->is_archived;
+            $contact->update(['is_archived' => !$isArchived]);
+            response_json(['success' => true, 'archived' => !$isArchived]);
+            break;
+            
+        default:
+            response_error('Invalid action', 422);
+    }
 }
 
 /**

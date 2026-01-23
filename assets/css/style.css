@@ -648,6 +648,160 @@ body {
     color: rgba(0, 0, 0, 0.5);
 }
 
+/* Message Actions */
+.message-actions {
+    display: none;
+    flex-direction: row;
+    gap: 6px;
+    margin-top: 6px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.message:hover .message-actions {
+    display: flex;
+    opacity: 1;
+}
+
+.msg-action-btn {
+    background: rgba(15, 23, 42, 0.06);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    color: rgba(15, 23, 42, 0.6);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    padding: 0;
+}
+
+.msg-action-btn:hover {
+    background: rgba(15, 23, 42, 0.12);
+    color: rgba(15, 23, 42, 0.9);
+    border-color: rgba(15, 23, 42, 0.2);
+}
+
+.msg-action-btn:active {
+    transform: scale(0.95);
+}
+
+.message.outgoing .msg-action-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.message.outgoing .msg-action-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Header Action Buttons */
+.header-action-btn {
+    background: rgba(15, 23, 42, 0.06);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    color: rgba(15, 23, 42, 0.6);
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+    padding: 0;
+}
+
+.header-action-btn:hover {
+    background: rgba(15, 23, 42, 0.12);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.header-action-btn:active {
+    transform: scale(0.95);
+}
+
+.header-action-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Chat Header Improvements */
+.chat-header {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, var(--surface-1) 0%, var(--surface-2) 100%);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.chat-header-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.contact-avatar-header {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), #11c9d3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.contact-info-header {
+    min-width: 0;
+}
+
+.contact-info-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.contact-status {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.chat-header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 /* Message Input */
 .message-input-container {
     padding: 20px 28px 28px;

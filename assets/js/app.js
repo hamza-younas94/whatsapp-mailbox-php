@@ -681,6 +681,49 @@ function renderMessages(messagesList, options = {}) {
                 </div>
             `;
         }
+        // For poll messages
+        else if (message.message_type === 'poll') {
+            const pollMatch = message.message_body?.match(/Poll: ([^\n]+)(?:\n(.+))?/) || [];
+            const question = pollMatch[1] || 'Poll';
+            const options = pollMatch[2] ? pollMatch[2].split('\n').filter(o => o.trim()) : [];
+            
+            const optionsList = options.length > 0 
+                ? `<div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+                    ${options.slice(0, 4).map((opt, idx) => `
+                        <div style="padding: 8px 10px; background: #f0f0f0; border-radius: 6px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                            <span style="background: #20a39e; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600;">${idx + 1}</span>
+                            <span>${escapeHtml(opt.trim())}</span>
+                        </div>
+                    `).join('')}
+                   </div>`
+                : '';
+            
+            content = `
+                <div class="message-text" style="padding: 10px 12px; background: #ecfdf5; border-left: 3px solid #20a39e; border-radius: 4px;">
+                    <div style="font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                        <span>🗳️</span> Poll
+                    </div>
+                    <div style="font-size: 14px; margin: 6px 0;">${escapeHtml(question)}</div>
+                    ${optionsList}
+                </div>
+            `;
+        }
+        // For vote messages
+        else if (message.message_type === 'vote') {
+            const voteMatch = message.message_body?.match(/Vote: ([^\n]+)(?:\n(.+))?/) || [];
+            const title = voteMatch[1] || 'Vote';
+            const selection = voteMatch[2] || '';
+            
+            content = `
+                <div class="message-text" style="padding: 10px 12px; background: #f3f4f6; border-left: 3px solid #6b7280; border-radius: 4px;">
+                    <div style="font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                        <span>✅</span> Vote
+                    </div>
+                    <div style="font-size: 14px;">${escapeHtml(title)}</div>
+                    ${selection ? `<div style="font-size: 12px; color: #4b5563; margin-top: 4px;">Selected: ${escapeHtml(selection)}</div>` : ''}
+                </div>
+            `;
+        }
         // For text messages
         else {
             content = `<div class="message-text">${escapeHtml(message.message_body)}</div>`;
@@ -2588,4 +2631,87 @@ function showFullTime(element, timestamp) {
 function truncateText(text, maxLength) {
     if (!text) return '';
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+}
+/**
+ * Star/unstar a contact
+ */
+async function starContact(contactId) {
+    try {
+        const response = await fetch('api.php/contact-action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contact_id: contactId,
+                action: 'star'
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            const btn = document.getElementById('starContactBtn');
+            const icon = btn.querySelector('i');
+            
+            if (result.starred) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                btn.classList.add('active');
+                showToast('Conversation starred', 'success');
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                btn.classList.remove('active');
+                showToast('Conversation unstarred', 'success');
+            }
+            
+            // Reload contacts to update sidebar
+            loadContacts();
+        } else {
+            showToast(result.error || 'Failed to star conversation', 'error');
+        }
+    } catch (error) {
+        console.error('Error starring contact:', error);
+        showToast('Failed to star conversation', 'error');
+    }
+}
+
+/**
+ * Archive/unarchive a contact
+ */
+async function archiveContact(contactId) {
+    try {
+        const response = await fetch('api.php/contact-action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contact_id: contactId,
+                action: 'archive'
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            const btn = document.getElementById('archiveContactBtn');
+            
+            if (result.archived) {
+                btn.classList.add('active');
+                showToast('Conversation archived', 'success');
+                // Go back to contacts list after 1 second
+                setTimeout(() => {
+                    selectContact(null);
+                    loadContacts();
+                }, 1000);
+            } else {
+                btn.classList.remove('active');
+                showToast('Conversation unarchived', 'success');
+                loadContacts();
+            }
+        } else {
+            showToast(result.error || 'Failed to archive conversation', 'error');
+        }
+    } catch (error) {
+        console.error('Error archiving contact:', error);
+        showToast('Failed to archive conversation', 'error');
+    }
 }

@@ -42,6 +42,12 @@
                     </div>
                 </div>
                 <div class="chat-header-actions" id="chatHeaderActions" style="display: none;">
+                    <button id="starContactBtn" onclick="starContact(currentContactId)" class="header-action-btn" title="Star conversation">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button id="archiveContactBtn" onclick="archiveContact(currentContactId)" class="header-action-btn" title="Archive conversation">
+                        <i class="fas fa-archive"></i>
+                    </button>
                     <button onclick="openMessageSearch()" class="header-action-btn" title="Search messages">
                         <i class="fas fa-search"></i>
                     </button>

@@ -701,6 +701,33 @@ class WhatsAppService
                 $messageBody = $messageData['ephemeral'] ?? 'View once message';
                 break;
 
+            case 'poll':
+                // Poll messages with options
+                $question = $messageData['poll']['name'] ?? '';
+                $messageBody = 'Poll: ' . $question;
+                
+                if (isset($messageData['poll']['options']) && is_array($messageData['poll']['options'])) {
+                    $options = array_map(function($opt) {
+                        return $opt['option'] ?? '';
+                    }, $messageData['poll']['options']);
+                    
+                    if (!empty($options)) {
+                        $messageBody .= "\n" . implode("\n", array_filter($options));
+                    }
+                }
+                break;
+
+            case 'vote':
+                // Vote/poll response
+                $parentId = $messageData['vote']['parent_id'] ?? '';
+                $selectedOption = $messageData['vote']['selected_index'] ?? '';
+                $messageBody = 'Vote: Poll Response';
+                
+                if ($selectedOption !== '') {
+                    $messageBody .= "\n" . 'Selected option: ' . ($selectedOption + 1);
+                }
+                break;
+
             case 'system':
                 $messageBody = $messageData['system']['body'] ?? 'System message';
                 // Handle group invite links, participant changes, etc.
