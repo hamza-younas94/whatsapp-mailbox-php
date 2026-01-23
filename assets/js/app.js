@@ -513,6 +513,16 @@ function renderMessages(messagesList, options = {}) {
                 </div>
             `;
         } 
+        // For unsupported/system messages - show warning icon with summary
+        else if (message.message_type === 'unsupported' || message.message_type === 'system') {
+            const isError = message.message_body?.includes('not supported') || message.message_body?.includes('error');
+            const icon = isError ? '⚠️' : 'ℹ️';
+            content = `
+                <div class="message-text" style="padding: 8px 12px; background: ${isError ? '#fff5f5' : '#f0f9ff'}; border-left: 3px solid ${isError ? '#ef4444' : '#3b82f6'}; border-radius: 4px; font-size: 13px;">
+                    ${icon} ${escapeHtml(message.message_body)}
+                </div>
+            `;
+        }
         // For text messages
         else {
             content = `<div class="message-text">${escapeHtml(message.message_body)}</div>`;
