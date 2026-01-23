@@ -193,140 +193,43 @@
 </head>
 <body>
     <?php
-    $currentPage = basename($_SERVER['PHP_SELF']);
-    $morePages = [
-        'tags.php',
-        'auto-tag-rules.php',
-        'search.php',
-        'segments.php',
-        'scheduled-messages.php',
-        'notes.php',
-        'deals.php',
-        'ip-commands.php',
-        'workflows.php',
-        'drip-campaigns.php',
-        'message-templates.php',
-        'webhook-manager.php'
+    // Determine current page for navbar highlighting
+    $currentPage = basename($_SERVER['PHP_SELF'], '.php');
+    
+    // Map PHP filenames to navbar page identifiers
+    $pageMap = [
+        'index' => 'mailbox',
+        'crm_dashboard' => 'crm',
+        'broadcasts' => 'broadcasts',
+        'quick-replies' => 'quick-replies',
+        'analytics' => 'analytics',
+        'tags' => 'tags',
+        'auto-tag-rules' => 'auto-tag-rules',
+        'search' => 'search',
+        'segments' => 'segments',
+        'scheduled-messages' => 'scheduled',
+        'notes' => 'notes',
+        'deals' => 'deals',
+        'ip-commands' => 'ip-commands',
+        'workflows' => 'workflows',
+        'drip-campaigns' => 'drip-campaigns',
+        'message-templates' => 'message-templates',
+        'webhook-manager' => 'webhook-manager',
+        'users' => 'users',
+        'subscriptions' => 'subscriptions',
+        'logs' => 'logs'
     ];
+    
+    $currentNavPage = $pageMap[$currentPage] ?? $currentPage;
+    
+    // Render the Twig navbar template (single source of truth)
+    global $twig;
+    echo $twig->render('navbar.html.twig', [
+        'currentPage' => $currentNavPage,
+        'user' => $user,
+        'username' => $user->username ?? 'Admin'
+    ]);
     ?>
-    <!-- Top Navigation -->
-    <div class="top-nav">
-        <div class="nav-links">
-            <?php if (hasFeature('mailbox')): ?>
-            <a href="index.php" class="nav-link <?php echo $currentPage === 'index.php' ? 'active' : ''; ?>">
-                <i class="fas fa-inbox"></i>
-                Mailbox
-            </a>
-            <?php endif; ?>
-            <?php if (hasFeature('crm')): ?>
-            <a href="crm_dashboard.php" class="nav-link <?php echo $currentPage === 'crm_dashboard.php' ? 'active' : ''; ?>">
-                <i class="fas fa-clipboard"></i>
-                CRM
-            </a>
-            <?php endif; ?>
-            <?php if (hasFeature('broadcasts')): ?>
-            <a href="broadcasts.php" class="nav-link <?php echo $currentPage === 'broadcasts.php' ? 'active' : ''; ?>">
-                <i class="fas fa-broadcast-tower"></i>
-                Broadcasts
-            </a>
-            <?php endif; ?>
-            <?php if (hasFeature('quick_replies')): ?>
-            <a href="quick-replies.php" class="nav-link <?php echo $currentPage === 'quick-replies.php' ? 'active' : ''; ?>">
-                <i class="fas fa-bolt"></i>
-                Quick Replies
-            </a>
-            <?php endif; ?>
-            <?php if (hasFeature('analytics')): ?>
-            <a href="analytics.php" class="nav-link <?php echo $currentPage === 'analytics.php' ? 'active' : ''; ?>">
-                <i class="fas fa-chart-bar"></i>
-                Analytics
-            </a>
-            <?php endif; ?>
-            <div class="dropdown">
-                <a href="#" class="nav-link <?php echo in_array($currentPage, $morePages, true) ? 'active' : ''; ?>">
-                    <i class="fas fa-ellipsis-h"></i>
-                    More ▾
-                </a>
-                <div class="dropdown-menu">
-                    <?php if (hasFeature('tags')): ?>
-                    <a href="tags.php" class="<?php echo $currentPage === 'tags.php' ? 'active' : ''; ?>">🏷️ Tags</a>
-                    <?php endif; ?>
-                    <a href="auto-tag-rules.php" class="<?php echo $currentPage === 'auto-tag-rules.php' ? 'active' : ''; ?>">🤖 Auto-Tag Rules</a>
-                    <a href="search.php" class="<?php echo $currentPage === 'search.php' ? 'active' : ''; ?>">🔍 Advanced Search</a>
-                    <?php if (hasFeature('segments')): ?>
-                    <a href="segments.php" class="<?php echo $currentPage === 'segments.php' ? 'active' : ''; ?>">📊 Segments</a>
-                    <?php endif; ?>
-                    <?php if (hasFeature('scheduled_messages')): ?>
-                    <a href="scheduled-messages.php" class="<?php echo $currentPage === 'scheduled-messages.php' ? 'active' : ''; ?>">⏰ Scheduled</a>
-                    <?php endif; ?>
-                    <?php if (hasFeature('notes')): ?>
-                    <a href="notes.php" class="<?php echo $currentPage === 'notes.php' ? 'active' : ''; ?>">📝 Notes</a>
-                    <?php endif; ?>
-                    <a href="deals.php" class="<?php echo $currentPage === 'deals.php' ? 'active' : ''; ?>">💰 Deals</a>
-                    <?php if (hasFeature('dcmb_ip_commands')): ?>
-                    <a href="ip-commands.php" class="<?php echo $currentPage === 'ip-commands.php' ? 'active' : ''; ?>">💻 IP Commands</a>
-                    <?php endif; ?>
-                    
-                    <!-- Automation Section -->
-                    <?php if (hasFeature('workflows') || hasFeature('drip_campaigns')): ?>
-                    <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
-                        <div style="padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Automation</div>
-                        <?php if (hasFeature('workflows')): ?>
-                        <a href="workflows.php" class="<?php echo $currentPage === 'workflows.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../workflows.php') ? '1' : '0.6'; ?>;">
-                            🔄 Workflows
-                            <?php if (!file_exists(__DIR__ . '/../workflows.php')): ?>
-                                <span style="font-size: 0.7rem; color: #f59e0b; margin-left: auto;">(Coming Soon)</span>
-                            <?php endif; ?>
-                        </a>
-                        <?php endif; ?>
-                        <?php if (hasFeature('drip_campaigns')): ?>
-                        <a href="drip-campaigns.php" class="<?php echo $currentPage === 'drip-campaigns.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../drip-campaigns.php') ? '1' : '0.6'; ?>;">
-                            💧 Drip Campaigns
-                            <?php if (!file_exists(__DIR__ . '/../drip-campaigns.php')): ?>
-                                <span style="font-size: 0.7rem; color: #f59e0b; margin-left: auto;">(Coming Soon)</span>
-                            <?php endif; ?>
-                        </a>
-                        <?php endif; ?>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <!-- Templates & Integration Section -->
-                    <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
-                        <div style="padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Templates & Integration</div>
-                        <?php if (hasFeature('message_templates')): ?>
-                        <a href="message-templates.php" class="<?php echo $currentPage === 'message-templates.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../message-templates.php') ? '1' : '0.6'; ?>;">
-                            📝 Message Templates
-                            <?php if (!file_exists(__DIR__ . '/../message-templates.php')): ?>
-                                <span style="font-size: 0.7rem; color: #f59e0b; margin-left: auto;">(Coming Soon)</span>
-                            <?php endif; ?>
-                        </a>
-                        <?php endif; ?>
-                        <a href="webhook-manager.php" class="<?php echo $currentPage === 'webhook-manager.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../webhook-manager.php') ? '1' : '0.6'; ?>;">
-                            🔗 Webhook Manager
-                            <?php if (!file_exists(__DIR__ . '/../webhook-manager.php')): ?>
-                                <span style="font-size: 0.7rem; color: #f59e0b; margin-left: auto;">(Coming Soon)</span>
-                            <?php endif; ?>
-                        </a>
-                    </div>
-                    
-                    <!-- Admin Section -->
-                    <?php if (isAdmin()): ?>
-                    <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
-                        <a href="users.php" class="<?php echo $currentPage === 'users.php' ? 'active' : ''; ?>">👥 Users</a>
-                        <a href="subscriptions.php" class="<?php echo $currentPage === 'subscriptions.php' ? 'active' : ''; ?>">💳 Subscriptions</a>
-                        <a href="logs.php" class="<?php echo $currentPage === 'logs.php' ? 'active' : ''; ?>">📋 Logs</a>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-        <div class="user-info ms-auto">
-            <span><i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($user->username ?? 'Admin'); ?></span>
-            <a href="logout.php" class="logout-btn" title="Logout">
-                <i class="fas fa-sign-out-alt"></i>
-            </a>
-        </div>
-    </div>
     
     <!-- Toast Container -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1060; pointer-events: none;">
