@@ -2,82 +2,109 @@
 <!-- Top Navigation -->
 <div class="top-nav">
     <div class="nav-links">
-        <a href="index.php" class="nav-link {% if currentPage == 'mailbox' %}active{% endif %}" title="Mailbox">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
-                <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/>
-            </svg>
+        {% if hasFeature('mailbox') %}
+        <a href="index.php" class="nav-link {% if currentPage == 'mailbox' %}active{% endif %}">
+            <i class="fas fa-inbox"></i>
             Mailbox
         </a>
-        <a href="crm_dashboard.php" class="nav-link {% if currentPage == 'crm' %}active{% endif %}" title="CRM">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-            </svg>
+        {% endif %}
+        {% if hasFeature('crm') %}
+        <a href="crm_dashboard.php" class="nav-link {% if currentPage == 'crm' %}active{% endif %}">
+            <i class="fas fa-clipboard"></i>
             CRM
         </a>
-        <a href="broadcasts.php" class="nav-link {% if currentPage == 'broadcasts' %}active{% endif %}" title="Broadcasts">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
-            </svg>
+        {% endif %}
+        {% if hasFeature('broadcasts') %}
+        <a href="broadcasts.php" class="nav-link {% if currentPage == 'broadcasts' %}active{% endif %}">
+            <i class="fas fa-broadcast-tower"></i>
             Broadcasts
         </a>
-        <a href="quick-replies.php" class="nav-link {% if currentPage == 'quick-replies' %}active{% endif %}" title="Quick Replies">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
-                <path d="M3 13h2v8H3zm4-8h2v16H7zm4-2h2v18h-2zm4-2h2v20h-2zm4 4h2v16h-2zm4 6h2v10h-2z"/>
-            </svg>
+        {% endif %}
+        {% if hasFeature('quick_replies') %}
+        <a href="quick-replies.php" class="nav-link {% if currentPage == 'quick-replies' %}active{% endif %}">
+            <i class="fas fa-bolt"></i>
             Quick Replies
         </a>
-        <a href="analytics.php" class="nav-link {% if currentPage == 'analytics' %}active{% endif %}" title="Analytics">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
-                <rect x="3" y="13" width="4" height="8"/><rect x="10" y="3" width="4" height="18"/><rect x="17" y="8" width="4" height="13"/>
-            </svg>
+        {% endif %}
+        {% if hasFeature('analytics') %}
+        <a href="analytics.php" class="nav-link {% if currentPage == 'analytics' %}active{% endif %}">
+            <i class="fas fa-chart-bar"></i>
             Analytics
         </a>
+        {% endif %}
         <div class="dropdown">
-            <a href="#" class="nav-link {% if currentPage in ['tags', 'auto-tag-rules', 'search', 'segments', 'scheduled', 'notes', 'deals', 'ip-commands', 'workflows', 'drip-campaigns', 'message-templates', 'webhook-manager', 'users'] %}active{% endif %}" title="More Options">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/>
-                </svg>
+            <a href="#" class="nav-link {% if currentPage in ['tags', 'auto-tag-rules', 'search', 'segments', 'scheduled', 'notes', 'deals', 'ip-commands', 'workflows', 'drip-campaigns', 'message-templates', 'webhook-manager', 'users'] %}active{% endif %}">
+                <i class="fas fa-ellipsis-h"></i>
                 More ▾
             </a>
-            <div class="dropdown-menu" style="min-width: 280px; max-height: 500px; overflow-y: auto;">
-                <h6 class="dropdown-header">CRM & Tools</h6>
+            <div class="dropdown-menu">
+                {% if hasFeature('tags') %}
                 <a href="tags.php" class="{% if currentPage == 'tags' %}active{% endif %}">🏷️ Tags</a>
+                {% endif %}
                 <a href="auto-tag-rules.php" class="{% if currentPage == 'auto-tag-rules' %}active{% endif %}">🤖 Auto-Tag Rules</a>
                 <a href="search.php" class="{% if currentPage == 'search' %}active{% endif %}">🔍 Advanced Search</a>
+                {% if hasFeature('segments') %}
                 <a href="segments.php" class="{% if currentPage == 'segments' %}active{% endif %}">📊 Segments</a>
-                <a href="scheduled-messages.php" class="{% if currentPage == 'scheduled' %}active{% endif %}">⏰ Scheduled Messages</a>
+                {% endif %}
+                {% if hasFeature('scheduled_messages') %}
+                <a href="scheduled-messages.php" class="{% if currentPage == 'scheduled' %}active{% endif %}">⏰ Scheduled</a>
+                {% endif %}
+                {% if hasFeature('notes') %}
                 <a href="notes.php" class="{% if currentPage == 'notes' %}active{% endif %}">📝 Notes</a>
+                {% endif %}
                 <a href="deals.php" class="{% if currentPage == 'deals' %}active{% endif %}">💰 Deals</a>
+                {% if hasFeature('dcmb_ip_commands') %}
                 <a href="ip-commands.php" class="{% if currentPage == 'ip-commands' %}active{% endif %}">💻 IP Commands</a>
+                {% endif %}
                 
-                <h6 class="dropdown-header mt-2">Automation</h6>
-                <a href="workflows.php" class="{% if currentPage == 'workflows' %}active{% endif %}">
-                    <i class="fas fa-project-diagram"></i> Workflows
-                </a>
-                <a href="drip-campaigns.php" class="{% if currentPage == 'drip-campaigns' %}active{% endif %}">
-                    <i class="fas fa-tint"></i> Drip Campaigns
-                </a>
-
-                <h6 class="dropdown-header mt-2">Templates & Integration</h6>
-                <a href="message-templates.php" class="{% if currentPage == 'message-templates' %}active{% endif %}">
-                    <i class="fas fa-file-alt"></i> Message Templates
-                </a>
-                <a href="webhook-manager.php" class="{% if currentPage == 'webhook-manager' %}active{% endif %}">
-                    <i class="fas fa-webhook"></i> Webhook Manager
-                </a>
+                <!-- Automation Section -->
+                {% if hasFeature('workflows') or hasFeature('drip_campaigns') %}
+                <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
+                    <div style="padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Automation</div>
+                    {% if hasFeature('workflows') %}
+                    <a href="workflows.php" class="{% if currentPage == 'workflows' %}active{% endif %}">
+                        🔄 Workflows
+                    </a>
+                    {% endif %}
+                    {% if hasFeature('drip_campaigns') %}
+                    <a href="drip-campaigns.php" class="{% if currentPage == 'drip-campaigns' %}active{% endif %}">
+                        💧 Drip Campaigns
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
                 
-                {% if user.role == 'admin' %}
-                <h6 class="dropdown-header mt-2">Admin</h6>
-                <a href="users.php" class="{% if currentPage == 'users' %}active{% endif %}">👥 Users</a>
+                <!-- Templates & Integration Section -->
+                <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
+                    <div style="padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Templates & Integration</div>
+                    {% if hasFeature('message_templates') %}
+                    <a href="message-templates.php" class="{% if currentPage == 'message-templates' %}active{% endif %}">
+                        📝 Message Templates
+                    </a>
+                    {% endif %}
+                    <a href="webhook-manager.php" class="{% if currentPage == 'webhook-manager' %}active{% endif %}">
+                        🔗 Webhook Manager
+                    </a>
+                </div>
+                
+                <!-- Admin Section -->
+                {% if isAdmin %}
+                <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
+                    <a href="users.php" class="{% if currentPage == 'users' %}active{% endif %}">👥 Users</a>
+                    <a href="subscriptions.php" class="{% if currentPage == 'subscriptions' %}active{% endif %}">💳 Subscriptions</a>
+                    <a href="logs.php" class="{% if currentPage == 'logs' %}active{% endif %}">📋 Logs</a>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
     <div class="user-info ms-auto">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-        </svg>
-        <span>{{ user.username|default(username|default('Admin')) }}</span>
+        <span><i class="fas fa-user-circle"></i> {{ user.username|default(username|default('Admin')) }}</span>
+        <a href="logout.php" class="logout-btn" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
+</div>
         <a href="logout.php" class="logout-btn" title="Logout">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5m0 0l-5-5m5 5H9"/>

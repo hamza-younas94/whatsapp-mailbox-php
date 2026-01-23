@@ -112,6 +112,22 @@ $twig->addFunction(new TwigFunction('getLevelColor', function($level) {
     return $colors[$level] ?? 'secondary';
 }));
 
+// Add hasFeature function for Twig templates
+$twig->addFunction(new TwigFunction('hasFeature', function($featureName) {
+    if (!function_exists('hasFeature')) {
+        require_once __DIR__ . '/auth.php';
+    }
+    return hasFeature($featureName);
+}));
+
+// Add isAdmin function for Twig templates
+$twig->addFunction(new TwigFunction('isAdmin', function() {
+    if (!function_exists('isAdmin')) {
+        require_once __DIR__ . '/auth.php';
+    }
+    return isAdmin();
+}));
+
 // Make Twig available globally
 $GLOBALS['twig'] = $twig;
 global $twig; // Also make it available as global variable for view() function
