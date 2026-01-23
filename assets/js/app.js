@@ -207,6 +207,11 @@ function renderContacts(contactsList) {
             : '';
         const activeClass = currentContactId === contact.id ? 'active' : '';
         
+        // Conversation status indicators
+        const starredIcon = contact.is_starred ? `<span title="Starred" style="color: #fbbf24; font-size: 14px;">⭐</span>` : '';
+        const archivedIcon = contact.is_archived ? `<span title="Archived" style="color: #9ca3af; font-size: 14px;">📦</span>` : '';
+        const statusIndicators = (starredIcon || archivedIcon) ? `<div style="display: flex; gap: 4px;">${starredIcon}${archivedIcon}</div>` : '';
+        
         // CRM features
         const stageBadge = contact.stage ? `<span class="stage-badge stage-${contact.stage}">${contact.stage}</span>` : '';
         const leadScore = contact.lead_score !== null ? `<span class="lead-score" title="Lead Score">${contact.lead_score}</span>` : '';
@@ -224,6 +229,7 @@ function renderContacts(contactsList) {
                         ${stageBadge}
                     </div>
                     ${companyInfo}
+                    ${statusIndicators}
                     ${tagBadges}
                     <div class="contact-last-message">${escapeHtml(lastMessage)}</div>
                 </div>
