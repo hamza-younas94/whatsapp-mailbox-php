@@ -460,7 +460,36 @@ function renderMessages(messagesList, options = {}) {
 
     const wasNearBottom = isNearBottom(container);
 
-    const html = messagesList.map(message => {
+    // Group reactions with their parent messages
+    const processedMessages = [];
+    const reactionsByParentId = {};
+    
+    // First pass: identify all reactions and group them by parent message ID
+    messagesList.forEach(msg => {
+        if (msg.message_type === 'reaction' && msg.parent_message_id) {
+            if (!reactionsByParentId[msg.parent_message_id]) {
+                reactionsByParentId[msg.parent_message_id] = [];
+            }
+            reactionsByParentId[msg.parent_message_id].push(msg);
+        }
+    });
+    
+    // Second pass: build processed message list excluding standalone reactions
+    messagesList.forEach(msg => {
+        // Skip reaction messages - they'll be attached to parents
+        if (msg.message_type === 'reaction' && msg.parent_message_id) {
+            return;
+        }
+        
+        // Add reactions to the message object if they exist
+        if (reactionsByParentId[msg.message_id]) {
+            msg.reactions = reactionsByParentId[msg.message_id];
+        }
+        
+        processedMessages.push(msg);
+    });
+
+    const html = processedMessages.map(message => {
         const direction = message.direction;
         const time = formatTime(message.timestamp);
         const status = direction === 'outgoing' ? getStatusIcon(message.status) : '';
@@ -750,6 +779,16 @@ function renderMessages(messagesList, options = {}) {
             </div>
         ` : '';
         
+        // Build reactions display if they exist
+        const reactionsDisplay = message.reactions && message.reactions.length > 0 ? `
+            <div class="message-reactions">
+                ${message.reactions.map(reaction => {
+                    const reactionEmoji = reaction.message_body?.match(/Reaction:\s*(.)/)?.[1] || '❤️';
+                    return `<span class="reaction-pill" title="Reaction">${reactionEmoji}</span>`;
+                }).join('')}
+            </div>
+        ` : '';
+        
         return `
             <div class="message ${direction}" data-message-id="${message.id}">
                 <div class="message-bubble">
@@ -760,6 +799,7 @@ function renderMessages(messagesList, options = {}) {
                     </div>
                     ${messageActions}
                 </div>
+                ${reactionsDisplay}
             </div>
         `;
     }).join('');

@@ -701,6 +701,46 @@ body {
     border-color: rgba(255, 255, 255, 0.4);
 }
 
+/* Message Reactions - Inline with Message */
+.message-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+    align-items: center;
+}
+
+.reaction-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    background: rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: default;
+    transition: all 0.2s ease;
+}
+
+.message.incoming .reaction-pill {
+    background: rgba(15, 23, 42, 0.06);
+    border-color: rgba(15, 23, 42, 0.1);
+}
+
+.message.outgoing .reaction-pill {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.reaction-pill:hover {
+    background: rgba(15, 23, 42, 0.12);
+}
+
+.message.outgoing .reaction-pill:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
 /* Header Action Buttons */
 .header-action-btn {
     background: rgba(15, 23, 42, 0.06);

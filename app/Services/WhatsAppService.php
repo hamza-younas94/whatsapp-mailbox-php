@@ -650,10 +650,28 @@ class WhatsAppService
                 break;
 
             case 'reaction':
-                $messageId = $messageData['reaction']['message_id'] ?? '';
+                $reactionParentId = $messageData['reaction']['message_id'] ?? '';
                 $emoji = $messageData['reaction']['emoji'] ?? '❤️';
                 $messageBody = "Reaction: {$emoji}";
-                // Note: Reactions are typically linked to the original message
+                
+                // Store the parent message ID so we can link reactions to original messages
+                $message = Message::updateOrCreate(
+                    ['message_id' => $messageId],
+                    [
+                        'user_id' => $this->userId,
+                        'contact_id' => $contact->id,
+                        'phone_number' => $from,
+                        'message_type' => $messageType,
+                        'direction' => 'incoming',
+                        'message_body' => $messageBody,
+                        'parent_message_id' => $reactionParentId,  // Link to original message
+                        'timestamp' => $timestamp,
+                        'is_read' => false
+                    ]
+                );
+                
+                logger("[SAVE] Reaction saved with parent message ID: {$reactionParentId}");
+                return; // Skip normal message save below
                 break;
 
             case 'interactive':

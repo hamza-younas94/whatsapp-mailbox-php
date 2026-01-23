@@ -22,7 +22,8 @@ class Message extends Model
         'media_caption',
         'status',
         'is_read',
-        'timestamp'
+        'timestamp',
+        'parent_message_id'
     ];
 
     protected $casts = [
