@@ -231,7 +231,7 @@ function getContacts() {
         ->get();
     
     // Format for response
-    $formatted = $contacts->map(function($contact) {
+    $formatted = $contacts->map(function($contact) use ($user) {
         return [
             'id' => $contact->id,
             'phone_number' => $contact->phone_number,
@@ -241,6 +241,14 @@ function getContacts() {
             'unread_count' => $contact->unread_count,
             'last_message' => $contact->lastMessage?->message_body,
             'initials' => $contact->initials,
+            // Conversation flags
+            'is_starred' => Capsule::table('message_actions as ma')
+                ->join('messages as m', 'ma.message_id', '=', 'm.id')
+                ->where('ma.user_id', $user->id)
+                ->where('ma.action_type', 'star')
+                ->where('m.contact_id', $contact->id)
+                ->exists(),
+            'is_archived' => (bool) ($contact->is_archived ?? false),
             // CRM fields with defaults
             'stage' => $contact->stage ?: 'new',
             'lead_score' => $contact->lead_score ?: 0,
@@ -1412,7 +1420,7 @@ function deleteTask($taskId) {
 }
 
 /**
- * Handle message action (star, forward, delete)
+ * Handle message action (star, forward, delete, archive)
  */
 function handleMessageAction() {
     global $user;
@@ -1421,6 +1429,7 @@ function handleMessageAction() {
     $messageId = $input['message_id'] ?? null;
     $actionType = $input['action_type'] ?? 'star';
     $forwardToContactId = $input['forward_to_contact_id'] ?? null;
+    $archiveContactId = $input['archive_contact_id'] ?? null;
     
     if (!$messageId) {
         response_error('message_id is required', 422);
@@ -1432,6 +1441,12 @@ function handleMessageAction() {
     switch ($actionType) {
         case 'star':
             MessageAction::star($messageId, $user->id);
+            response_json(['success' => true, 'action' => 'star', 'is_starred' => true]);
+            break;
+            
+        case 'unstar':
+            MessageAction::unstar($messageId, $user->id);
+            response_json(['success' => true, 'action' => 'unstar', 'is_starred' => false]);
             break;
             
         case 'forward':
@@ -1462,15 +1477,38 @@ function handleMessageAction() {
             } else {
                 $whatsappService->sendTextMessage($forwardToContact->phone_number, $forwardMessage);
             }
+            response_json(['success' => true, 'action' => 'forward', 'forwarded_to' => $forwardToContact->name]);
+            break;
+            
+        case 'archive':
+            if (!$archiveContactId) {
+                response_error('archive_contact_id is required for archive action', 422);
+            }
+            // MULTI-TENANT: verify contact belongs to user
+            Contact::where('user_id', $user->id)->findOrFail($archiveContactId);
+            Contact::where('id', $archiveContactId)->update(['is_archived' => true]);
+            response_json(['success' => true, 'action' => 'archive', 'is_archived' => true]);
+            break;
+            
+        case 'unarchive':
+            if (!$archiveContactId) {
+                response_error('archive_contact_id is required for unarchive action', 422);
+            }
+            // MULTI-TENANT: verify contact belongs to user
+            Contact::where('user_id', $user->id)->findOrFail($archiveContactId);
+            Contact::where('id', $archiveContactId)->update(['is_archived' => false]);
+            response_json(['success' => true, 'action' => 'unarchive', 'is_archived' => false]);
             break;
             
         case 'delete':
             // Soft delete or mark as deleted
             $message->update(['message_body' => '[Deleted]', 'is_deleted' => true]);
+            response_json(['success' => true, 'action' => 'delete']);
             break;
+            
+        default:
+            response_error('Invalid action type', 422);
     }
-    
-    response_json(['success' => true]);
 }
 
 /**

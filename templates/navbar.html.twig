@@ -33,7 +33,7 @@
         </a>
         {% endif %}
         <div class="dropdown">
-            <a href="#" class="nav-link {% if currentPage in ['tags', 'auto-tag-rules', 'search', 'segments', 'scheduled', 'notes', 'deals', 'ip-commands', 'workflows', 'drip-campaigns', 'message-templates', 'webhook-manager', 'users', 'subscriptions', 'user-settings', 'logs', 'execution_logs', 'tenant_health', 'implementation-status', 'webhook_debug', 'check-media', 'check_database', 'check_quick_replies', 'verify_files', 'diagnose_user_data', 'smoke_features', 'migrate', 'run-migrations', 'seed_default_data', 'seed_demo_tenant', 'init_config', 'clear-cache'] %}active{% endif %}">
+            <a href="#" class="nav-link {% if currentPage in ['tags', 'auto-tag-rules', 'search', 'segments', 'scheduled', 'notes', 'deals', 'ip-commands', 'workflows', 'drip-campaigns', 'message-templates', 'webhook-manager', 'users', 'subscriptions', 'user-settings', 'logs', 'execution_logs', 'tenant_health', 'implementation-status', 'webhook_debug', 'check-media', 'check_database', 'check_quick_replies', 'verify_files', 'diagnose_user_data', 'migrate', 'run-migrations', 'seed_default_data', 'init_config', 'clear-cache'] %}active{% endif %}">
                 <i class="fas fa-ellipsis-h"></i>
                 More ▾
             </a>
@@ -109,7 +109,6 @@
                     <a href="check_quick_replies.php" class="{% if currentPage == 'check_quick_replies' %}active{% endif %}">⚡ Check Quick Replies</a>
                     <a href="verify_files.php" class="{% if currentPage == 'verify_files' %}active{% endif %}">📂 Verify Files</a>
                     <a href="diagnose_user_data.php" class="{% if currentPage == 'diagnose_user_data' %}active{% endif %}">🔬 Diagnose User Data</a>
-                    <a href="smoke_features.php" class="{% if currentPage == 'smoke_features' %}active{% endif %}">🧪 Feature Smoke Test</a>
                 </div>
                 
                 <!-- Migration & Setup -->
@@ -118,7 +117,7 @@
                     <a href="migrate.php" class="{% if currentPage == 'migrate' %}active{% endif %}">🔄 Run Migrations</a>
                     <a href="run-migrations.php" class="{% if currentPage == 'run-migrations' %}active{% endif %}">▶️ Run Migrations (Alt)</a>
                     <a href="seed_default_data.php" class="{% if currentPage == 'seed_default_data' %}active{% endif %}">🌱 Seed Default Data</a>
-                    <a href="seed_demo_tenant.php" class="{% if currentPage == 'seed_demo_tenant' %}active{% endif %}">🎭 Seed Demo Tenant</a>
+                    
                     <a href="init_config.php" class="{% if currentPage == 'init_config' %}active{% endif %}">⚙️ Init Config</a>
                     <a href="clear-cache.php" class="{% if currentPage == 'clear-cache' %}active{% endif %}">🗑️ Clear Cache</a>
                 </div>

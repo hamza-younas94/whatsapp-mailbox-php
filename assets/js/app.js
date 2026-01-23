@@ -268,9 +268,9 @@ function filterContacts(query) {
     if (currentConversationFilter === 'unread') {
         filtered = filtered.filter(c => c.unread_count > 0);
     } else if (currentConversationFilter === 'starred') {
-        filtered = filtered.filter(c => c.is_starred);
+        filtered = filtered.filter(c => c.is_starred === true || c.is_starred === 1);
     } else if (currentConversationFilter === 'archived') {
-        filtered = filtered.filter(c => c.is_archived);
+        filtered = filtered.filter(c => c.is_archived === true || c.is_archived === 1);
     }
     
     // Then apply search query
@@ -2083,9 +2083,91 @@ async function starMessage(messageId, buttonElement) {
  * Forward a message
  */
 async function forwardMessage(messageId) {
-    // Show contact selection modal
-    showToast('Forward feature - Select a contact', 'info');
-    // TODO: Implement contact selection modal for forwarding
+    // Build contact selection modal dynamically
+    let modal = document.getElementById('forwardModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'forwardModal';
+        modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1100;';
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 12px; width: 520px; max-width: 90vw; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+                <div style="padding: 16px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between;">
+                    <h3 style="margin: 0; font-size: 18px;">Forward to Contact</h3>
+                    <button id="forwardCloseBtn" style="border:none;background:none;font-size:22px;cursor:pointer;">&times;</button>
+                </div>
+                <div style="padding: 14px 20px;">
+                    <input id="forwardSearch" type="text" placeholder="Search contacts..." style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px;">
+                    <div id="forwardList" style="max-height: 320px; overflow:auto; margin-top: 12px; border:1px solid #eee; border-radius:8px;"></div>
+                </div>
+                <div style="padding: 12px 20px; border-top: 1px solid #eee; display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="forwardCancel" class="btn-secondary" style="padding:8px 12px;">Cancel</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    const listEl = modal.querySelector('#forwardList');
+    const searchEl = modal.querySelector('#forwardSearch');
+    const closeBtn = modal.querySelector('#forwardCloseBtn');
+    const cancelBtn = modal.querySelector('#forwardCancel');
+
+    function renderForwardList(items) {
+        listEl.innerHTML = items.map(c => `
+            <div class="forward-item" data-id="${c.id}" style="padding:10px 12px; display:flex; align-items:center; gap:10px; cursor:pointer; border-bottom:1px solid #f5f5f5;">
+                <div class="contact-avatar">${getInitials(c.name)}</div>
+                <div style="flex:1;">
+                    <div style="font-weight:600;">${escapeHtml(c.name)}</div>
+                    <div style="color:#6b7280; font-size:12px;">${c.phone_number}</div>
+                </div>
+                <button class="btn-primary" style="padding:6px 10px;">Forward</button>
+            </div>
+        `).join('');
+    }
+
+    // Initial render
+    renderForwardList(contacts);
+
+    // Search
+    searchEl.oninput = function(e) {
+        const q = e.target.value.toLowerCase();
+        const filtered = contacts.filter(c => (c.name || '').toLowerCase().includes(q) || (c.phone_number || '').includes(q));
+        renderForwardList(filtered);
+    };
+
+    // Item click
+    listEl.onclick = async function(e) {
+        const item = e.target.closest('.forward-item');
+        if (!item) return;
+        const targetId = parseInt(item.dataset.id, 10);
+        try {
+            const response = await fetch('api.php/message-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message_id: messageId,
+                    action_type: 'forward',
+                    forward_to_contact_id: targetId
+                })
+            });
+            const result = await response.json();
+            if (response.ok && result.success) {
+                showToast('Message forwarded successfully!', 'success');
+                modal.style.display = 'none';
+            } else {
+                showToast(result.error || 'Failed to forward message', 'error');
+            }
+        } catch (err) {
+            console.error('Forward error:', err);
+            showToast('Failed to forward message', 'error');
+        }
+    };
+
+    closeBtn.onclick = () => { modal.style.display = 'none'; };
+    cancelBtn.onclick = () => { modal.style.display = 'none'; };
+
+    // Show modal
+    modal.style.display = 'flex';
 }
 
 /**

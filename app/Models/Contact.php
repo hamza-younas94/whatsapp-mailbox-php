@@ -28,7 +28,8 @@ class Contact extends Model
         'deal_value',
         'deal_currency',
         'expected_close_date',
-        'custom_fields'
+        'custom_fields',
+        'is_archived'
     ];
 
     protected $casts = [
@@ -38,7 +39,8 @@ class Contact extends Model
         'last_activity_at' => 'datetime',
         'deal_value' => 'decimal:2',
         'expected_close_date' => 'date',
-        'custom_fields' => 'array'
+        'custom_fields' => 'array',
+        'is_archived' => 'boolean'
     ];
 
     /**

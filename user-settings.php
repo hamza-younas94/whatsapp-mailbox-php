@@ -4,6 +4,8 @@
  */
 
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/app/helpers.php';
 use App\Services\Encryption;
 
 // Require authentication
@@ -18,6 +20,9 @@ $user = \App\Models\User::find($userId);
 if (!$user) {
     die('User not found');
 }
+
+// Enforce feature access for settings
+requireFeature('settings');
 
 // Get or create user settings
 $userSettings = \App\Models\UserSettings::firstOrCreate(
@@ -63,8 +68,7 @@ if (isset($_POST['generate_token'])) {
 }
 
 // Render page
-$twig = require_once __DIR__ . '/bootstrap.php';
-echo $twig->render('user-settings.html.twig', [
+render('user-settings.html.twig', [
     'user' => $user,
     'settings' => $userSettings,
     'message' => $message,
