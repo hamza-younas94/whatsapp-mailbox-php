@@ -678,8 +678,45 @@ class WhatsAppService
                 if ($description) $messageBody .= ' - ' . $description;
                 break;
 
+            case 'template':
+                // Template message from WhatsApp (e.g., notifications)
+                $templateName = $messageData['template']['name'] ?? 'Template';
+                $messageBody = 'Template: ' . $templateName;
+                if (isset($messageData['template']['language'])) {
+                    $messageBody .= ' (' . $messageData['template']['language']['code'] . ')';
+                }
+                break;
+
+            case 'order':
+                // Order messages from catalog
+                $orderId = $messageData['order']['id'] ?? '';
+                $messageBody = 'Order: ' . $orderId;
+                if (isset($messageData['order']['catalog_id'])) {
+                    $messageBody .= ' (Catalog)';
+                }
+                break;
+
+            case 'ephemeral':
+                // Ephemeral messages that disappear after viewing
+                $messageBody = $messageData['ephemeral'] ?? 'View once message';
+                break;
+
             case 'system':
                 $messageBody = $messageData['system']['body'] ?? 'System message';
+                // Handle group invite links, participant changes, etc.
+                if (isset($messageData['system']['type'])) {
+                    switch ($messageData['system']['type']) {
+                        case 'group_invite':
+                            $messageBody = '📞 Group invite link created';
+                            break;
+                        case 'group_participant_added':
+                            $messageBody = '➕ Participant added to group';
+                            break;
+                        case 'group_participant_removed':
+                            $messageBody = '➖ Participant removed from group';
+                            break;
+                    }
+                }
                 break;
 
             case 'notification':

@@ -529,6 +529,158 @@ function renderMessages(messagesList, options = {}) {
                 </div>
             `;
         }
+        // For stickers
+        else if (message.message_type === 'sticker' && (message.media_filename || message.media_url)) {
+            const stickerUrl = message.media_filename ? `/uploads/${escapeHtml(message.media_filename)}` : message.media_url;
+            content = `
+                <div class="message-media">
+                    <img src="${stickerUrl}" alt="Sticker" style="max-width: 200px; height: auto; border-radius: 8px;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                    <div style="display:none;padding:10px;background:#f0f0f0;border-radius:8px;color:#666;text-align:center;">😊 Sticker unavailable</div>
+                </div>
+            `;
+        }
+        // For reactions - show emoji reply
+        else if (message.message_type === 'reaction') {
+            const emoji = message.message_body?.match(/Reaction: (.)/)?.[1] || '❤️';
+            content = `
+                <div class="message-text" style="display: inline-block; padding: 4px 8px; background: #fff9e6; border-radius: 20px; font-size: 20px;">
+                    ${emoji}
+                </div>
+            `;
+        }
+        // For location messages
+        else if (message.message_type === 'location') {
+            const locMatch = message.message_body?.match(/Location: ([-\d.]+), ([-\d.]+)/);
+            if (locMatch) {
+                const lat = locMatch[1];
+                const lng = locMatch[2];
+                const name = message.message_body?.match(/\(([^)]+)\)/)?.[1] || 'Location';
+                const mapUrl = `https://www.google.com/maps/search/${lat},${lng}`;
+                content = `
+                    <div class="message-media">
+                        <a href="${mapUrl}" target="_blank" style="display: block; text-decoration: none;">
+                            <img src="https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=300x200&markers=${lat},${lng}&key=AIzaSyDummyKey" alt="Map" style="max-width: 300px; border-radius: 8px;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22300%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-family=%22Arial%22%3E📍 ${escapeHtml(name)}<br/>${lat}, ${lng}%3C/text%3E%3C/svg%3E';">
+                            <div style="padding: 8px; background: #f9fafb; border-radius: 0 0 8px 8px;">
+                                <div style="font-weight: 600; margin-bottom: 4px;">📍 ${escapeHtml(name)}</div>
+                                <div style="font-size: 12px; color: #6b7280;">${lat}, ${lng}</div>
+                                <div style="font-size: 11px; color: #3b82f6; margin-top: 6px;">Open in Maps →</div>
+                            </div>
+                        </a>
+                    </div>
+                `;
+            } else {
+                content = `<div class="message-text">📍 ${escapeHtml(message.message_body)}</div>`;
+            }
+        }
+        // For contact cards
+        else if (message.message_type === 'contacts') {
+            const contactsMatch = message.message_body?.match(/Contact(?:s)?: (.+)/);
+            const contactsList = contactsMatch ? contactsMatch[1].split(', ').map(c => {
+                const parts = c.match(/([^(]+)\s*\(([^)]+)\)?/);
+                const name = parts?.[1]?.trim() || c;
+                const phone = parts?.[2]?.trim() || '';
+                return `<div style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#3b82f6"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm8 0v1.54c0 .87-.5 1.64-1.23 2.05.5-1.18.5-2.49 0-3.59.73.41 1.23 1.18 1.23 2.05zM15.5 19v1.5H.5V19c0-2.64 5.05-4 7.5-4s7.5 1.36 7.5 4z"/></svg>
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">${escapeHtml(name)}</div>
+                        ${phone ? `<div style="font-size: 12px; color: #6b7280;">📞 ${escapeHtml(phone)}</div>` : ''}
+                    </div>
+                </div>`;
+            }).join('') : '';
+            
+            content = `
+                <div class="message-media" style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                    <div style="padding: 8px 12px; background: #f9fafb; font-weight: 600; border-bottom: 1px solid #e5e7eb;">
+                        👤 Contact${message.message_body?.includes('Contacts:') ? 's' : ''}
+                    </div>
+                    ${contactsList}
+                </div>
+            `;
+        }
+        // For interactive messages (buttons, lists)
+        else if (message.message_type === 'interactive') {
+            const typeMatch = message.message_body?.match(/Interactive message \((\w+)\)/);
+            const msgType = typeMatch?.[1] || 'interactive';
+            const selectedMatch = message.message_body?.match(/: (.+)/);
+            const selected = selectedMatch?.[1] || message.message_body;
+            
+            content = `
+                <div class="message-text" style="padding: 10px 12px; background: #f3f4f6; border-left: 3px solid #6366f1; border-radius: 4px;">
+                    <div style="font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <span>🎯</span> ${msgType.charAt(0).toUpperCase() + msgType.slice(1)}
+                    </div>
+                    <div style="font-size: 14px; color: #374151;">${escapeHtml(selected)}</div>
+                </div>
+            `;
+        }
+        // For button messages
+        else if (message.message_type === 'button') {
+            const btnMatch = message.message_body?.match(/Button message: (.+)/);
+            const btnText = btnMatch?.[1] || message.message_body;
+            
+            content = `
+                <div class="message-text" style="padding: 8px 12px; background: #f0f9ff; border-left: 3px solid #0ea5e9; border-radius: 4px;">
+                    <span style="display: inline-block; background: #0ea5e9; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 500;">
+                        🔘 ${escapeHtml(btnText)}
+                    </span>
+                </div>
+            `;
+        }
+        // For list messages
+        else if (message.message_type === 'list') {
+            const listMatch = message.message_body?.match(/List message: ([^-]+)(?: - (.+))?/);
+            const title = listMatch?.[1] || 'List';
+            const desc = listMatch?.[2] || '';
+            
+            content = `
+                <div class="message-text" style="padding: 10px 12px; background: #f5f3ff; border-left: 3px solid #a78bfa; border-radius: 4px;">
+                    <div style="font-weight: 600; margin-bottom: 4px;">📋 ${escapeHtml(title)}</div>
+                    ${desc ? `<div style="font-size: 13px; color: #6b7280;">${escapeHtml(desc)}</div>` : ''}
+                </div>
+            `;
+        }
+        // For template messages
+        else if (message.message_type === 'template') {
+            const templateMatch = message.message_body?.match(/Template: ([^(]+)(?:\(([^)]+)\))?/);
+            const templateName = templateMatch?.[1]?.trim() || 'Template';
+            const language = templateMatch?.[2] || '';
+            
+            content = `
+                <div class="message-text" style="padding: 10px 12px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px;">
+                    <div style="font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                        <span>📋</span> Template Message
+                    </div>
+                    <div style="font-size: 14px;">${escapeHtml(templateName)}</div>
+                    ${language ? `<div style="font-size: 11px; color: #6b7280; margin-top: 4px;">🌐 ${escapeHtml(language)}</div>` : ''}
+                </div>
+            `;
+        }
+        // For order messages
+        else if (message.message_type === 'order') {
+            const orderMatch = message.message_body?.match(/Order: ([^\s]+)(?: \((.+?)\))?/);
+            const orderId = orderMatch?.[1] || 'Order';
+            const catalog = orderMatch?.[2] || '';
+            
+            content = `
+                <div class="message-text" style="padding: 10px 12px; background: #dcfce7; border-left: 3px solid #22c55e; border-radius: 4px;">
+                    <div style="font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                        <span>🛒</span> Order
+                    </div>
+                    <div style="font-size: 14px; font-family: monospace;">${escapeHtml(orderId)}</div>
+                    ${catalog ? `<div style="font-size: 12px; color: #6b7280; margin-top: 4px;">From Catalog</div>` : ''}
+                </div>
+            `;
+        }
+        // For ephemeral/view-once messages
+        else if (message.message_type === 'ephemeral') {
+            content = `
+                <div class="message-text" style="padding: 10px 12px; background: #fce7f3; border-left: 3px solid #ec4899; border-radius: 4px;">
+                    <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <span>👁️</span> View Once Message
+                    </div>
+                </div>
+            `;
+        }
         // For text messages
         else {
             content = `<div class="message-text">${escapeHtml(message.message_body)}</div>`;
