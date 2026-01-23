@@ -145,6 +145,41 @@ $userSettings     = fetchSingle('user_settings', $userId);
 $userApiCreds     = fetchSingle('user_api_credentials', $userId);
 $userPreferences  = fetchSingle('user_preferences', $userId);
 $userSubscription = fetchSingle('user_subscriptions', $userId);
+
+// Auto-create subscription if missing so admins can edit in one place
+if (!$userSubscription) {
+    $defaultPlan = 'starter';
+    $planLimits = [
+        'free' => ['message_limit' => 100, 'contact_limit' => 50],
+        'starter' => ['message_limit' => 1000, 'contact_limit' => 500],
+        'pro' => ['message_limit' => 10000, 'contact_limit' => 5000],
+        'enterprise' => ['message_limit' => 999999, 'contact_limit' => 999999]
+    ];
+    $limits = $planLimits[$defaultPlan];
+
+    Capsule::table('user_subscriptions')->insert([
+        'user_id' => $userId,
+        'plan' => $defaultPlan,
+        'status' => 'trial',
+        'message_limit' => $limits['message_limit'],
+        'messages_used' => 0,
+        'contact_limit' => $limits['contact_limit'],
+        'features' => getDefaultFeaturesForPlan($defaultPlan),
+        'trial_ends_at' => date('Y-m-d H:i:s', strtotime('+14 days')),
+        'current_period_start' => date('Y-m-d H:i:s'),
+        'current_period_end' => date('Y-m-d H:i:s', strtotime('+30 days')),
+        'created_at' => date('Y-m-d H:i:s'),
+        'updated_at' => date('Y-m-d H:i:s')
+    ]);
+
+    $userSubscription = fetchSingle('user_subscriptions', $userId);
+} elseif (empty($userSubscription->features)) {
+    Capsule::table('user_subscriptions')
+        ->where('user_id', $userId)
+        ->update(['features' => json_encode(getDefaultFeaturesForPlan($userSubscription->plan ?? 'starter'))]);
+    $userSubscription = fetchSingle('user_subscriptions', $userId);
+}
+
 $userUsageLogs    = fetchMany('user_usage_logs', $userId, 25);
 
 $pageTitle = 'User Profile';
