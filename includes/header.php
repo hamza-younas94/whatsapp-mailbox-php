@@ -217,7 +217,24 @@
         'webhook-manager' => 'webhook-manager',
         'users' => 'users',
         'subscriptions' => 'subscriptions',
-        'logs' => 'logs'
+        'user-settings' => 'user-settings',
+        'logs' => 'logs',
+        'execution_logs' => 'execution_logs',
+        'tenant_health' => 'tenant_health',
+        'implementation-status' => 'implementation-status',
+        'webhook_debug' => 'webhook_debug',
+        'check-media' => 'check-media',
+        'check_database' => 'check_database',
+        'check_quick_replies' => 'check_quick_replies',
+        'verify_files' => 'verify_files',
+        'diagnose_user_data' => 'diagnose_user_data',
+        'smoke_features' => 'smoke_features',
+        'migrate' => 'migrate',
+        'run-migrations' => 'run-migrations',
+        'seed_default_data' => 'seed_default_data',
+        'seed_demo_tenant' => 'seed_demo_tenant',
+        'init_config' => 'init_config',
+        'clear-cache' => 'clear-cache'
     ];
     
     $currentNavPage = $pageMap[$currentPage] ?? $currentPage;
