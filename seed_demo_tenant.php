@@ -6,6 +6,11 @@
  *   php seed_demo_tenant.php --user=1
  * If --user is omitted, the first user (admin preferred) is used.
  */
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    die('This script can only be run from command line');
+}
+
 
 require_once __DIR__ . '/bootstrap.php';
 

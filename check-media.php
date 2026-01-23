@@ -3,6 +3,17 @@
  * Media Feature Diagnostic Page
  * Check if all media-related features are properly deployed
  */
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/auth.php';
+
+use Illuminate\Database\Capsule\Manager as Capsule;
+
+$user = getCurrentUser();
+if (!$user) {
+    header('Location: login.php');
+    exit;
+}
+
 
 header('Content-Type: text/html; charset=utf-8');
 

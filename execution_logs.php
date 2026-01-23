@@ -45,18 +45,18 @@ if ($type === 'workflow' || $type === 'all') {
     }
     
     $workflowLogs = $workflowQuery->orderBy('we.executed_at', 'desc')->limit(1000)->get();
-    $logs = array_merge($logs, array_map(function($log) {
-        return [
+    foreach ($workflowLogs as $log) {
+        $logs[] = [
             'type' => 'workflow',
-            'resource_name' => $log->workflow_name,
-            'resource_id' => $log->workflow_id,
-            'timestamp' => $log->executed_at,
-            'status' => $log->status,
+            'resource_name' => $log->workflow_name ?? 'Unknown',
+            'resource_id' => $log->workflow_id ?? null,
+            'timestamp' => $log->executed_at ?? null,
+            'status' => $log->status ?? 'unknown',
             'data' => json_decode($log->actions_performed ?? '{}', true),
-            'contact_id' => $log->contact_id,
+            'contact_id' => $log->contact_id ?? null,
             'log' => $log
         ];
-    }, (array)$workflowLogs));
+    }
     $typeLabel = 'Workflow Executions';
 }
 
@@ -81,18 +81,18 @@ if ($type === 'drip' || $type === 'all') {
     }
     
     $dripLogs = $dripQuery->orderBy('ds.updated_at', 'desc')->limit(1000)->get();
-    $logs = array_merge($logs, array_map(function($log) {
-        return [
+    foreach ($dripLogs as $log) {
+        $logs[] = [
             'type' => 'drip',
-            'resource_name' => $log->campaign_name,
-            'resource_id' => $log->campaign_id,
-            'timestamp' => $log->updated_at,
-            'status' => $log->status,
-            'data' => ['steps_completed' => $log->completed_steps, 'current_step' => $log->current_step],
-            'contact_id' => $log->contact_id,
+            'resource_name' => $log->campaign_name ?? 'Unknown',
+            'resource_id' => $log->campaign_id ?? null,
+            'timestamp' => $log->updated_at ?? null,
+            'status' => $log->status ?? 'unknown',
+            'data' => ['steps_completed' => $log->completed_steps ?? 0, 'current_step' => $log->current_step ?? 0],
+            'contact_id' => $log->contact_id ?? null,
             'log' => $log
         ];
-    }, (array)$dripLogs));
+    }
     $typeLabel = 'Drip Campaign Activity';
 }
 

@@ -44,7 +44,9 @@ use App\Services\WhatsAppService;
 logger("[WEBHOOK DEBUG] Request method: {$method}");
 logger("[WEBHOOK DEBUG] Raw input length: " . strlen($logData['raw_input']));
 
-$whatsappService = new WhatsAppService();
+// Use first user for webhook debug (no session)
+$userId = \Illuminate\Database\Capsule\Manager::table('users')->orderBy('id')->value('id') ?? 1;
+$whatsappService = new WhatsAppService($userId);
 
 // Verify webhook (GET request from Meta)
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {

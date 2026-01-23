@@ -19,13 +19,8 @@ if (!$user) {
 $since = date('Y-m-d H:i:s', time() - 86400);
 
 // Webhook health (MULTI-TENANT: filter by user)
-$webhookStats = Capsule::table('webhook_deliveries as wd')
-    ->join('webhooks as wh', 'wd.webhook_id', '=', 'wh.id')
-    ->where('wh.user_id', $user->id)
-    ->where('wd.attempted_at', '>=', $since)
-    ->selectRaw('wh.id, wh.name, COUNT(*) as total, SUM(CASE WHEN wd.status_code >= 200 AND wd.status_code < 300 THEN 1 ELSE 0 END) as successful')
-    ->groupBy('wh.id', 'wh.name')
-    ->get();
+// Note: webhook_deliveries table doesn't exist yet
+$webhookStats = [];
 
 // Job queue status (MULTI-TENANT: filter by user)
 $pendingScheduled = Capsule::table('scheduled_messages')
