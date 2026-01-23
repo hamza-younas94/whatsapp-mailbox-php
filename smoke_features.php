@@ -47,7 +47,7 @@ foreach ($planFeatures as $plan => $expectedFeatures) {
         'email' => $username . '@smoke.test',
         'full_name' => 'Smoke Test ' . ucfirst($plan),
         'password' => password_hash('test1234', PASSWORD_DEFAULT),
-        'role' => 'user',
+        'role' => 'agent',
         'is_active' => true
     ]);
 
