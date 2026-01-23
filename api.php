@@ -279,15 +279,8 @@ function getContacts() {
         ];
     });
     
-    response_json([
-        'data' => $formatted,
-        'pagination' => [
-            'page' => $page,
-            'limit' => $limit,
-            'total' => $total,
-            'pages' => (int) ceil($total / $limit)
-        ]
-    ]);
+    // Return flat array for backward compatibility (frontend expects array)
+    response_json($formatted->values()->all());
 }
 
 /**
@@ -316,7 +309,11 @@ function getMessages() {
         $messages = $query
             ->where('id', '>', $afterId)
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->map(function($msg) {
+                $msg->makeVisible(['parent_message_id']);
+                return $msg;
+            });
         response_json($messages);
         return;
     }
@@ -327,7 +324,11 @@ function getMessages() {
         ->offset($offset)
         ->get()
         ->reverse()
-        ->values();
+        ->values()
+        ->map(function($msg) {
+            $msg->makeVisible(['parent_message_id']);
+            return $msg;
+        });
     
     response_json($messages);
 }
