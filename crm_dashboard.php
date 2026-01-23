@@ -13,6 +13,8 @@ if (!isAuthenticated()) {
     exit;
 }
 
+requireFeature('crm');
+
 $user = getCurrentUser();
 
 // Render CRM Dashboard template

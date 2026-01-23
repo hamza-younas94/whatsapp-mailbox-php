@@ -94,10 +94,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     
                     // Create subscription based on selected plan
                     $subscriptionPlan = sanitize($_POST['subscription_plan'] ?? 'starter');
+                    if ($subscriptionPlan === 'professional') {
+                        $subscriptionPlan = 'pro';
+                    }
                     $planLimits = [
                         'free' => ['message_limit' => 100, 'contact_limit' => 50],
                         'starter' => ['message_limit' => 1000, 'contact_limit' => 500],
-                        'professional' => ['message_limit' => 10000, 'contact_limit' => 5000],
+                        'pro' => ['message_limit' => 10000, 'contact_limit' => 5000],
                         'enterprise' => ['message_limit' => 999999, 'contact_limit' => 999999]
                     ];
                     
@@ -119,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                             'message_templates' => true, 'crm' => true, 'analytics' => false,
                             'workflows' => false, 'dcmb_ip_commands' => true
                         ],
-                        'professional' => [
+                        'pro' => [
                             'mailbox' => true, 'quick_replies' => true, 'broadcasts' => true,
                             'segments' => true, 'drip_campaigns' => true, 'scheduled_messages' => true,
                             'auto_reply' => true, 'tags' => true, 'notes' => true,
@@ -383,7 +386,7 @@ require_once __DIR__ . '/includes/header.php';
                     <select id="subscriptionPlan" name="subscription_plan" class="crm-select">
                         <option value="free">Free (100 msgs/month, 50 contacts)</option>
                         <option value="starter" selected>Starter (1,000 msgs/month, 500 contacts)</option>
-                        <option value="professional">Professional (10,000 msgs/month, 5,000 contacts)</option>
+                        <option value="pro">Professional (10,000 msgs/month, 5,000 contacts)</option>
                         <option value="enterprise">Enterprise (Unlimited)</option>
                     </select>
                     <small class="text-muted">Select subscription plan for new organization</small>

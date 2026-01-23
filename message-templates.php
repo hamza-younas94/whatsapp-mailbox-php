@@ -14,6 +14,8 @@ if (!$user) {
     exit;
 }
 
+requireFeature('message_templates');
+
 // Handle AJAX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     header('Content-Type: application/json');

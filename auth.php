@@ -7,6 +7,57 @@ require_once __DIR__ . '/bootstrap.php';
 
 use App\Models\User;
 
+function getDefaultFeaturesForPlan($plan) {
+    $defaults = [
+        'free' => [
+            'mailbox' => true,
+            'quick_replies' => true,
+            'auto_reply' => true
+        ],
+        'starter' => [
+            'mailbox' => true,
+            'quick_replies' => true,
+            'broadcasts' => true,
+            'segments' => true,
+            'auto_reply' => true,
+            'tags' => true,
+            'notes' => true
+        ],
+        'pro' => [
+            'mailbox' => true,
+            'quick_replies' => true,
+            'broadcasts' => true,
+            'segments' => true,
+            'drip_campaigns' => true,
+            'scheduled_messages' => true,
+            'auto_reply' => true,
+            'tags' => true,
+            'notes' => true,
+            'message_templates' => true,
+            'crm' => true,
+            'analytics' => true
+        ],
+        'enterprise' => [
+            'mailbox' => true,
+            'quick_replies' => true,
+            'broadcasts' => true,
+            'segments' => true,
+            'drip_campaigns' => true,
+            'scheduled_messages' => true,
+            'auto_reply' => true,
+            'tags' => true,
+            'notes' => true,
+            'message_templates' => true,
+            'crm' => true,
+            'analytics' => true,
+            'workflows' => true,
+            'dcmb_ip_commands' => true
+        ]
+    ];
+
+    return $defaults[$plan] ?? [];
+}
+
 /**
  * Check if user is authenticated
  */
@@ -172,7 +223,27 @@ function getUserSubscription() {
         return null;
     }
     
-    return \App\Models\UserSubscription::where('user_id', $user->id)->first();
+    $subscription = \App\Models\UserSubscription::where('user_id', $user->id)->first();
+
+    if (!$subscription) {
+        $subscription = \App\Models\UserSubscription::create([
+            'user_id' => $user->id,
+            'plan' => 'free',
+            'status' => 'active',
+            'message_limit' => 100,
+            'messages_used' => 0,
+            'contact_limit' => 50,
+            'features' => getDefaultFeaturesForPlan('free'),
+            'current_period_start' => date('Y-m-d H:i:s'),
+            'current_period_end' => date('Y-m-d H:i:s', strtotime('+30 days'))
+        ]);
+    } elseif (empty($subscription->features)) {
+        $subscription->update([
+            'features' => getDefaultFeaturesForPlan($subscription->plan ?? 'free')
+        ]);
+    }
+
+    return $subscription;
 }
 
 /**

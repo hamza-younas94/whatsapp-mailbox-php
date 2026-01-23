@@ -84,8 +84,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     'dcmb_ip_commands' => isset($_POST['feature_dcmb_ip_commands'])
                 ];
                 
+                $plan = sanitize($_POST['plan'] ?? 'free');
+                if ($plan === 'professional') {
+                    $plan = 'pro';
+                }
+
                 $sub->update([
-                    'plan' => sanitize($_POST['plan'] ?? 'free'),
+                    'plan' => $plan,
                     'status' => sanitize($_POST['status'] ?? 'active'),
                     'message_limit' => (int) ($_POST['message_limit'] ?? 1000),
                     'contact_limit' => (int) ($_POST['contact_limit'] ?? 100),
@@ -310,7 +315,7 @@ require_once __DIR__ . '/includes/header.php';
                         <select name="plan">
                             <option value="free" <?php echo ($userSubscription->plan ?? '') === 'free' ? 'selected' : ''; ?>>Free (100 msgs)</option>
                             <option value="starter" <?php echo ($userSubscription->plan ?? '') === 'starter' ? 'selected' : ''; ?>>Starter (1,000 msgs)</option>
-                            <option value="professional" <?php echo ($userSubscription->plan ?? '') === 'professional' ? 'selected' : ''; ?>>Professional (10,000 msgs)</option>
+                            <option value="pro" <?php echo in_array(($userSubscription->plan ?? ''), ['pro','professional']) ? 'selected' : ''; ?>>Professional (10,000 msgs)</option>
                             <option value="enterprise" <?php echo ($userSubscription->plan ?? '') === 'enterprise' ? 'selected' : ''; ?>>Enterprise (Unlimited)</option>
                         </select>
                     </div>
@@ -408,31 +413,35 @@ require_once __DIR__ . '/includes/header.php';
 <script>
 const userId = <?php echo $userId; ?>;
 
+function toggleSection(viewId, formId, showForm) {
+    const view = document.getElementById(viewId);
+    const form = document.getElementById(formId);
+    if (!view || !form) {
+        return;
+    }
+    view.style.display = showForm ? 'none' : 'block';
+    form.style.display = showForm ? 'block' : 'none';
+}
+
 function editSettings() {
-    document.getElementById('settings-view').style.display = 'none';
-    document.getElementById('settings-form').style.display = 'block';
+    toggleSection('settings-view', 'settings-form', true);
 }
 
 function editPreferences() {
-    document.getElementById('prefs-view').style.display = 'none';
-    document.getElementById('prefs-form').style.display = 'block';
+    toggleSection('prefs-view', 'prefs-form', true);
 }
 
 function editSubscription() {
-    document.getElementById('sub-view').style.display = 'none';
-    document.getElementById('sub-form').style.display = 'block';
+    toggleSection('sub-view', 'sub-form', true);
 }
 
 function cancelEdit(section) {
     if (section === 'settings') {
-        document.getElementById('settings-view').style.display = 'block';
-        document.getElementById('settings-form').style.display = 'none';
+        toggleSection('settings-view', 'settings-form', false);
     } else if (section === 'prefs') {
-        document.getElementById('prefs-view').style.display = 'block';
-        document.getElementById('prefs-form').style.display = 'none';
+        toggleSection('prefs-view', 'prefs-form', false);
     } else if (section === 'sub') {
-        document.getElementById('sub-view').style.display = 'block';
-        document.getElementById('sub-form').style.display = 'none';
+        toggleSection('sub-view', 'sub-form', false);
     }
 }
 

@@ -11,6 +11,8 @@ if (!isAuthenticated()) {
     exit;
 }
 
+requireFeature('mailbox');
+
 $user = getCurrentUser();
 
 // Render Twig template

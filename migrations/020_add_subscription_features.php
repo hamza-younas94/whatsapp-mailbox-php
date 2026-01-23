@@ -46,7 +46,7 @@ return [
                     'workflows' => false,
                     'dcmb_ip_commands' => true
                 ],
-                'professional' => [
+                'pro' => [
                     'mailbox' => true,
                     'quick_replies' => true,
                     'broadcasts' => true,

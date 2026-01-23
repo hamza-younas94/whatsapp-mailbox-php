@@ -18,6 +18,8 @@ if (!$user) {
     exit;
 }
 
+requireFeature('analytics');
+
 // Date range filter
 $startDate = $_GET['start_date'] ?? date('Y-m-01'); // First day of current month
 $endDate = $_GET['end_date'] ?? date('Y-m-d'); // Today

@@ -106,7 +106,7 @@ $stats = [
     'expired' => $subscriptions->where('status', 'expired')->count(),
     'free' => $subscriptions->where('plan', 'free')->count(),
     'starter' => $subscriptions->where('plan', 'starter')->count(),
-    'professional' => $subscriptions->where('plan', 'professional')->count(),
+    'pro' => $subscriptions->where('plan', 'pro')->count(),
     'enterprise' => $subscriptions->where('plan', 'enterprise')->count(),
 ];
 
@@ -176,7 +176,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="stat-card">
             <div class="stat-icon">💼</div>
             <div>
-                <div class="stat-value"><?php echo number_format($stats['professional']); ?></div>
+                <div class="stat-value"><?php echo number_format($stats['pro']); ?></div>
                 <div class="stat-label">Professional Plan</div>
             </div>
         </div>
@@ -217,7 +217,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <span class="badge badge-<?php 
                                     echo $sub->plan === 'free' ? 'secondary' : 
                                         ($sub->plan === 'starter' ? 'info' : 
-                                        ($sub->plan === 'professional' ? 'warning' : 'success')); 
+                                        ($sub->plan === 'pro' ? 'warning' : 'success')); 
                                 ?>">
                                     <?php echo strtoupper($sub->plan); ?>
                                 </span>
@@ -285,7 +285,7 @@ require_once __DIR__ . '/includes/header.php';
                     <select name="plan" required>
                         <option value="free">Free</option>
                         <option value="starter">Starter</option>
-                        <option value="professional">Professional</option>
+                        <option value="pro">Professional</option>
                         <option value="enterprise">Enterprise</option>
                     </select>
                 </div>

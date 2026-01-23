@@ -212,14 +212,18 @@
     <!-- Top Navigation -->
     <div class="top-nav">
         <div class="nav-links">
+            <?php if (hasFeature('mailbox')): ?>
             <a href="index.php" class="nav-link <?php echo $currentPage === 'index.php' ? 'active' : ''; ?>">
                 <i class="fas fa-inbox"></i>
                 Mailbox
             </a>
+            <?php endif; ?>
+            <?php if (hasFeature('crm')): ?>
             <a href="crm_dashboard.php" class="nav-link <?php echo $currentPage === 'crm_dashboard.php' ? 'active' : ''; ?>">
                 <i class="fas fa-clipboard"></i>
                 CRM
             </a>
+            <?php endif; ?>
             <?php if (hasFeature('broadcasts')): ?>
             <a href="broadcasts.php" class="nav-link <?php echo $currentPage === 'broadcasts.php' ? 'active' : ''; ?>">
                 <i class="fas fa-broadcast-tower"></i>
@@ -289,12 +293,14 @@
                     <!-- Templates & Integration Section -->
                     <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0; padding-top: 0.5rem;">
                         <div style="padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Templates & Integration</div>
+                        <?php if (hasFeature('message_templates')): ?>
                         <a href="message-templates.php" class="<?php echo $currentPage === 'message-templates.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../message-templates.php') ? '1' : '0.6'; ?>;">
                             📝 Message Templates
                             <?php if (!file_exists(__DIR__ . '/../message-templates.php')): ?>
                                 <span style="font-size: 0.7rem; color: #f59e0b; margin-left: auto;">(Coming Soon)</span>
                             <?php endif; ?>
                         </a>
+                        <?php endif; ?>
                         <a href="webhook-manager.php" class="<?php echo $currentPage === 'webhook-manager.php' ? 'active' : ''; ?>" style="opacity: <?php echo file_exists(__DIR__ . '/../webhook-manager.php') ? '1' : '0.6'; ?>;">
                             🔗 Webhook Manager
                             <?php if (!file_exists(__DIR__ . '/../webhook-manager.php')): ?>
