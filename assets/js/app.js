@@ -1347,7 +1347,7 @@ function openCrmModal(contactId) {
                     </svg>
                     <h3>Company Information</h3>
                 </div>
-                <form id="companyInfoForm" class="needs-validation" novalidate>
+                <form id="companyInfoForm" class="needs-validation" novalidate data-validate='{"company_name":"required|min:2|max:255","email":"required|email|max:255","city":"max:100"}'>
                     <div class="mb-3">
                         <input type="text" id="crmCompany" name="company_name" class="crm-input form-control" placeholder="Company Name" value="${contact.company_name || ''}">
                         <div class="invalid-feedback"></div>
@@ -1371,7 +1371,7 @@ function openCrmModal(contactId) {
                     </svg>
                     <h3>Add Note</h3>
                 </div>
-                <form id="addNoteForm" class="needs-validation" novalidate>
+                <form id="addNoteForm" class="needs-validation" novalidate data-validate='{"content":"required|min:1|max:5000"}'>
                     <div class="mb-3">
                         <textarea id="crmNote" name="content" class="crm-textarea form-control" placeholder="Type your note here..." rows="3" required></textarea>
                         <div class="invalid-feedback">Please enter a note</div>
@@ -1428,7 +1428,7 @@ function openCrmModal(contactId) {
                     </svg>
                     <h3>Add New Deal</h3>
                 </div>
-                <form id="addDealFormElement" class="needs-validation" novalidate>
+                <form id="addDealFormElement" class="needs-validation" novalidate data-validate='{"deal_name":"required|min:2|max:150","amount":"required|numeric|min:0","deal_date":"required"}'>
                     <div class="mb-3">
                         <input type="text" id="dealName" name="deal_name" class="crm-input form-control" placeholder="Deal Name (e.g., Website Package)" required>
                         <div class="invalid-feedback">Please enter a deal name</div>
@@ -1537,8 +1537,8 @@ async function updateCompanyInfo(contactId) {
     // Validate form
     if (typeof FormValidator !== 'undefined') {
         const validator = new FormValidator('companyInfoForm', {
-            email: ['email', 'max:255'],
-            company_name: ['max:255'],
+            company_name: ['required', 'min:2', 'max:255'],
+            email: ['required', 'email', 'max:255'],
             city: ['max:100']
         });
         
@@ -1595,6 +1595,16 @@ async function updateCompanyInfo(contactId) {
         showToast('Failed to update', 'error');
     }
 }
+
+// Prevent default form submission on inline CRM forms to avoid modal close/reload
+document.addEventListener('submit', (event) => {
+    const target = event.target;
+    if (!target || !target.id) return;
+    const blockList = ['addNoteForm', 'addDealFormElement', 'companyInfoForm'];
+    if (blockList.includes(target.id)) {
+        event.preventDefault();
+    }
+});
 
 /**
  * Update deal info
@@ -1890,8 +1900,8 @@ async function saveDeal(contactId) {
     // Validate form
     if (typeof FormValidator !== 'undefined') {
         const validator = new FormValidator('addDealFormElement', {
-            deal_name: ['required', 'min:2', 'max:255'],
-            amount: ['required', 'number', {min: 0}],
+            deal_name: ['required', 'min:2', 'max:150'],
+            amount: ['required', 'numeric', 'min:0'],
             deal_date: ['required']
         });
         
