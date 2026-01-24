@@ -1313,6 +1313,7 @@ class WhatsAppService
             
             // Save the outgoing message to database with auto-reply marker
             Message::create([
+                'user_id' => $this->userId,
                 'contact_id' => $contact->id,
                 'phone_number' => $phoneNumber,
                 'message_id' => $response['message_id'] ?? null,
@@ -1364,6 +1365,7 @@ class WhatsAppService
             if ($response && $response['success']) {
                 // Save message to database
                 Message::create([
+                    'user_id' => $this->userId,
                     'contact_id' => $contact->id,
                     'phone_number' => $phoneNumber,
                     'message_id' => $response['message_id'] ?? null,
@@ -1942,6 +1944,7 @@ class WhatsAppService
                 // Save to message history
                 try {
                     \App\Models\Message::create([
+                        'user_id' => $this->userId,
                         'contact_id' => $contact->id,
                         'phone_number' => $contact->phone_number,
                         'message_id' => $response['message_id'] ?? null,
