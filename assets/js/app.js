@@ -16,6 +16,57 @@ let lastContactsLoadTime = 0;
 const CONTACTS_LOAD_DEBOUNCE = 8000; // 8 seconds minimum between loads
 
 /**
+ * Emoji to Color Mapping
+ */
+const EMOJI_COLOR_MAP = {
+    // Red reactions: ❤️, 🔥
+    '❤️': 'emoji-red',
+    '❤': 'emoji-red',
+    '🔥': 'emoji-red',
+    
+    // Yellow reactions: 😂, 😆, 😃, 🤣, 😅
+    '😂': 'emoji-yellow',
+    '😆': 'emoji-yellow',
+    '😃': 'emoji-yellow',
+    '🤣': 'emoji-yellow',
+    '😅': 'emoji-yellow',
+    
+    // Blue reactions: 👍, 👌, ✅
+    '👍': 'emoji-blue',
+    '👌': 'emoji-blue',
+    '✅': 'emoji-blue',
+    
+    // Pink reactions: 😍, 🥰, 💕, 💖
+    '😍': 'emoji-pink',
+    '🥰': 'emoji-pink',
+    '💕': 'emoji-pink',
+    '💖': 'emoji-pink',
+    
+    // Purple reactions: 😱, 😲, 🤯, 🤬
+    '😱': 'emoji-purple',
+    '😲': 'emoji-purple',
+    '🤯': 'emoji-purple',
+    '🤬': 'emoji-purple',
+    
+    // Green reactions: 👏, 🙌, ✨, 💚
+    '👏': 'emoji-green',
+    '🙌': 'emoji-green',
+    '✨': 'emoji-green',
+    '💚': 'emoji-green',
+    
+    // Orange reactions: 🎉, ⭐
+    '🎉': 'emoji-orange',
+    '⭐': 'emoji-orange'
+};
+
+/**
+ * Get emoji color class
+ */
+function getEmojiColorClass(emoji) {
+    return EMOJI_COLOR_MAP[emoji] || 'emoji-default';
+}
+
+/**
  * Show toast notification
  */
 function showToast(message, type = 'info') {
@@ -314,7 +365,17 @@ async function selectContact(contactId, name, phoneNumber) {
         </div>
     ` : '';
     
+    // Add back button for mobile screens
+    const backButtonHTML = window.innerWidth <= 1024 ? `
+        <button onclick="backToContacts()" class="btn-back-mobile" style="display: none; width: 36px; height: 36px; padding: 0; margin-right: 8px;" title="Back to contacts">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 12H5m7-7l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+        </button>
+    ` : '';
+    
     chatHeader.innerHTML = `
+        ${backButtonHTML}
         <div class="contact-avatar">${getInitials(name)}</div>
         <div class="chat-contact-info">
             <h3>${escapeHtml(name)}</h3>
@@ -340,6 +401,18 @@ async function selectContact(contactId, name, phoneNumber) {
     // Show message input
     document.getElementById('messageInputContainer').style.display = 'block';
     
+    // Mobile: Hide sidebar, show chat area
+    if (window.innerWidth <= 1024) {
+        const sidebar = document.querySelector('.sidebar');
+        const chatArea = document.querySelector('.chat-area');
+        if (sidebar) sidebar.classList.add('hidden');
+        if (chatArea) chatArea.classList.add('active');
+        
+        // Show back button
+        const backBtn = chatHeader.querySelector('.btn-back-mobile');
+        if (backBtn) backBtn.style.display = 'block';
+    }
+    
     // Load messages
     await loadMessages(contactId);
     
@@ -348,6 +421,20 @@ async function selectContact(contactId, name, phoneNumber) {
     
     // Reload contacts to update unread count
     loadContacts();
+}
+
+/**
+ * Go back to contacts list on mobile
+ */
+function backToContacts() {
+    currentContactId = null;
+    document.getElementById('messageInputContainer').style.display = 'none';
+    
+    const sidebar = document.querySelector('.sidebar');
+    const chatArea = document.querySelector('.chat-area');
+    
+    if (sidebar) sidebar.classList.remove('hidden');
+    if (chatArea) chatArea.classList.remove('active');
 }
 
 /**
@@ -784,7 +871,8 @@ function renderMessages(messagesList, options = {}) {
             <div class="message-reactions">
                 ${message.reactions.map(reaction => {
                     const reactionEmoji = reaction.message_body?.match(/Reaction:\s*(.)/)?.[1] || '❤️';
-                    return `<span class="reaction-pill" title="Reaction">${reactionEmoji}</span>`;
+                    const colorClass = getEmojiColorClass(reactionEmoji);
+                    return `<span class="reaction-pill ${colorClass}" title="Reaction">${reactionEmoji}</span>`;
                 }).join('')}
             </div>
         ` : '';
