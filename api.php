@@ -1541,7 +1541,7 @@ function handleMessageAction() {
                     'phone_number' => $contact->phone_number,
                     'message_type' => 'reaction',
                     'direction' => 'outgoing',
-                    'message_body' => $emoji,
+                    'message_body' => "Reaction: {$emoji}",  // Format: "Reaction: emoji" to match incoming reactions
                     'message_id' => $reactionResult['message_id'] ?? null,
                     'status' => 'sent',
                     'is_read' => true,
