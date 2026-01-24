@@ -568,9 +568,9 @@ function renderMessages(messagesList, options = {}) {
             return;
         }
         
-        // Add reactions to the message object if they exist
-        if (reactionsByParentId[msg.message_id]) {
-            msg.reactions = reactionsByParentId[msg.message_id];
+        // Add reactions to the message object if they exist (match by numeric ID, not message_id)
+        if (reactionsByParentId[msg.id]) {
+            msg.reactions = reactionsByParentId[msg.id];
         }
         
         processedMessages.push(msg);
