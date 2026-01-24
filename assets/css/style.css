@@ -701,6 +701,30 @@ body {
     border-color: rgba(255, 255, 255, 0.4);
 }
 
+/* Reaction Picker */
+.reaction-picker {
+    animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.reaction-option:hover {
+    transform: scale(1.3);
+}
+
+.reaction-option:active {
+    transform: scale(1.1);
+}
+
 /* Message Reactions - Inline with Message */
 .message-reactions {
     display: flex;

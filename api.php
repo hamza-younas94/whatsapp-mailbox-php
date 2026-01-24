@@ -1434,7 +1434,7 @@ function handleMessageAction() {
     $input = json_decode(file_get_contents('php://input'), true);
     
     $messageId = $input['message_id'] ?? null;
-    $actionType = $input['action_type'] ?? 'star';
+    $actionType = $input['action'] ?? $input['action_type'] ?? 'star';
     $forwardToContactId = $input['forward_to_contact_id'] ?? null;
     $archiveContactId = $input['archive_contact_id'] ?? null;
     
@@ -1505,6 +1505,37 @@ function handleMessageAction() {
             Contact::where('user_id', $user->id)->findOrFail($archiveContactId);
             Contact::where('id', $archiveContactId)->update(['is_archived' => false]);
             response_json(['success' => true, 'action' => 'unarchive', 'is_archived' => false]);
+            break;
+            
+        case 'react':
+            // Send reaction to a message
+            $emoji = $input['emoji'] ?? '❤️';
+            $contactId = $input['contact_id'] ?? null;
+            
+            if (!$contactId) {
+                response_error('contact_id is required for react action', 422);
+            }
+            
+            // MULTI-TENANT: verify contact belongs to user
+            $contact = Contact::where('user_id', $user->id)->findOrFail($contactId);
+            
+            // Send reaction via WhatsApp API
+            try {
+                $whatsappService = new WhatsAppService($user->id);  // MULTI-TENANT: pass user_id
+                $whatsappService->sendReaction($contact->phone_number, $messageId, $emoji);
+                
+                // Log the reaction action
+                MessageAction::create([
+                    'message_id' => $messageId,
+                    'user_id' => $user->id,
+                    'action_type' => 'react',
+                    'notes' => "Reaction: {$emoji}"
+                ]);
+                
+                response_json(['success' => true, 'action' => 'react', 'emoji' => $emoji]);
+            } catch (\Exception $e) {
+                response_error("Failed to send reaction: " . $e->getMessage(), 500);
+            }
             break;
             
         case 'delete':

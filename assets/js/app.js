@@ -657,7 +657,7 @@ function renderMessages(messagesList, options = {}) {
         }
         // For reactions - show emoji reply
         else if (message.message_type === 'reaction') {
-            const emoji = message.message_body?.match(/Reaction: (.)/)?.[1] || '❤️';
+            const emoji = message.message_body?.match(/Reaction:\s*([^\s]+)/)?.[1] || '❤️';
             content = `
                 <div class="message-text" style="display: inline-block; padding: 4px 8px; background: #fff9e6; border-radius: 20px; font-size: 20px;">
                     ${emoji}
@@ -854,23 +854,29 @@ function renderMessages(messagesList, options = {}) {
             minute: '2-digit'
         });
         
-        // Message actions (star, forward, etc.)
-        const messageActions = direction === 'incoming' ? `
+        // Message actions (react, star, forward, etc.)
+        const messageActions = `
             <div class="message-actions">
-                <button onclick="starMessage(${message.id}, this)" class="msg-action-btn" title="Star message">
-                    <i class="far fa-star"></i>
+                <button onclick="toggleReactionPicker(event, ${message.id})" class="msg-action-btn" title="Add reaction">
+                    😊
                 </button>
-                <button onclick="forwardMessage(${message.id})" class="msg-action-btn" title="Forward">
-                    <i class="fas fa-share"></i>
-                </button>
+                ${direction === 'incoming' ? `
+                    <button onclick="starMessage(${message.id}, this)" class="msg-action-btn" title="Star message">
+                        <i class="far fa-star"></i>
+                    </button>
+                    <button onclick="forwardMessage(${message.id})" class="msg-action-btn" title="Forward">
+                        <i class="fas fa-share"></i>
+                    </button>
+                ` : ''}
             </div>
-        ` : '';
+        `;
         
         // Build reactions display if they exist
         const reactionsDisplay = message.reactions && message.reactions.length > 0 ? `
             <div class="message-reactions">
                 ${message.reactions.map(reaction => {
-                    const reactionEmoji = reaction.message_body?.match(/Reaction:\s*(.)/)?.[1] || '❤️';
+                    // Extract emoji - handle full emoji sequences (can be multiple bytes)
+                    const reactionEmoji = reaction.message_body?.match(/Reaction:\s*([^\s]+)/)?.[1] || '❤️';
                     const colorClass = getEmojiColorClass(reactionEmoji);
                     return `<span class="reaction-pill ${colorClass}" title="Reaction">${reactionEmoji}</span>`;
                 }).join('')}
@@ -2841,5 +2847,118 @@ async function archiveContact(contactId) {
     } catch (error) {
         console.error('Error archiving contact:', error);
         showToast('Failed to archive conversation', 'error');
+    }
+}
+
+/**
+ * Toggle reaction picker for a message
+ */
+function toggleReactionPicker(event, messageId) {
+    event.stopPropagation();
+    
+    // Check if picker already open
+    const existing = document.querySelector('.reaction-picker');
+    if (existing) {
+        existing.remove();
+    }
+    
+    // Common WhatsApp reactions
+    const reactions = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🎉', '🔥'];
+    
+    const picker = document.createElement('div');
+    picker.className = 'reaction-picker';
+    picker.style.cssText = `
+        position: absolute;
+        bottom: 100%;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        padding: 8px 6px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        display: flex;
+        gap: 4px;
+        z-index: 1000;
+        margin-bottom: 8px;
+    `;
+    
+    reactions.forEach(emoji => {
+        const btn = document.createElement('button');
+        btn.textContent = emoji;
+        btn.className = 'reaction-option';
+        btn.style.cssText = `
+            border: none;
+            background: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        btn.onmouseover = () => btn.style.background = 'rgba(0,0,0,0.08)';
+        btn.onmouseout = () => btn.style.background = 'none';
+        btn.onclick = () => sendReaction(messageId, emoji);
+        picker.appendChild(btn);
+    });
+    
+    const button = event.target.closest('button');
+    button.style.position = 'relative';
+    button.parentElement.style.position = 'relative';
+    button.parentElement.appendChild(picker);
+    
+    // Close picker when clicking outside
+    document.addEventListener('click', function closePickerOnClick() {
+        const p = document.querySelector('.reaction-picker');
+        if (p) p.remove();
+        document.removeEventListener('click', closePickerOnClick);
+    });
+}
+
+/**
+ * Send reaction to a message
+ */
+async function sendReaction(messageId, emoji) {
+    if (!currentContactId) {
+        showToast('No contact selected', 'error');
+        return;
+    }
+    
+    try {
+        // Get the message details
+        const message = messages.find(m => m.id === messageId);
+        if (!message) {
+            showToast('Message not found', 'error');
+            return;
+        }
+        
+        // Send reaction via API
+        const response = await fetch('api.php/message-action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message_id: message.message_id,  // WhatsApp message ID
+                action: 'react',
+                emoji: emoji,
+                contact_id: currentContactId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            showToast(`Reacted with ${emoji}`, 'success');
+            // Close picker
+            const picker = document.querySelector('.reaction-picker');
+            if (picker) picker.remove();
+            // Optionally reload messages to show new reaction
+            loadMessages(currentContactId);
+        } else {
+            showToast(result.error || 'Failed to send reaction', 'error');
+        }
+    } catch (error) {
+        console.error('Error sending reaction:', error);
+        showToast('Failed to send reaction', 'error');
     }
 }

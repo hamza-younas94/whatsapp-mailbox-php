@@ -205,6 +205,77 @@ class WhatsAppService
     }
 
     /**
+     * Send a reaction to a message
+     */
+    public function sendReaction($to, $messageId, $emoji = '❤️')
+    {
+        // Format phone number
+        $to = $this->formatPhoneNumber($to);
+        
+        $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            'to' => $to,
+            'type' => 'reaction',
+            'reaction' => [
+                'message_id' => $messageId,
+                'emoji' => $emoji
+            ]
+        ];
+
+        try {
+            $response = $this->client->post($url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->accessToken,
+                    'Content-Type' => 'application/json'
+                ],
+                'json' => $payload
+            ]);
+
+            $result = json_decode($response->getBody()->getContents(), true);
+
+            if (isset($result['messages'][0]['id'])) {
+                logger("[REACTION] Reaction sent: {$emoji} to message {$messageId}");
+                return [
+                    'success' => true,
+                    'message_id' => $result['messages'][0]['id'],
+                    'emoji' => $emoji,
+                    'data' => $result
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error' => 'Failed to send reaction',
+                'data' => $result
+            ];
+
+        } catch (RequestException $e) {
+            $errorMessage = $e->getMessage();
+            $responseBody = null;
+            
+            if ($e->hasResponse()) {
+                $responseBody = $e->getResponse()->getBody()->getContents();
+                $errorData = json_decode($responseBody, true);
+                if (isset($errorData['error']['message'])) {
+                    $errorMessage = $errorData['error']['message'];
+                }
+            }
+            
+            logger('WhatsApp Reaction Error: ' . $errorMessage, 'error');
+            logger('WhatsApp Reaction Message ID: ' . $messageId, 'error');
+            
+            return [
+                'success' => false,
+                'error' => $errorMessage,
+                'response' => $responseBody
+            ];
+        }
+    }
+
+    /**
      * Get available message templates
      */
     public function getTemplates()
