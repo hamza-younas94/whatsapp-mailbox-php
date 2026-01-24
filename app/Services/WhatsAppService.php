@@ -723,9 +723,7 @@ class WhatsAppService
             case 'reaction':
                 $reactionParentId = $messageData['reaction']['message_id'] ?? '';
                 $emoji = $messageData['reaction']['emoji'] ?? '❤️';
-                // Store emoji both in message_body (for compatibility) and as JSON metadata
                 $messageBody = "Reaction: {$emoji}";
-                $metadata = json_encode(['emoji' => $emoji, 'parent_message_id' => $reactionParentId]);
                 
                 // Store the parent message ID so we can link reactions to original messages
                 $message = Message::updateOrCreate(
@@ -738,7 +736,6 @@ class WhatsAppService
                         'direction' => 'incoming',
                         'message_body' => $messageBody,
                         'parent_message_id' => $reactionParentId,  // Link to original message
-                        'metadata' => $metadata,  // Store emoji in metadata for reliable retrieval
                         'timestamp' => $timestamp,
                         'is_read' => false
                     ]

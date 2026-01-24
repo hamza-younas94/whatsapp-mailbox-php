@@ -675,20 +675,8 @@ function renderMessages(messagesList, options = {}) {
         }
         // For reactions - show emoji reply
         else if (message.message_type === 'reaction') {
-            let emoji = '❤️';
-            // Try to get emoji from metadata first (most reliable)
-            if (message.metadata) {
-                try {
-                    const meta = typeof message.metadata === 'string' ? JSON.parse(message.metadata) : message.metadata;
-                    emoji = meta.emoji || emoji;
-                } catch (e) {
-                    // Fall back to regex if metadata parsing fails
-                    emoji = message.message_body?.match(/Reaction:\s*(.+)$/)?.[1]?.trim() || emoji;
-                }
-            } else {
-                // Fall back to regex matching (handles emoji with multiple bytes correctly)
-                emoji = message.message_body?.match(/Reaction:\s*(.+)$/)?.[1]?.trim() || emoji;
-            }
+            // Extract emoji from "Reaction: emoji" format - match full emoji including multi-byte characters
+            const emoji = message.message_body?.match(/Reaction:\s*(.+)$/)?.[1]?.trim() || '❤️';
             content = `
                 <div class="message-text" style="display: inline-block; padding: 4px 8px; background: #fff9e6; border-radius: 20px; font-size: 20px;">
                     ${emoji}
@@ -906,18 +894,8 @@ function renderMessages(messagesList, options = {}) {
         const reactionsDisplay = message.reactions && message.reactions.length > 0 ? `
             <div class="message-reactions">
                 ${message.reactions.map(reaction => {
-                    // Extract emoji - try metadata first for reliability
-                    let reactionEmoji = '❤️';
-                    if (reaction.metadata) {
-                        try {
-                            const meta = typeof reaction.metadata === 'string' ? JSON.parse(reaction.metadata) : reaction.metadata;
-                            reactionEmoji = meta.emoji || reactionEmoji;
-                        } catch (e) {
-                            reactionEmoji = reaction.message_body?.match(/Reaction:\s*(.+)$/)?.[1]?.trim() || reactionEmoji;
-                        }
-                    } else {
-                        reactionEmoji = reaction.message_body?.match(/Reaction:\s*(.+)$/)?.[1]?.trim() || reactionEmoji;
-                    }
+                    // Extract emoji from "Reaction: emoji" format - match full emoji including multi-byte characters
+                    const reactionEmoji = reaction.message_body?.match(/Reaction:\s*(.+)$/)?.[1]?.trim() || '❤️';
                     const colorClass = getEmojiColorClass(reactionEmoji);
                     return `<span class="reaction-pill ${colorClass}" title="Reaction">${reactionEmoji}</span>`;
                 }).join('')}

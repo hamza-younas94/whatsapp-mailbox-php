@@ -311,7 +311,7 @@ function getMessages() {
             ->orderBy('id')
             ->get()
             ->map(function($msg) {
-                $msg->makeVisible(['parent_message_id', 'metadata']);
+                $msg->makeVisible(['parent_message_id']);
                 return $msg;
             });
         response_json($messages);
@@ -326,7 +326,7 @@ function getMessages() {
         ->reverse()
         ->values()
         ->map(function($msg) {
-            $msg->makeVisible(['parent_message_id', 'metadata']);
+            $msg->makeVisible(['parent_message_id']);
             return $msg;
         });
     

@@ -23,8 +23,7 @@ class Message extends Model
         'status',
         'is_read',
         'timestamp',
-        'parent_message_id',
-        'metadata'
+        'parent_message_id'
     ];
 
     protected $casts = [
