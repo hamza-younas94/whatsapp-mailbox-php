@@ -9,6 +9,7 @@ require_once __DIR__ . '/auth.php';
 use App\Models\Tag;
 use App\Models\Contact;
 use App\Middleware\TenantMiddleware;
+use App\Validation;
 
 // Check if user is authenticated
 if (!isAuthenticated()) {
@@ -61,28 +62,29 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         switch ($action) {
             case 'create':
             case 'update':
-                // Validate input
-                $validation = validate([
-                    'name' => sanitize($_POST['name'] ?? ''),
-                    'description' => sanitize($_POST['description'] ?? '')
-                ], [
+                // Validate input using Validation class
+                $input = [
+                    'name' => $_POST['name'] ?? '',
+                    'description' => $_POST['description'] ?? ''
+                ];
+                $validator = new Validation($input);
+                if (!$validator->validate([
                     'name' => 'required|min:2|max:50',
                     'description' => 'max:255'
-                ]);
-                
-                if ($validation !== true) {
+                ])) {
+                    http_response_code(422);
                     echo json_encode([
                         'success' => false,
                         'error' => 'Validation failed',
-                        'errors' => $validation
+                        'errors' => $validator->errors()
                     ]);
                     exit;
                 }
                 
                 $data = [
-                    'name' => sanitize($_POST['name']),
-                    'color' => sanitize($_POST['color'] ?? '#25D366'),
-                    'description' => !empty($_POST['description']) ? sanitize($_POST['description']) : null
+                    'name' => Validation::sanitize($_POST['name']),
+                    'color' => Validation::sanitize($_POST['color'] ?? '#25D366'),
+                    'description' => !empty($_POST['description']) ? Validation::sanitize($_POST['description']) : null
                 ];
                 
                 if ($action === 'create') {
@@ -230,7 +232,7 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="tagForm">
+                <form id="tagForm" data-validate='{"name":"required|min:2|max:50","description":"max:255"}'>
                     <input type="hidden" id="tag_id" name="id">
                     
                     <div class="mb-3">

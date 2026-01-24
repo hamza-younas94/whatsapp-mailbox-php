@@ -1528,17 +1528,45 @@ function handleMessageAction() {
             // Send reaction via WhatsApp API
             try {
                 $whatsappService = new WhatsAppService($user->id);  // MULTI-TENANT: pass user_id
-                $whatsappService->sendReaction($contact->phone_number, $message->message_id, $emoji);
+                $reactionResult = $whatsappService->sendReaction($contact->phone_number, $message->message_id, $emoji);
+
+                if (empty($reactionResult['success'])) {
+                    throw new \Exception($reactionResult['error'] ?? 'Failed to send reaction');
+                }
                 
-                // Log the reaction action using message ID (numeric primary key)
-                MessageAction::create([
-                    'message_id' => $message->id,
+                // Persist reaction as a message so it survives refresh and shows in UI
+                $reactionMessage = Message::create([
                     'user_id' => $user->id,
-                    'action_type' => 'react',
-                    'notes' => "Reaction: {$emoji}"
+                    'contact_id' => $contact->id,
+                    'phone_number' => $contact->phone_number,
+                    'message_type' => 'reaction',
+                    'direction' => 'outgoing',
+                    'message_body' => $emoji,
+                    'message_id' => $reactionResult['message_id'] ?? null,
+                    'status' => 'sent',
+                    'is_read' => true,
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'parent_message_id' => $message->id
                 ]);
                 
-                response_json(['success' => true, 'action' => 'react', 'emoji' => $emoji]);
+                // Log/update the reaction action using message ID (numeric primary key)
+                MessageAction::updateOrCreate(
+                    [
+                        'message_id' => $message->id,
+                        'user_id' => $user->id,
+                        'action_type' => 'react'
+                    ],
+                    [
+                        'notes' => "Reaction: {$emoji}"
+                    ]
+                );
+                
+                response_json([
+                    'success' => true,
+                    'action' => 'react',
+                    'emoji' => $emoji,
+                    'reaction_message_id' => $reactionMessage->id
+                ]);
             } catch (\Exception $e) {
                 response_error("Failed to send reaction: " . $e->getMessage(), 500);
             }

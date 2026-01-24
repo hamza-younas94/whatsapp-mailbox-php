@@ -7,6 +7,7 @@ require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/auth.php';
 
 use App\Models\User;
+use App\Validation;
 
 // Check if user is authenticated
 $user = getCurrentUser();
@@ -32,42 +33,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         switch ($action) {
             case 'create':
             case 'update':
-                // Validate input
-                $validation = validate([
-                    'username' => sanitize($_POST['username'] ?? ''),
-                    'email' => sanitize($_POST['email'] ?? ''),
-                    'full_name' => sanitize($_POST['full_name'] ?? ''),
+                // Validate input using Validation class
+                $input = [
+                    'username' => $_POST['username'] ?? '',
+                    'email' => $_POST['email'] ?? '',
+                    'full_name' => $_POST['full_name'] ?? '',
                     'password' => $_POST['password'] ?? '',
-                    'role' => sanitize($_POST['role'] ?? 'agent')
-                ], [
+                    'role' => $_POST['role'] ?? 'agent'
+                ];
+                $validator = new Validation($input);
+                if (!$validator->validate([
                     'username' => 'required|min:3|max:50',
                     'email' => 'required|email|max:255',
                     'full_name' => 'required|min:2|max:100',
                     'password' => ($action === 'create' ? 'required|min:6' : 'min:6'),
                     'role' => 'required|in:admin,agent,viewer'
-                ]);
-                
-                if ($validation !== true) {
+                ])) {
+                    http_response_code(422);
                     echo json_encode([
                         'success' => false,
                         'error' => 'Validation failed',
-                        'errors' => $validation
+                        'errors' => $validator->errors()
                     ]);
                     exit;
                 }
                 
                 $data = [
-                    'username' => sanitize($_POST['username']),
-                    'email' => sanitize($_POST['email']),
-                    'full_name' => sanitize($_POST['full_name']),
-                    'role' => sanitize($_POST['role']),
+                    'username' => Validation::sanitize($_POST['username']),
+                    'email' => Validation::sanitize($_POST['email']),
+                    'full_name' => Validation::sanitize($_POST['full_name']),
+                    'role' => Validation::sanitize($_POST['role']),
                     'is_active' => isset($_POST['is_active']) && $_POST['is_active'] == '1',
-                    'phone' => sanitize($_POST['phone'] ?? '')
+                    'phone' => Validation::sanitize($_POST['phone'] ?? '')
                 ];
                 
                 // Only update password if provided
                 if (!empty($_POST['password'])) {
                     $data['password'] = $_POST['password']; // Will be hashed by model
+                }
+                if (empty($data['password'])) {
+                    unset($data['password']); // Don't update password if empty
                 }
                 
                 if ($action === 'create') {
@@ -215,16 +220,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
             case 'reset_password':
                 $userToReset = User::findOrFail($_POST['id']);
                 $newPassword = $_POST['new_password'] ?? '';
-                
-                $validation = validate(['new_password' => $newPassword], [
+                $passwordValidator = new Validation(['new_password' => $newPassword]);
+                if (!$passwordValidator->validate([
                     'new_password' => 'required|min:6'
-                ]);
-                
-                if ($validation !== true) {
+                ])) {
+                    http_response_code(422);
                     echo json_encode([
                         'success' => false,
                         'error' => 'Validation failed',
-                        'errors' => $validation
+                        'errors' => $passwordValidator->errors()
                     ]);
                     exit;
                 }
@@ -346,7 +350,7 @@ require_once __DIR__ . '/includes/header.php';
             <button onclick="closeUserModal()" class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
-            <form id="userForm">
+            <form id="userForm" data-validate='{"username":"required|min:3|max:50","full_name":"required|min:2|max:100","email":"required|email|max:255","password":"min:6","role":"required|in:admin,agent,viewer","subscription_plan":"in:free,starter,pro,enterprise"}'>
                 <input type="hidden" id="userId" name="id">
                 
                 <div class="form-group">

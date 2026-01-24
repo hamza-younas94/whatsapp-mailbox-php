@@ -8,6 +8,7 @@ require_once __DIR__ . '/auth.php';
 
 use App\Models\Segment;
 use App\Middleware\TenantMiddleware;
+use App\Validation;
 
 $user = getCurrentUser();
 if (!$user) {
@@ -28,22 +29,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         switch ($action) {
             case 'create':
             case 'update':
-                // Validate input
-                $validation = validate([
-                    'name' => sanitize($_POST['name'] ?? ''),
-                    'description' => sanitize($_POST['description'] ?? ''),
+                // Validate input using Validation class
+                $input = [
+                    'name' => $_POST['name'] ?? '',
+                    'description' => $_POST['description'] ?? '',
                     'conditions' => $_POST['conditions'] ?? '{}'
-                ], [
+                ];
+                $validator = new Validation($input);
+                if (!$validator->validate([
                     'name' => 'required|min:2|max:100',
                     'description' => 'max:500',
                     'conditions' => 'required'
-                ]);
-                
-                if ($validation !== true) {
+                ])) {
+                    http_response_code(422);
                     echo json_encode([
                         'success' => false,
                         'error' => 'Validation failed',
-                        'errors' => $validation
+                        'errors' => $validator->errors()
                     ]);
                     exit;
                 }
@@ -60,8 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 }
                 
                 $data = [
-                    'name' => sanitize($_POST['name']),
-                    'description' => !empty($_POST['description']) ? sanitize($_POST['description']) : null,
+                    'name' => Validation::sanitize($_POST['name']),
+                    'description' => !empty($_POST['description']) ? Validation::sanitize($_POST['description']) : null,
                     'conditions' => $conditions,
                     'is_dynamic' => isset($_POST['is_dynamic']) && $_POST['is_dynamic'] == '1'
                 ];
@@ -161,7 +163,7 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="segmentForm" class="needs-validation" novalidate>
+                <form id="segmentForm" class="needs-validation" novalidate data-validate='{"name":"required|min:2|max:100","description":"max:500","conditions":"required"}'>
                     <input type="hidden" id="segment_id" name="id">
                     
                     <div class="mb-3">
