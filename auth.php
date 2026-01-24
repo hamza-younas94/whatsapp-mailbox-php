@@ -150,28 +150,31 @@ function logout() {
     session_destroy();
 }
 
-/**
- * Get current user
- */
-function getCurrentUser() {
-    if (!isAuthenticated()) {
-        return null;
-    }
-    
-    try {
-        $userId = $_SESSION['user_id'];
-        
-        // Try to get from User model first (new system)
-        $user = \App\Models\User::find($userId);
-        if ($user) {
-            return $user;
+// Avoid redeclaring when helpers.php already defines getCurrentUser()
+if (!function_exists('getCurrentUser')) {
+    /**
+     * Get current user
+     */
+    function getCurrentUser() {
+        if (!isAuthenticated()) {
+            return null;
         }
         
-        // No user found
-        return null;
-    } catch (\Exception $e) {
-        logger('Get current user error: ' . $e->getMessage(), 'error');
-        return null;
+        try {
+            $userId = $_SESSION['user_id'];
+            
+            // Try to get from User model first (new system)
+            $user = \App\Models\User::find($userId);
+            if ($user) {
+                return $user;
+            }
+            
+            // No user found
+            return null;
+        } catch (\Exception $e) {
+            logger('Get current user error: ' . $e->getMessage(), 'error');
+            return null;
+        }
     }
 }
 
