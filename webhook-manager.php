@@ -8,6 +8,7 @@ require_once __DIR__ . '/auth.php';
 
 use App\Models\Webhook;
 use App\Services\Encryption;
+use App\Validation;
 
 $user = getCurrentUser();
 if (!$user) {
@@ -25,22 +26,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         switch ($action) {
             case 'create':
             case 'update':
-                // Validate input
-                $validation = validate([
-                    'name' => sanitize($_POST['name'] ?? ''),
-                    'url' => sanitize($_POST['url'] ?? ''),
+                // Validate input using Validation class
+                $input = [
+                    'name' => $_POST['name'] ?? '',
+                    'url' => $_POST['url'] ?? '',
                     'events' => $_POST['events'] ?? '[]'
-                ], [
+                ];
+                $validator = new Validation($input);
+                if (!$validator->validate([
                     'name' => 'required|min:2|max:150',
                     'url' => 'required|url',
                     'events' => 'required'
-                ]);
-                
-                if ($validation !== true) {
+                ])) {
+                    http_response_code(422);
                     echo json_encode([
                         'success' => false,
                         'error' => 'Validation failed',
-                        'errors' => $validation
+                        'errors' => $validator->errors()
                     ]);
                     exit;
                 }
@@ -61,8 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 $secret = Encryption::encrypt($secretPlain);
                 
                 $data = [
-                    'name' => sanitize($_POST['name']),
-                    'url' => sanitize($_POST['url']),
+                    'name' => Validation::sanitize($_POST['name']),
+                    'url' => Validation::sanitize($_POST['url']),
                     'events' => $events,
                     'secret' => $secret,
                     'is_active' => isset($_POST['is_active']) && $_POST['is_active'] == '1'
@@ -275,7 +277,7 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close" onclick="closeWebhookModal()"></button>
             </div>
             <div class="modal-body">
-                <form id="webhookForm">
+                <form id="webhookForm" data-validate='{"name":"required|min:2|max:150","url":"required|url","secret":"max:255"}'>
                     <input type="hidden" id="webhook_id" name="id">
                     
                     <div class="mb-3">
@@ -345,7 +347,7 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close" onclick="closeTestWebhookModal()"></button>
             </div>
             <div class="modal-body">
-                <form id="testWebhookForm">
+                <form id="testWebhookForm" data-validate='{"test_event":"required","test_payload":"required"}'>
                     <input type="hidden" id="test_webhook_id" name="webhook_id">
                     
                     <div class="mb-3">

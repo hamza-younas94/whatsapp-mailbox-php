@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\UserApiCredential;
 use App\Models\UserSubscription;
 use App\Models\UserSettings;
+use App\Validation;
 
 $error = null;
 $success = null;
@@ -23,15 +24,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirmPassword = $_POST['confirm_password'] ?? '';
     $businessName = trim($_POST['business_name'] ?? '');
     
-    // Validation
-    if (empty($username) || empty($email) || empty($password) || empty($businessName)) {
-        $error = 'All fields are required';
-    } elseif ($password !== $confirmPassword) {
-        $error = 'Passwords do not match';
-    } elseif (strlen($password) < 8) {
-        $error = 'Password must be at least 8 characters';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Invalid email address';
+    // Validation using Validation class
+    $validator = new Validation([
+        'username' => $username,
+        'email' => $email,
+        'password' => $password,
+        'confirm_password' => $confirmPassword,
+        'business_name' => $businessName
+    ]);
+    
+    if (!$validator->validate([
+        'username' => 'required|min:3|max:50',
+        'email' => 'required|email|max:255',
+        'password' => 'required|min:8',
+        'confirm_password' => 'required|same:password',
+        'business_name' => 'required|min:2|max:150'
+    ])) {
+        $errors = $validator->errors();
+        $error = reset($errors)[0] ?? 'Validation failed';
     } else {
         // Check if username or email already exists
         $existingUser = User::where('username', $username)
@@ -204,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="mb-0 mt-2"><small>Redirecting to login...</small></p>
             </div>
         <?php else: ?>
-            <form method="POST" action="">
+            <form method="POST" action="" data-validate='{"username":"required|min:3|max:50","email":"required|email|max:255","password":"required|min:8","confirm_password":"required|same:password","business_name":"required|min:2|max:150"}'>
                 <div class="mb-3">
                     <label for="username" class="form-label">Username</label>
                     <input type="text" class="form-control" id="username" name="username" 
