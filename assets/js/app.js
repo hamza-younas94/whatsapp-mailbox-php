@@ -568,12 +568,11 @@ function renderMessages(messagesList, options = {}) {
     // Group reactions with their parent messages
     const processedMessages = [];
     const reactionsByParentId = {};
-    const reactionsByParentMessageId = {};
     
-    // First pass: identify all reactions and group them by BOTH parent_message_id (WhatsApp ID) and database ID
+    // First pass: identify all reactions and group them by parent_message_id (WhatsApp message ID)
     messagesList.forEach(msg => {
         if (msg.message_type === 'reaction' && msg.parent_message_id) {
-            // Group by WhatsApp message_id (string)
+            // Group by WhatsApp message_id (parent_message_id field stores the WhatsApp ID)
             if (!reactionsByParentId[msg.parent_message_id]) {
                 reactionsByParentId[msg.parent_message_id] = [];
             }
@@ -581,16 +580,17 @@ function renderMessages(messagesList, options = {}) {
         }
     });
     
-    // Second pass: build processed message list excluding standalone reactions
+    // Second pass: build processed message list excluding all reaction messages
+    // Reactions will ONLY be shown attached to their parent messages
     messagesList.forEach(msg => {
-        // Skip reaction messages - they'll be attached to parents
-        if (msg.message_type === 'reaction' && msg.parent_message_id) {
+        // Skip reaction messages completely - they'll be attached to parents, never shown standalone
+        if (msg.message_type === 'reaction') {
             return;
         }
         
         // Add reactions to the message object if they exist
-        // Match by WhatsApp message_id first (for incoming messages)
-        if (reactionsByParentId[msg.message_id]) {
+        // Match by WhatsApp message_id field
+        if (msg.message_id && reactionsByParentId[msg.message_id]) {
             msg.reactions = reactionsByParentId[msg.message_id];
         }
         
