@@ -442,7 +442,15 @@ function backToContacts() {
  */
 async function loadMessages(contactId) {
     try {
-        const response = await fetch(`api.php/messages?contact_id=${contactId}`);
+        // Add timestamp to prevent browser caching
+        const cacheBuster = Date.now();
+        const response = await fetch(`api.php/messages?contact_id=${contactId}&_=${cacheBuster}`, {
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
         
         if (!response.ok) {
             throw new Error('Failed to load messages');
@@ -467,13 +475,21 @@ async function pollNewMessages() {
     }
     
     try {
+        // Add cache buster to prevent browser caching
+        const cacheBuster = Date.now();
         // Fetch recent messages (last 50) to get status updates for existing messages
         // If we have lastMessageId, use after_id for efficiency. Otherwise fetch recent 50 for status updates
         const url = lastMessageId 
-            ? `api.php/messages?contact_id=${currentContactId}&after_id=${lastMessageId}`
-            : `api.php/messages?contact_id=${currentContactId}&limit=50`;
+            ? `api.php/messages?contact_id=${currentContactId}&after_id=${lastMessageId}&_=${cacheBuster}`
+            : `api.php/messages?contact_id=${currentContactId}&limit=50&_=${cacheBuster}`;
         
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
         if (!response.ok) {
             return;
         }
@@ -482,7 +498,9 @@ async function pollNewMessages() {
         if (!Array.isArray(allMessages) || allMessages.length === 0) {
             // If we were polling for status updates and got no new messages, fetch recent to check statuses
             if (lastMessageId && messages.length > 0) {
-                const statusCheckResponse = await fetch(`api.php/messages?contact_id=${currentContactId}&limit=20`);
+                const statusCheckResponse = await fetch(`api.php/messages?contact_id=${currentContactId}&limit=20&_=${Date.now()}`, {
+                    cache: 'no-cache'
+                });
                 if (statusCheckResponse.ok) {
                     const recentMessages = await statusCheckResponse.json();
                     updateMessageStatuses(recentMessages);
