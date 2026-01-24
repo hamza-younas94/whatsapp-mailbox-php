@@ -98,38 +98,44 @@ if ($type === 'drip' || $type === 'all') {
 
 if ($type === 'webhook' || $type === 'all') {
     // Webhook deliveries (MULTI-TENANT: filter by user)
-    $webhookQuery = Capsule::table('webhook_deliveries as wd')
-        ->join('webhooks as wh', 'wd.webhook_id', '=', 'wh.id')
-        ->where('wh.user_id', $user->id)
-        ->whereBetween('wd.attempted_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-        ->select('wd.*', 'wh.name as webhook_name', 'wh.url as webhook_url');
-    
-    if ($resourceId) {
-        $webhookQuery->where('wh.id', $resourceId);
-    }
-    if ($status !== 'all') {
-        // Map status: success=delivered, failed=failed
-        if ($status === 'success') {
-            $webhookQuery->where('wd.status_code', '>=', 200)->where('wd.status_code', '<', 300);
-        } else {
-            $webhookQuery->where('wd.status_code', '>=', 400);
+    // Check if table exists first
+    try {
+        $webhookQuery = Capsule::table('webhook_deliveries as wd')
+            ->join('webhooks as wh', 'wd.webhook_id', '=', 'wh.id')
+            ->where('wh.user_id', $user->id)
+            ->whereBetween('wd.attempted_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->select('wd.*', 'wh.name as webhook_name', 'wh.url as webhook_url');
+        
+        if ($resourceId) {
+            $webhookQuery->where('wh.id', $resourceId);
         }
+        if ($status !== 'all') {
+            // Map status: success=delivered, failed=failed
+            if ($status === 'success') {
+                $webhookQuery->where('wd.status_code', '>=', 200)->where('wd.status_code', '<', 300);
+            } else {
+                $webhookQuery->where('wd.status_code', '>=', 400);
+            }
+        }
+        
+        $webhookLogs = $webhookQuery->orderBy('wd.attempted_at', 'desc')->limit(1000)->get();
+        $logs = array_merge($logs, array_map(function($log) {
+            return [
+                'type' => 'webhook',
+                'resource_name' => $log->webhook_name ?? 'Unknown',
+                'resource_id' => $log->webhook_id ?? null,
+                'timestamp' => $log->attempted_at ?? null,
+                'status' => ($log->status_code ?? 0) >= 200 && ($log->status_code ?? 0) < 300 ? 'success' : 'failed',
+                'data' => ['status_code' => $log->status_code ?? null, 'response_body' => substr($log->response_body ?? '', 0, 100), 'retry_count' => $log->retry_count ?? 0],
+                'contact_id' => null,
+                'log' => $log
+            ];
+        }, (array)$webhookLogs));
+        $typeLabel = 'Webhook Deliveries';
+    } catch (\Exception $e) {
+        // Webhook table doesn't exist, skip
+        error_log('Webhook deliveries table check failed: ' . $e->getMessage());
     }
-    
-    $webhookLogs = $webhookQuery->orderBy('wd.attempted_at', 'desc')->limit(1000)->get();
-    $logs = array_merge($logs, array_map(function($log) {
-        return [
-            'type' => 'webhook',
-            'resource_name' => $log->webhook_name,
-            'resource_id' => $log->webhook_id,
-            'timestamp' => $log->attempted_at,
-            'status' => $log->status_code >= 200 && $log->status_code < 300 ? 'success' : 'failed',
-            'data' => ['status_code' => $log->status_code, 'response_body' => substr($log->response_body ?? '', 0, 100), 'retry_count' => $log->retry_count],
-            'contact_id' => null,
-            'log' => $log
-        ];
-    }, (array)$webhookLogs));
-    $typeLabel = 'Webhook Deliveries';
 }
 
 // Sort by timestamp descending

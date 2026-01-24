@@ -208,3 +208,53 @@ if (!function_exists('render')) {
         echo view($template, $data);
     }
 }
+
+if (!function_exists('getCurrentUser')) {
+    /**
+     * Get the currently authenticated user
+     */
+    function getCurrentUser()
+    {
+        if (!isset($_SESSION['user_id'])) {
+            return null;
+        }
+        
+        try {
+            $user = \App\Models\User::find($_SESSION['user_id']);
+            return $user;
+        } catch (\Exception $e) {
+            error_log('Error getting current user: ' . $e->getMessage());
+            return null;
+        }
+    }
+}
+
+if (!function_exists('auth')) {
+    /**
+     * Authentication helper - returns an auth guard object
+     */
+    function auth()
+    {
+        return new class {
+            public function check()
+            {
+                return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+            }
+            
+            public function user()
+            {
+                return getCurrentUser();
+            }
+            
+            public function id()
+            {
+                return $_SESSION['user_id'] ?? null;
+            }
+            
+            public function guest()
+            {
+                return !$this->check();
+            }
+        };
+    }
+}
