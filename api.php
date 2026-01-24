@@ -1546,7 +1546,7 @@ function handleMessageAction() {
                     'status' => 'sent',
                     'is_read' => true,
                     'timestamp' => date('Y-m-d H:i:s'),
-                    'parent_message_id' => $message->id
+                    'parent_message_id' => $message->message_id  // Use WhatsApp message ID for consistency with incoming reactions
                 ]);
                 
                 // Log/update the reaction action using message ID (numeric primary key)
