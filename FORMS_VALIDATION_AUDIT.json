@@ -1,0 +1,413 @@
+{
+  "forms": [
+    {
+      "formId": "quickReplyForm",
+      "file": "quick-replies.php",
+      "handler": "AJAX POST (quick-replies.php action=create/update)",
+      "fields": [
+        "shortcut",
+        "title",
+        "message",
+        "is_active",
+        "priority",
+        "shortcuts",
+        "use_regex",
+        "business_hours_start",
+        "business_hours_end",
+        "timezone",
+        "outside_hours_message",
+        "conditions",
+        "delay_seconds",
+        "media_url",
+        "media_type",
+        "media_filename",
+        "excluded_contact_ids",
+        "included_contact_ids",
+        "sequence_messages",
+        "sequence_delay_seconds",
+        "allow_groups"
+      ],
+      "validationNeeded": [
+        "shortcut",
+        "title",
+        "message",
+        "priority",
+        "delay_seconds",
+        "business_hours_start",
+        "business_hours_end",
+        "timezone",
+        "media_url",
+        "media_type",
+        "conditions",
+        "excluded_contact_ids",
+        "included_contact_ids"
+      ],
+      "currentValidation": "YES - validate() function",
+      "validationRules": {
+        "shortcut": "required|min:1|max:50",
+        "title": "required|min:2|max:100",
+        "message": "required|min:1|max:4096"
+      }
+    },
+    {
+      "formId": "workflowForm",
+      "file": "workflows.php",
+      "handler": "AJAX POST (workflows.php action=create/update)",
+      "fields": [
+        "name",
+        "trigger_type",
+        "trigger_conditions",
+        "actions",
+        "description",
+        "is_active"
+      ],
+      "validationNeeded": [
+        "name",
+        "trigger_type",
+        "trigger_conditions",
+        "actions",
+        "description"
+      ],
+      "currentValidation": "YES - validate() function + JSON validation",
+      "validationRules": {
+        "name": "required|min:2|max:150",
+        "trigger_type": "required",
+        "trigger_conditions": "required",
+        "actions": "required (at least one action)"
+      }
+    },
+    {
+      "formId": "campaignForm",
+      "file": "drip-campaigns.php",
+      "handler": "AJAX POST (drip-campaigns.php action=create/update)",
+      "fields": [
+        "name",
+        "description",
+        "trigger_conditions",
+        "steps",
+        "is_active"
+      ],
+      "validationNeeded": [
+        "name",
+        "description",
+        "trigger_conditions",
+        "steps"
+      ],
+      "currentValidation": "YES - validate() function + JSON validation",
+      "validationRules": {
+        "name": "required|min:2|max:150",
+        "trigger_conditions": "required",
+        "steps": "required (at least one step)"
+      }
+    },
+    {
+      "formId": "broadcastForm",
+      "file": "broadcasts.php",
+      "handler": "AJAX POST (broadcasts.php action=create/update)",
+      "fields": [
+        "name",
+        "recipient_filter",
+        "message",
+        "message_type",
+        "template_name",
+        "scheduled_at"
+      ],
+      "validationNeeded": [
+        "name",
+        "recipient_filter",
+        "message",
+        "message_type",
+        "template_name",
+        "scheduled_at"
+      ],
+      "currentValidation": "YES - validate() function + recipient check",
+      "validationRules": {
+        "name": "required|min:2|max:100",
+        "recipient_filter": "required",
+        "message": "required|min:1|max:4096"
+      }
+    },
+    {
+      "formId": "scheduleForm",
+      "file": "scheduled-messages.php",
+      "handler": "AJAX POST (scheduled-messages.php action=create)",
+      "fields": [
+        "contact_id",
+        "message",
+        "scheduled_at"
+      ],
+      "validationNeeded": [
+        "contact_id",
+        "message",
+        "scheduled_at"
+      ],
+      "currentValidation": "YES - validate() function + date/contact check",
+      "validationRules": {
+        "contact_id": "required",
+        "message": "required|min:1|max:4096",
+        "scheduled_at": "required (must be future date)"
+      }
+    },
+    {
+      "formId": "templateForm",
+      "file": "message-templates.php",
+      "handler": "AJAX POST (message-templates.php action=create/update)",
+      "fields": [
+        "name",
+        "whatsapp_template_name",
+        "language_code",
+        "content",
+        "category",
+        "status",
+        "variables"
+      ],
+      "validationNeeded": [
+        "name",
+        "whatsapp_template_name",
+        "language_code",
+        "content",
+        "category",
+        "status",
+        "variables"
+      ],
+      "currentValidation": "YES - validate() function + regex parsing",
+      "validationRules": {
+        "name": "required|min:2|max:150",
+        "whatsapp_template_name": "required|min:1|max:100",
+        "language_code": "required|max:10",
+        "content": "required|min:1"
+      }
+    },
+    {
+      "formId": "ruleModal",
+      "file": "templates/auto_tag_rules.html.twig",
+      "handler": "AJAX POST (auto-tag-rules.php action=create/update)",
+      "fields": [
+        "ruleName",
+        "ruleTagId",
+        "ruleKeywords",
+        "ruleMatchType",
+        "rulePriority",
+        "ruleEnabled"
+      ],
+      "validationNeeded": [
+        "ruleName",
+        "ruleTagId",
+        "ruleKeywords",
+        "ruleMatchType",
+        "rulePriority"
+      ],
+      "currentValidation": "NO - needs implementation",
+      "validationRules": {
+        "ruleName": "required|min:2|max:100",
+        "ruleTagId": "required",
+        "ruleKeywords": "required|min:1",
+        "ruleMatchType": "required|in:any,all,exact",
+        "rulePriority": "required|integer|min:1|max:100"
+      }
+    },
+    {
+      "formId": "segmentForm",
+      "file": "segments.php",
+      "handler": "AJAX POST (segments.php action=create/update)",
+      "fields": [
+        "name",
+        "description",
+        "conditions",
+        "is_dynamic"
+      ],
+      "validationNeeded": [
+        "name",
+        "description",
+        "conditions",
+        "is_dynamic"
+      ],
+      "currentValidation": "YES - validate() function + JSON validation",
+      "validationRules": {
+        "name": "required|min:2|max:100",
+        "description": "max:500",
+        "conditions": "required (valid JSON)"
+      }
+    },
+    {
+      "formId": "tagForm",
+      "file": "tags.php",
+      "handler": "AJAX POST (tags.php action=create/update)",
+      "fields": [
+        "name",
+        "color",
+        "description"
+      ],
+      "validationNeeded": [
+        "name",
+        "color",
+        "description"
+      ],
+      "currentValidation": "YES - validate() function",
+      "validationRules": {
+        "name": "required|min:2|max:50",
+        "description": "max:255"
+      }
+    },
+    {
+      "formId": "userForm",
+      "file": "users.php",
+      "handler": "AJAX POST (users.php action=create/update)",
+      "fields": [
+        "username",
+        "email",
+        "full_name",
+        "password",
+        "role",
+        "is_active",
+        "phone",
+        "subscription_plan"
+      ],
+      "validationNeeded": [
+        "username",
+        "email",
+        "full_name",
+        "password",
+        "role",
+        "phone",
+        "subscription_plan"
+      ],
+      "currentValidation": "YES - validate() function + duplicate checks",
+      "validationRules": {
+        "username": "required|min:3|max:50",
+        "email": "required|email|max:255",
+        "full_name": "required|min:2|max:100",
+        "password": "required (create)|min:6 (update)",
+        "role": "required|in:admin,agent,viewer"
+      }
+    },
+    {
+      "formId": "webhookForm",
+      "file": "webhook-manager.php",
+      "handler": "AJAX POST (webhook-manager.php action=create/update)",
+      "fields": [
+        "name",
+        "url",
+        "events",
+        "secret",
+        "is_active"
+      ],
+      "validationNeeded": [
+        "name",
+        "url",
+        "events",
+        "secret",
+        "is_active"
+      ],
+      "currentValidation": "YES - validate() function + JSON validation",
+      "validationRules": {
+        "name": "required|min:2|max:150",
+        "url": "required|url",
+        "events": "required (at least one event)"
+      }
+    },
+    {
+      "formId": "loginForm",
+      "file": "templates/login.html.twig",
+      "handler": "POST (login.php)",
+      "fields": [
+        "username",
+        "password"
+      ],
+      "validationNeeded": [
+        "username",
+        "password"
+      ],
+      "currentValidation": "BASIC - login() function check only",
+      "validationRules": {
+        "username": "required|not_empty",
+        "password": "required|not_empty"
+      }
+    },
+    {
+      "formId": "registerForm",
+      "file": "register.php",
+      "handler": "POST (register.php)",
+      "fields": [
+        "username",
+        "email",
+        "password",
+        "confirm_password",
+        "business_name"
+      ],
+      "validationNeeded": [
+        "username",
+        "email",
+        "password",
+        "confirm_password",
+        "business_name"
+      ],
+      "currentValidation": "YES - basic validation (length, email format, duplicates)",
+      "validationRules": {
+        "username": "required|not_empty",
+        "email": "required|email_format",
+        "password": "required|min:8",
+        "confirm_password": "required|match:password",
+        "business_name": "required|not_empty"
+      }
+    },
+    {
+      "formId": "settingsForm",
+      "file": "templates/user-settings.html.twig",
+      "handler": "POST (user-settings.php)",
+      "fields": [
+        "business_name",
+        "phone_number",
+        "whatsapp_access_token",
+        "whatsapp_phone_number_id",
+        "whatsapp_api_version"
+      ],
+      "validationNeeded": [
+        "business_name",
+        "phone_number",
+        "whatsapp_access_token",
+        "whatsapp_phone_number_id",
+        "whatsapp_api_version"
+      ],
+      "currentValidation": "MINIMAL - basic assignment only",
+      "validationRules": {
+        "business_name": "required|min:2|max:100",
+        "phone_number": "required|valid_phone_number",
+        "whatsapp_access_token": "required|min:50",
+        "whatsapp_phone_number_id": "required|numeric",
+        "whatsapp_api_version": "required|in:v18.0,v17.0,v16.0"
+      }
+    }
+  ],
+  "validation_summary": {
+    "total_forms": 13,
+    "with_validation": 11,
+    "without_validation": 2,
+    "partial_validation": 0,
+    "needs_enhancement": [
+      "auto_tag_rules.html.twig - ruleModal (no validation)",
+      "user-settings.html.twig - settingsForm (minimal validation)"
+    ]
+  },
+  "common_validation_function": "validate()",
+  "validation_function_location": "bootstrap.php or includes/validation.php",
+  "recommendations": {
+    "priority_1_implement": [
+      "Auto-tag rules form validation (ruleModal)",
+      "User settings form validation (especially WhatsApp credentials)"
+    ],
+    "priority_2_enhance": [
+      "Add client-side validation for all AJAX forms",
+      "Add field-level error messages to all inputs",
+      "Implement password strength validation",
+      "Add phone number format validation",
+      "Add URL format validation for webhook URLs"
+    ],
+    "priority_3_standardize": [
+      "Create FormValidator class for reusable validation",
+      "Standardize error response format across all handlers",
+      "Add comprehensive error logging",
+      "Implement CSRF token validation for all forms"
+    ]
+  }
+}

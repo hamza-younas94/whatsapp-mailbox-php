@@ -9,6 +9,7 @@ require_once __DIR__ . '/auth.php';
 use App\Models\ScheduledMessage;
 use App\Models\Contact;
 use App\Middleware\TenantMiddleware;
+use App\Validation;
 
 $user = getCurrentUser();
 if (!$user) {
@@ -27,22 +28,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     try {
         switch ($action) {
             case 'create':
-                // Validate input
-                $validation = validate([
+                // Validate input using new Validation class
+                $input = [
                     'contact_id' => $_POST['contact_id'] ?? '',
-                    'message' => sanitize($_POST['message'] ?? ''),
+                    'message' => $_POST['message'] ?? '',
                     'scheduled_at' => $_POST['scheduled_at'] ?? ''
-                ], [
+                ];
+                
+                $validator = new Validation($input);
+                if (!$validator->validate([
                     'contact_id' => 'required',
                     'message' => 'required|min:1|max:4096',
                     'scheduled_at' => 'required'
-                ]);
-                
-                if ($validation !== true) {
+                ])) {
+                    http_response_code(422);
                     echo json_encode([
                         'success' => false,
                         'error' => 'Validation failed',
-                        'errors' => $validation
+                        'errors' => $validator->errors()
                     ]);
                     exit;
                 }
@@ -193,7 +196,7 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="scheduleForm" class="needs-validation" novalidate>
+                <form id="scheduleForm" class="needs-validation" novalidate data-validate='{"contact_id":"required","message":"required|min:1|max:4096","scheduled_at":"required"}'>
                     <div class="mb-3">
                         <label for="contact_id" class="form-label">Contact *</label>
                         <select class="form-select crm-select" id="contact_id" name="contact_id">

@@ -11,6 +11,7 @@ use App\Models\Segment;
 use App\Models\Tag;
 use App\Models\Contact;
 use App\Middleware\TenantMiddleware;
+use App\Validation;
 
 $user = getCurrentUser();
 if (!$user) {
@@ -30,24 +31,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         switch ($action) {
             case 'create':
             case 'update':
-                // Validate input
-                $validation = validate([
-                    'name' => sanitize($_POST['name'] ?? ''),
-                    'trigger_type' => sanitize($_POST['trigger_type'] ?? ''),
+                // Validate input using new Validation class
+                $input = [
+                    'name' => $_POST['name'] ?? '',
+                    'trigger_type' => $_POST['trigger_type'] ?? '',
                     'trigger_conditions' => $_POST['trigger_conditions'] ?? '{}',
                     'actions' => $_POST['actions'] ?? '[]'
-                ], [
+                ];
+                
+                $validator = new Validation($input);
+                if (!$validator->validate([
                     'name' => 'required|min:2|max:150',
-                    'trigger_type' => 'required',
+                    'trigger_type' => 'required|in:message,tag,stage,contact',
                     'trigger_conditions' => 'required',
                     'actions' => 'required'
-                ]);
-                
-                if ($validation !== true) {
+                ])) {
+                    http_response_code(422);
                     echo json_encode([
                         'success' => false,
                         'error' => 'Validation failed',
-                        'errors' => $validation
+                        'errors' => $validator->errors()
                     ]);
                     exit;
                 }
@@ -255,7 +258,7 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close" onclick="closeWorkflowModal()"></button>
             </div>
             <div class="modal-body">
-                <form id="workflowForm">
+                <form id="workflowForm" data-validate='{"name":"required|min:2|max:150","trigger_type":"required","trigger_conditions":"required","actions":"required"}'>
                     <input type="hidden" id="workflow_id" name="id">
                     
                     <div class="mb-3">

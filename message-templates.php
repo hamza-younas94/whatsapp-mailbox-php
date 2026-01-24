@@ -7,6 +7,7 @@ require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/auth.php';
 
 use App\Models\MessageTemplate;
+use App\Validation;
 
 $user = getCurrentUser();
 if (!$user) {
@@ -26,24 +27,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         switch ($action) {
             case 'create':
             case 'update':
-                // Validate input
-                $validation = validate([
-                    'name' => sanitize($_POST['name'] ?? ''),
-                    'whatsapp_template_name' => sanitize($_POST['whatsapp_template_name'] ?? ''),
-                    'language_code' => sanitize($_POST['language_code'] ?? ''),
-                    'content' => sanitize($_POST['content'] ?? '')
-                ], [
+                // Validate input using new Validation class
+                $input = [
+                    'name' => $_POST['name'] ?? '',
+                    'whatsapp_template_name' => $_POST['whatsapp_template_name'] ?? '',
+                    'language_code' => $_POST['language_code'] ?? '',
+                    'content' => $_POST['content'] ?? ''
+                ];
+                
+                $validator = new Validation($input);
+                if (!$validator->validate([
                     'name' => 'required|min:2|max:150',
                     'whatsapp_template_name' => 'required|min:1|max:100',
                     'language_code' => 'required|max:10',
                     'content' => 'required|min:1'
-                ]);
-                
-                if ($validation !== true) {
+                ])) {
+                    http_response_code(422);
                     echo json_encode([
                         'success' => false,
                         'error' => 'Validation failed',
-                        'errors' => $validation
+                        'errors' => $validator->errors()
                     ]);
                     exit;
                 }
@@ -237,7 +240,7 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close" onclick="closeTemplateModal()"></button>
             </div>
             <div class="modal-body">
-                <form id="templateForm">
+                <form id="templateForm" data-validate='{"name":"required|min:2|max:150","whatsapp_template_name":"required|min:1|max:100","language_code":"required|max:10","content":"required|min:1"}'>
                     <input type="hidden" id="template_id" name="id">
                     
                     <div class="row">

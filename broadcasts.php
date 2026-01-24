@@ -12,6 +12,7 @@ use App\Models\Contact;
 use App\Models\Tag;
 use App\Models\Segment;
 use App\Middleware\TenantMiddleware;
+use App\Validation;
 
 // Check if user is authenticated
 $user = getCurrentUser();
@@ -32,22 +33,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         switch ($action) {
             case 'create':
             case 'update':
-                // Validate input
-                $validation = validate([
-                    'name' => sanitize($_POST['name'] ?? ''),
-                    'recipient_filter' => sanitize($_POST['recipient_filter'] ?? ''),
-                    'message' => sanitize($_POST['message'] ?? '')
-                ], [
+                // Validate input using new Validation class
+                $input = [
+                    'name' => $_POST['name'] ?? '',
+                    'recipient_filter' => $_POST['recipient_filter'] ?? '',
+                    'message' => $_POST['message'] ?? ''
+                ];
+                
+                $validator = new Validation($input);
+                if (!$validator->validate([
                     'name' => 'required|min:2|max:100',
                     'recipient_filter' => 'required',
                     'message' => 'required|min:1|max:4096'
-                ]);
-                
-                if ($validation !== true) {
+                ])) {
+                    http_response_code(422);
                     echo json_encode([
                         'success' => false,
                         'error' => 'Validation failed',
-                        'errors' => $validation
+                        'errors' => $validator->errors()
+                    ]);
+                    exit;
+                }
                     ]);
                     exit;
                 }
@@ -375,7 +381,7 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="broadcastForm">
+                <form id="broadcastForm" data-validate='{"name":"required|min:2|max:100","recipient_filter":"required","message":"required|min:1|max:4096"}'>
                     <div class="mb-3">
                         <label for="broadcast_name" class="form-label">Broadcast Name *</label>
                         <input type="text" class="form-control crm-input" id="broadcast_name" name="name" placeholder="e.g., Monthly Newsletter">

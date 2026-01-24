@@ -1443,7 +1443,13 @@ function handleMessageAction() {
     }
     
     // MULTI-TENANT: verify message belongs to user
-    $message = Message::where('user_id', $user->id)->findOrFail($messageId);
+    // message_id can be numeric ID or wamid (message_id field), so check both
+    $message = Message::where('user_id', $user->id)
+        ->where(function($q) use ($messageId) {
+            $q->where('id', $messageId)
+              ->orWhere('message_id', $messageId);
+        })
+        ->firstOrFail();
     
     switch ($actionType) {
         case 'star':
@@ -1522,11 +1528,11 @@ function handleMessageAction() {
             // Send reaction via WhatsApp API
             try {
                 $whatsappService = new WhatsAppService($user->id);  // MULTI-TENANT: pass user_id
-                $whatsappService->sendReaction($contact->phone_number, $messageId, $emoji);
+                $whatsappService->sendReaction($contact->phone_number, $message->message_id, $emoji);
                 
-                // Log the reaction action
+                // Log the reaction action using message ID (numeric primary key)
                 MessageAction::create([
-                    'message_id' => $messageId,
+                    'message_id' => $message->id,
                     'user_id' => $user->id,
                     'action_type' => 'react',
                     'notes' => "Reaction: {$emoji}"

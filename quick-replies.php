@@ -10,6 +10,7 @@ use App\Models\QuickReply;
 use App\Models\Tag;
 use App\Models\Contact;
 use App\Middleware\TenantMiddleware;
+use App\Validation;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 // Check if user is authenticated
@@ -31,30 +32,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         switch ($action) {
             case 'create':
             case 'update':
-                // Validate input
-                $validation = validate([
-                    'shortcut' => sanitize($_POST['shortcut'] ?? ''),
-                    'title' => sanitize($_POST['title'] ?? ''),
-                    'message' => sanitize($_POST['message'] ?? '')
-                ], [
+                // Validate input using new Validation class
+                $input = [
+                    'shortcut' => $_POST['shortcut'] ?? '',
+                    'title' => $_POST['title'] ?? '',
+                    'message' => $_POST['message'] ?? ''
+                ];
+                
+                $validator = new Validation($input);
+                if (!$validator->validate([
                     'shortcut' => 'required|min:1|max:50',
                     'title' => 'required|min:2|max:100',
                     'message' => 'required|min:1|max:4096'
-                ]);
-                
-                if ($validation !== true) {
+                ])) {
+                    http_response_code(422);
                     echo json_encode([
                         'success' => false,
                         'error' => 'Validation failed',
-                        'errors' => $validation
+                        'errors' => $validator->errors()
                     ]);
                     exit;
                 }
                 
+                // Sanitize all input
                 $data = [
-                    'shortcut' => sanitize($_POST['shortcut'] ?? ''),
-                    'title' => sanitize($_POST['title'] ?? ''),
-                    'message' => sanitize($_POST['message'] ?? ''),
+                    'shortcut' => Validation::sanitize($_POST['shortcut'] ?? ''),
+                    'title' => Validation::sanitize($_POST['title'] ?? ''),
+                    'message' => Validation::sanitize($_POST['message'] ?? ''),
                     'is_active' => isset($_POST['is_active']) && $_POST['is_active'] == '1',
                     // Priority
                     'priority' => (int)($_POST['priority'] ?? 0),
@@ -65,16 +69,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     // Business hours
                     'business_hours_start' => !empty($_POST['business_hours_start']) ? $_POST['business_hours_start'] : null,
                     'business_hours_end' => !empty($_POST['business_hours_end']) ? $_POST['business_hours_end'] : null,
-                    'timezone' => sanitize($_POST['timezone'] ?? 'UTC'),
-                    'outside_hours_message' => sanitize($_POST['outside_hours_message'] ?? ''),
+                    'timezone' => Validation::sanitize($_POST['timezone'] ?? 'UTC'),
+                    'outside_hours_message' => Validation::sanitize($_POST['outside_hours_message'] ?? ''),
                     // Conditions
                     'conditions' => !empty($_POST['conditions']) ? json_decode($_POST['conditions'], true) : null,
                     // Delay
                     'delay_seconds' => (int)($_POST['delay_seconds'] ?? 0),
                     // Media
-                    'media_url' => sanitize($_POST['media_url'] ?? ''),
-                    'media_type' => sanitize($_POST['media_type'] ?? ''),
-                    'media_filename' => sanitize($_POST['media_filename'] ?? ''),
+                    'media_url' => Validation::sanitize($_POST['media_url'] ?? ''),
+                    'media_type' => Validation::sanitize($_POST['media_type'] ?? ''),
+                    'media_filename' => Validation::sanitize($_POST['media_filename'] ?? ''),
                     // Contact filtering
                     'excluded_contact_ids' => !empty($_POST['excluded_contact_ids']) ? json_decode($_POST['excluded_contact_ids'], true) : null,
                     'included_contact_ids' => !empty($_POST['included_contact_ids']) ? json_decode($_POST['included_contact_ids'], true) : null,
@@ -638,7 +642,7 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="replyForm">
+                <form id="replyForm" data-validate='{"shortcut":"required|min:1|max:50","title":"required|min:2|max:100","message":"required|min:1|max:4096"}'>
                     <input type="hidden" id="reply_id" name="id">
                     
                     <!-- Tabs for organization -->
