@@ -681,16 +681,6 @@ function renderMessages(messagesList, options = {}) {
                 </div>
             `;
         }
-        // For reactions - show emoji reply
-        else if (message.message_type === 'reaction') {
-            // Extract emoji from "Reaction: emoji" format - match full emoji including multi-byte characters
-            const emoji = message.message_body?.match(/Reaction:\s*(.+)$/)?.[1]?.trim() || '❤️';
-            content = `
-                <div class="message-text" style="display: inline-block; padding: 4px 8px; background: #fff9e6; border-radius: 20px; font-size: 20px;">
-                    ${emoji}
-                </div>
-            `;
-        }
         // For location messages
         else if (message.message_type === 'location') {
             const locMatch = message.message_body?.match(/Location: ([-\d.]+), ([-\d.]+)/);
