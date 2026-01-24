@@ -589,9 +589,14 @@ function renderMessages(messagesList, options = {}) {
         }
         
         // Add reactions to the message object if they exist
-        // Match by WhatsApp message_id field
+        // Match by WhatsApp message_id field (the parent_message_id in reactions points to this)
         if (msg.message_id && reactionsByParentId[msg.message_id]) {
             msg.reactions = reactionsByParentId[msg.message_id];
+            // Debug: log when reactions are attached
+            // console.log(`[REACTION] Attached ${msg.reactions.length} reactions to message ${msg.message_id}`);
+        } else if (msg.message_type !== 'reaction') {
+            // For non-reaction messages, ensure reactions field is empty
+            msg.reactions = [];
         }
         
         processedMessages.push(msg);
