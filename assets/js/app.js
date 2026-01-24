@@ -893,9 +893,17 @@ function renderMessages(messagesList, options = {}) {
             <div class="message-reactions">
                 ${message.reactions.map(reaction => {
                     // Extract emoji from "Reaction: emoji" format - match full emoji including multi-byte characters
-                    const reactionEmoji = reaction.message_body?.match(/Reaction:\s*(.+)$/)?.[1]?.trim() || '❤️';
+                    // Handle cases with extra whitespace
+                    let reactionEmoji = reaction.message_body?.match(/Reaction:\s*(.+?)(?:\s*$|$)/)?.[1] || '❤️';
+                    reactionEmoji = reactionEmoji.trim();
+                    
+                    // If extraction failed or result is empty, use heart as fallback
+                    if (!reactionEmoji || reactionEmoji.length === 0) {
+                        reactionEmoji = '❤️';
+                    }
+                    
                     const colorClass = getEmojiColorClass(reactionEmoji);
-                    return `<span class="reaction-pill ${colorClass}" title="Reaction">${reactionEmoji}</span>`;
+                    return `<span class="reaction-pill ${colorClass}" title="Reaction: ${reactionEmoji}">${reactionEmoji}</span>`;
                 }).join('')}
             </div>
         ` : '';
@@ -2895,17 +2903,16 @@ function toggleReactionPicker(event, messageId) {
     const picker = document.createElement('div');
     picker.className = 'reaction-picker';
     picker.style.cssText = `
-        position: absolute;
-        bottom: 100%;
-        right: 0;
+        position: fixed;
         background: white;
         border-radius: 12px;
         padding: 8px 6px;
         box-shadow: 0 4px 16px rgba(0,0,0,0.15);
         display: flex;
         gap: 4px;
-        z-index: 1000;
-        margin-bottom: 8px;
+        z-index: 2000;
+        flex-wrap: wrap;
+        max-width: 280px;
     `;
     
     reactions.forEach(emoji => {
@@ -2917,12 +2924,14 @@ function toggleReactionPicker(event, messageId) {
             background: none;
             font-size: 24px;
             cursor: pointer;
-            padding: 4px 6px;
+            padding: 6px 8px;
             border-radius: 8px;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            min-width: 40px;
+            height: 40px;
         `;
         btn.onmouseover = () => btn.style.background = 'rgba(0,0,0,0.08)';
         btn.onmouseout = () => btn.style.background = 'none';
@@ -2930,16 +2939,41 @@ function toggleReactionPicker(event, messageId) {
         picker.appendChild(btn);
     });
     
+    document.body.appendChild(picker);
+    
+    // Position picker above the clicked button
     const button = event.target.closest('button');
-    button.style.position = 'relative';
-    button.parentElement.style.position = 'relative';
-    button.parentElement.appendChild(picker);
+    const rect = button.getBoundingClientRect();
+    const pickerRect = picker.getBoundingClientRect();
+    
+    // Position above the button, centered
+    let top = rect.top - pickerRect.height - 8;
+    let left = rect.left - (pickerRect.width / 2) + (rect.width / 2);
+    
+    // Adjust if too close to top
+    if (top < 10) {
+        top = rect.bottom + 8;
+    }
+    
+    // Adjust if too close to right edge
+    if (left + pickerRect.width > window.innerWidth - 10) {
+        left = window.innerWidth - pickerRect.width - 10;
+    }
+    
+    // Adjust if too close to left edge
+    if (left < 10) {
+        left = 10;
+    }
+    
+    picker.style.top = top + 'px';
+    picker.style.left = left + 'px';
     
     // Close picker when clicking outside
-    document.addEventListener('click', function closePickerOnClick() {
-        const p = document.querySelector('.reaction-picker');
-        if (p) p.remove();
-        document.removeEventListener('click', closePickerOnClick);
+    document.addEventListener('click', function closePickerOnClick(e) {
+        if (!picker.contains(e.target) && e.target !== button) {
+            picker.remove();
+            document.removeEventListener('click', closePickerOnClick);
+        }
     });
 }
 
