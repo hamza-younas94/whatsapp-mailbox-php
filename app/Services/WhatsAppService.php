@@ -1789,18 +1789,62 @@ class WhatsAppService
                     $action['message'] ?? '',
                     $contact
                 );
-                return $this->sendTextMessage($contact->phone_number, $message);
+                $response = $this->sendTextMessage($contact->phone_number, $message);
+                
+                // Save to message history if successful
+                if ($response && $response['success']) {
+                    try {
+                        Message::create([
+                            'user_id' => $this->userId,
+                            'contact_id' => $contact->id,
+                            'phone_number' => $contact->phone_number,
+                            'message_id' => $response['message_id'] ?? null,
+                            'message_type' => 'text',
+                            'direction' => 'outgoing',
+                            'message_body' => '[WORKFLOW] ' . $message,
+                            'timestamp' => now(),
+                            'status' => 'sent',
+                            'is_read' => true
+                        ]);
+                        logger("[WORKFLOW] Message saved to history");
+                    } catch (\Exception $e) {
+                        logger("[WORKFLOW] Failed to save message: " . $e->getMessage(), 'error');
+                    }
+                }
+                return $response;
                 
             case 'send_template':
                 $templateName = $action['template'] ?? '';
                 $params = $action['params'] ?? [];
                 $languageCode = $action['language_code'] ?? 'en';
-                return $this->sendTemplateMessage(
+                $response = $this->sendTemplateMessage(
                     $contact->phone_number,
                     $templateName,
                     $languageCode,
                     $params
                 );
+                
+                // Save to message history if successful
+                if ($response && $response['success']) {
+                    try {
+                        Message::create([
+                            'user_id' => $this->userId,
+                            'contact_id' => $contact->id,
+                            'phone_number' => $contact->phone_number,
+                            'message_id' => $response['message_id'] ?? null,
+                            'message_type' => 'template',
+                            'direction' => 'outgoing',
+                            'message_body' => '[WORKFLOW] Template: ' . $templateName,
+                            'timestamp' => now(),
+                            'status' => 'sent',
+                            'is_read' => true
+                        ]);
+                        logger("[WORKFLOW] Template message saved to history");
+                    } catch (\Exception $e) {
+                        logger("[WORKFLOW] Failed to save template message: " . $e->getMessage(), 'error');
+                    }
+                }
+                return $response;
                 
             case 'add_tag':
                 $tagId = $action['tag_id'] ?? null;

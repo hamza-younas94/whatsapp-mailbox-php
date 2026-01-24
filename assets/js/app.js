@@ -568,10 +568,12 @@ function renderMessages(messagesList, options = {}) {
     // Group reactions with their parent messages
     const processedMessages = [];
     const reactionsByParentId = {};
+    const reactionsByParentMessageId = {};
     
-    // First pass: identify all reactions and group them by parent message ID
+    // First pass: identify all reactions and group them by BOTH parent_message_id (WhatsApp ID) and database ID
     messagesList.forEach(msg => {
         if (msg.message_type === 'reaction' && msg.parent_message_id) {
+            // Group by WhatsApp message_id (string)
             if (!reactionsByParentId[msg.parent_message_id]) {
                 reactionsByParentId[msg.parent_message_id] = [];
             }
@@ -586,9 +588,10 @@ function renderMessages(messagesList, options = {}) {
             return;
         }
         
-        // Add reactions to the message object if they exist (match by numeric ID, not message_id)
-        if (reactionsByParentId[msg.id]) {
-            msg.reactions = reactionsByParentId[msg.id];
+        // Add reactions to the message object if they exist
+        // Match by WhatsApp message_id first (for incoming messages)
+        if (reactionsByParentId[msg.message_id]) {
+            msg.reactions = reactionsByParentId[msg.message_id];
         }
         
         processedMessages.push(msg);
