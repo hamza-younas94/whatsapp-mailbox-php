@@ -41,11 +41,12 @@ $capsule = new Capsule;
 try {
     $capsule->addConnection([
         'driver' => env('DB_CONNECTION', 'mysql'),
-        'host' => env('DB_HOST', 'localhost'),
+        'host' => env('DB_HOST', '127.0.0.1'),
         'port' => env('DB_PORT', '3306'),
         'database' => env('DB_DATABASE'),
         'username' => env('DB_USERNAME'),
         'password' => env('DB_PASSWORD'),
+        'unix_socket' => env('DB_SOCKET', null),
         'charset' => 'utf8mb4',
         'collation' => 'utf8mb4_unicode_ci',
         'prefix' => '',
@@ -73,15 +74,26 @@ $capsule->bootEloquent();
 // Auto-run migrations on bootstrap (only in web requests, not CLI)
 // This ensures database schema is always up-to-date when the app loads
 if (php_sapi_name() !== 'cli' && file_exists(__DIR__ . '/migrate.php')) {
+    $connectionOk = true;
     try {
-        require_once __DIR__ . '/migrate.php';
-        $migrationRunner = new MigrationRunner();
-        $migrationRunner->run(true); // Silent mode - no output (logs errors only)
+        // Preflight DB connection check to avoid socket failures
+        $capsule->getConnection()->getPdo();
     } catch (Exception $e) {
-        // Log migration errors but don't break the app
-        error_log("Migration auto-run error: " . $e->getMessage());
-        if (env('APP_DEBUG', false)) {
-            error_log("Migration stack trace: " . $e->getTraceAsString());
+        $connectionOk = false;
+        error_log("Migration auto-run skipped: DB not reachable. " . $e->getMessage());
+    }
+
+    if ($connectionOk) {
+        try {
+            require_once __DIR__ . '/migrate.php';
+            $migrationRunner = new MigrationRunner();
+            $migrationRunner->run(true); // Silent mode - no output (logs errors only)
+        } catch (Exception $e) {
+            // Log migration errors but don't break the app
+            error_log("Migration auto-run error: " . $e->getMessage());
+            if (env('APP_DEBUG', false)) {
+                error_log("Migration stack trace: " . $e->getTraceAsString());
+            }
         }
     }
 }
