@@ -116,7 +116,7 @@ app.get('/health', (req, res) => res.json({ ok: true, node: process.version }));
 app.get('/whatsapp-web/health', (req, res) => res.json({ ok: true, node: process.version }));
 
 // Start or get session, return QR if needed
-app.post('/session/start', async (req, res) => {
+const startSessionHandler = async (req, res) => {
   try {
     const { userId } = req.body;
     const session = ensureSession(userId);
@@ -124,26 +124,32 @@ app.post('/session/start', async (req, res) => {
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
-});
+};
+app.post('/session/start', startSessionHandler);
+app.post('/whatsapp-web/session/start', startSessionHandler);
 
 // Get QR for current session
-app.get('/session/:userId/qr', (req, res) => {
+const getQrHandler = (req, res) => {
   const { userId } = req.params;
   const session = sessions.get(userId);
   if (!session) return res.status(404).json({ error: 'session not found' });
   res.json({ status: session.status, qr: session.qrDataUrl });
-});
+};
+app.get('/session/:userId/qr', getQrHandler);
+app.get('/whatsapp-web/session/:userId/qr', getQrHandler);
 
 // Session status
-app.get('/session/:userId/status', (req, res) => {
+const getStatusHandler = (req, res) => {
   const { userId } = req.params;
   const session = sessions.get(userId);
   if (!session) return res.status(404).json({ error: 'session not found' });
   res.json({ status: session.status });
-});
+};
+app.get('/session/:userId/status', getStatusHandler);
+app.get('/whatsapp-web/session/:userId/status', getStatusHandler);
 
 // Send text message
-app.post('/message/send', async (req, res) => {
+const sendMessageHandler = async (req, res) => {
   try {
     const { userId, to, text } = req.body;
     const session = sessions.get(userId) || ensureSession(userId);
@@ -152,7 +158,9 @@ app.post('/message/send', async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-});
+};
+app.post('/message/send', sendMessageHandler);
+app.post('/whatsapp-web/message/send', sendMessageHandler);
 
 // Use Passenger's listening mechanism if available, otherwise listen directly
 const server = app.listen(PORT, '0.0.0.0', () => {
