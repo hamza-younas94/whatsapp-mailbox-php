@@ -3,6 +3,8 @@
 // Requires: Node 18+, npm packages: whatsapp-web.js, express, qrcode
 // CommonJS (CJS) - compatible with cPanel/Passenger
 
+console.log(`[WhatsApp Web Bridge] Node version: ${process.version}`);
+
 const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
@@ -92,11 +94,12 @@ function ensureSession(userId) {
 const app = express();
 app.use(express.json());
 
-// Simple health/root endpoint so GET / works under Passenger
-app.get('/', (req, res) => {
+// Simple health/root endpoints so GET works under Passenger with or without path prefix
+const rootHandler = (req, res) => {
   res.json({
     status: 'ok',
     message: 'WhatsApp Web Bridge running',
+    node: process.version,
     routes: [
       { method: 'POST', path: '/session/start', body: '{ userId }' },
       { method: 'GET', path: '/session/:userId/qr' },
@@ -104,9 +107,13 @@ app.get('/', (req, res) => {
       { method: 'POST', path: '/message/send', body: '{ userId, to, text }' }
     ]
   });
-});
+};
 
-app.get('/health', (req, res) => res.json({ ok: true }));
+app.get('/', rootHandler);
+app.get('/whatsapp-web', rootHandler);
+app.get('/whatsapp-web/', rootHandler);
+app.get('/health', (req, res) => res.json({ ok: true, node: process.version }));
+app.get('/whatsapp-web/health', (req, res) => res.json({ ok: true, node: process.version }));
 
 // Start or get session, return QR if needed
 app.post('/session/start', async (req, res) => {
