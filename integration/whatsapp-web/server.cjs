@@ -92,6 +92,22 @@ function ensureSession(userId) {
 const app = express();
 app.use(express.json());
 
+// Simple health/root endpoint so GET / works under Passenger
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'WhatsApp Web Bridge running',
+    routes: [
+      { method: 'POST', path: '/session/start', body: '{ userId }' },
+      { method: 'GET', path: '/session/:userId/qr' },
+      { method: 'GET', path: '/session/:userId/status' },
+      { method: 'POST', path: '/message/send', body: '{ userId, to, text }' }
+    ]
+  });
+});
+
+app.get('/health', (req, res) => res.json({ ok: true }));
+
 // Start or get session, return QR if needed
 app.post('/session/start', async (req, res) => {
   try {
