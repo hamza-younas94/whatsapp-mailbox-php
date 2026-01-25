@@ -2,11 +2,11 @@
   "name": "whatsapp-web-bridge",
   "version": "1.0.0",
   "description": "Optional WhatsApp Web QR bridge for mailbox, cPanel-friendly",
-  "main": "server.js",
+  "main": "server.cjs",
   "type": "commonjs",
   "scripts": {
-    "start": "node server.js",
-    "start:prod": "NODE_ENV=production node server.js"
+    "start": "node server.cjs",
+    "start:prod": "NODE_ENV=production node server.cjs"
   },
   "dependencies": {
     "express": "^4.18.2",

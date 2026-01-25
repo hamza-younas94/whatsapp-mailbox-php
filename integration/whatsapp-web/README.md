@@ -12,7 +12,7 @@ This optional microservice lets you link a regular WhatsApp device via QR and au
 ```sh
 cd integration/whatsapp-web
 npm install
-# optional locally: node server.js
+# optional locally: node server.cjs
 # on cPanel: use Application Manager → Create Node.js app (Passenger)
 ```
 
@@ -42,7 +42,7 @@ npm install
 2. In cPanel → Application Manager → Create Node.js App:
 	- Application root: `integration/whatsapp-web`
 	- Application URL: `/whatsappweb` (or any path you prefer)
-	- Startup file: `server.js`
+	- Startup file: `server.cjs`
 	- Node.js version: 18+
 3. Click "Create" then "Run NPM Install" in the app panel (or SSH: `npm install`).
 4. Environment variables (App Manager → Edit):

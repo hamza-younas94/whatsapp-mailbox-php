@@ -1,15 +1,17 @@
 // WhatsApp Web Bridge (QR login) - Non-intrusive optional channel
 // Runs independently; exposes REST endpoints; posts incoming events to PHP webhook
 // Requires: Node 18+, npm packages: whatsapp-web.js, express, qrcode
+// CommonJS (CJS) - compatible with cPanel/Passenger
 
 const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 
-// On cPanel/Passenger, PORT is injected. Locally defaults to 4000.
+// On cPanel/Passenger, PORT is injected by Passenger. Locally defaults to 4000.
 const PORT = process.env.PORT || 4000;
-// Point to your PHP app webhook. On shared hosting, same domain path works.
-const WEBHOOK_URL = process.env.WEBHOOK_URL || (process.env.BASE_URL ? `${process.env.BASE_URL}/webhook_web.php` : 'http://localhost/webhook_web.php');
+// WEBHOOK_URL must point to your PHP app's webhook_web.php
+// On cPanel: set via Application Manager → Environment Variables
+const WEBHOOK_URL = process.env.WEBHOOK_URL || 'http://localhost/webhook_web.php';
 
 // In-memory session registry by userId (for demo). For production, persist sessions.
 const sessions = new Map();
@@ -129,6 +131,16 @@ app.post('/message/send', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`WhatsApp Web bridge listening on :${PORT}`);
+// Use Passenger's listening mechanism if available, otherwise listen directly
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[WhatsApp Web Bridge] Listening on port ${PORT}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('[WhatsApp Web Bridge] SIGTERM received, shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
