@@ -2,7 +2,17 @@
 // Simple page to link a device via WhatsApp Web bridge (non-intrusive)
 require 'bootstrap.php';
 
-$user = auth_required(); // Reuse your existing auth logic
+// Use existing auth when available; otherwise allow ?user_id= for unauthenticated use (e.g., public QR page)
+$userId = null;
+if (function_exists('auth_required')) {
+    $user = auth_required();
+    $userId = $user->id;
+} else {
+    $userId = intval($_GET['user_id'] ?? 0);
+    if (!$userId) {
+        die('user_id required');
+    }
+}
 // On cPanel Node.js app, set WHATSAPP_WEB_SERVICE_URL to the app's URL path (e.g., /whatsappweb)
 // Fallbacks:
 // - If running locally: http://localhost:4000
@@ -54,7 +64,7 @@ $serviceUrl = getenv('WHATSAPP_WEB_SERVICE_URL') ?: '/whatsappweb';
 
 <script>
 const serviceUrl = '<?= htmlspecialchars($serviceUrl, ENT_QUOTES) ?>';
-const userId = <?= json_encode($user->id) ?>;
+const userId = <?= json_encode($userId) ?>;
 
 async function startSession() {
   const res = await fetch(serviceUrl + '/session/start', {
