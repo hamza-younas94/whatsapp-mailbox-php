@@ -137,17 +137,9 @@ export class MessageService implements IMessageService {
 
         logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
 
-        // Pre-load all chats to initialize WhatsApp Web's internal state
-        // This prevents markedUnread errors when sending to new numbers
-        try {
-          const allChats = await activeSession.client.getChats();
-          logger.info({ chatId, totalChats: allChats.length }, 'Pre-loaded chats');
-        } catch (chatErr) {
-          logger.warn({ chatId, error: (chatErr as Error).message }, 'Could not pre-load chats');
-        }
-
-        // Add delay to allow WhatsApp internals to stabilize
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Add delay to allow WhatsApp internals to stabilize before sending
+        logger.info({ delayMs: 2000 }, 'Waiting before send...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Send message with retry logic for markedUnread error
         let waMessage: any = null;
@@ -155,7 +147,7 @@ export class MessageService implements IMessageService {
         
         for (let attempt = 1; attempt <= 3; attempt++) {
           try {
-            logger.info({ chatId, attempt }, 'Attempting to send message');
+            logger.info({ chatId, attempt, msg: 'Attempt to send' }, 'Attempting to send message');
             waMessage = await activeSession.client.sendMessage(chatId, input.content);
             logger.info({ messageId: waMessage.id.id, to: chatId, attempt }, 'WhatsApp message sent successfully');
             break; // Success, exit retry loop
@@ -163,10 +155,13 @@ export class MessageService implements IMessageService {
             lastError = err as Error;
             const errorMsg = lastError.message || '';
             
+            logger.error({ chatId, attempt, errorMsg }, 'Send attempt failed');
+            
             // markedUnread error indicates chat isn't fully initialized - retry with longer delays
             if (errorMsg.includes('markedUnread') && attempt < 3) {
-              logger.warn({ chatId, attempt, error: errorMsg }, 'markedUnread error, waiting before retry...');
-              await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Wait 2s, 4s, 6s
+              const waitMs = 3000 * attempt;
+              logger.warn({ chatId, attempt, waitMs, error: errorMsg }, 'markedUnread error, retrying with delay...');
+              await new Promise(resolve => setTimeout(resolve, waitMs));
               continue;
             }
             
