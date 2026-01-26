@@ -4,6 +4,7 @@
 import { Request, Response } from 'express';
 import { ContactService } from '@services/contact.service';
 import { asyncHandler } from '@middleware/error.middleware';
+import { requireUserId } from '@utils/auth-helpers';
 
 interface CreateContactInput {
   phoneNumber: string;
@@ -23,7 +24,7 @@ export class ContactController {
 
   createContact = asyncHandler(async (req: Request, res: Response) => {
     const { phoneNumber, name, email, tags } = req.body;
-    const userId = req.user!.id;
+    const userId = requireUserId(req);
 
     const input: CreateContactInput = {
       phoneNumber,
@@ -53,7 +54,7 @@ export class ContactController {
 
   searchContacts = asyncHandler(async (req: Request, res: Response) => {
     const { search, tags, isBlocked, limit = 20, offset = 0 } = req.query;
-    const userId = req.user!.id;
+    const userId = requireUserId(req);
 
     const filters: ContactFilters = {
       query: search as string,

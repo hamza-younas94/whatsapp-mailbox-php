@@ -131,25 +131,42 @@
                 ...(tags && { tags })
             });
 
-            const response = await fetchWithAuth(`${API_BASE}/contacts?${params}`);
-            if (response.ok) {
-                const data = await response.json();
-                displayContacts(data.data || []);
-                displayPagination(data);
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/contacts?${params}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Contacts response:', data);
+                    // Handle different response structures
+                    const contacts = data.data?.data || data.data || [];
+                    displayContacts(contacts);
+                    displayPagination(data.data || data);
+                } else {
+                    console.error('Failed to load contacts:', response.status, await response.text());
+                    displayContacts([]);
+                }
+            } catch (error) {
+                console.error('Error loading contacts:', error);
+                displayContacts([]);
             }
         }
 
         async function loadTags() {
-            const response = await fetchWithAuth(`${API_BASE}/tags`);
-            if (response.ok) {
-                const data = await response.json();
-                const select = document.getElementById('filterTags');
-                (data.data || []).forEach(tag => {
-                    const option = document.createElement('option');
-                    option.value = tag.name;
-                    option.textContent = tag.name;
-                    select.appendChild(option);
-                });
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/tags`);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Tags response:', data);
+                    const select = document.getElementById('filterTags');
+                    const tags = data.data || [];
+                    tags.forEach(tag => {
+                        const option = document.createElement('option');
+                        option.value = tag.name;
+                        option.textContent = tag.name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading tags:', error);
             }
         }
 
