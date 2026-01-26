@@ -188,6 +188,20 @@ enum MessageStatus {
   RECEIVED
 }
 
+enum MessageMediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+enum ScheduledMessageStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
 model Reaction {
   id        String   @id @default(cuid())
   messageId String
@@ -459,7 +473,7 @@ model DripCampaignStep {
   delayHours   Int
   message      String              @db.Text
   mediaUrl     String?
-  mediaType    MessageMediaType?
+  mediaType    String?
   createdAt    DateTime            @default(now())
 
   scheduled    DripScheduledMessage[]
@@ -501,9 +515,9 @@ model DripScheduledMessage {
   contact      Contact             @relation(fields: [contactId], references: [id], onDelete: Cascade)
   message      String              @db.Text
   mediaUrl     String?
-  mediaType    MessageMediaType?
+  mediaType    String?
   scheduledFor DateTime
-  status       ScheduledMessageStatus
+  status       String              @default("PENDING")
   sentAt       DateTime?
   createdAt    DateTime            @default(now())
 
