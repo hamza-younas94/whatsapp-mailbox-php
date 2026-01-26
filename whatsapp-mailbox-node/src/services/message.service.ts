@@ -8,6 +8,7 @@ import { ConversationRepository } from '@repositories/conversation.repository';
 import { NotFoundError, ValidationError, ExternalServiceError } from '@utils/errors';
 import logger from '@utils/logger';
 import { WhatsAppService } from './whatsapp.service';
+import { whatsappWebService } from './whatsapp-web.service';
 
 interface CreateMessageInput {
   phoneNumber?: string;
@@ -103,27 +104,38 @@ export class MessageService implements IMessageService {
         mediaType: input.mediaType?.toString(),
       } as Prisma.MessageCreateInput);
 
-      // Send via WhatsApp API
+      // Send via WhatsApp Web
       try {
-        const waResponse = await this.whatsAppService.sendMessage(
-          input.phoneNumber || contactId,
-          input.content,
-          input.mediaUrl,
-        );
+        // Get user's active WhatsApp Web session
+        const sessions = whatsappWebService.getUserSessions(userId);
+        const activeSession = sessions.find((s) => s.status === 'READY');
+
+        if (!activeSession) {
+          throw new ValidationError('WhatsApp is not connected. Please connect your WhatsApp first.');
+        }
+
+        // Format phone number for WhatsApp Web (e.g., 923462115115@c.us)
+        const phoneNumber = input.phoneNumber || '';
+        const formattedNumber = phoneNumber.replace(/[^0-9]/g, ''); // Remove non-digits
+        const chatId = `${formattedNumber}@c.us`;
+
+        // Send message using WhatsApp Web client
+        const waMessage = await activeSession.client.sendMessage(chatId, input.content);
 
         // Update message with WhatsApp message ID
         return await this.messageRepository.update(message.id, {
-          waMessageId: waResponse.messageId,
+          waMessageId: waMessage.id.id,
           status: MessageStatus.SENT,
         });
       } catch (error) {
-        // Mark message as failed if WhatsApp API fails
+        // Mark message as failed if WhatsApp Web fails
         await this.messageRepository.update(message.id, {
           status: MessageStatus.FAILED,
         });
 
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        throw new ExternalServiceError('WhatsApp API', errorMessage);
+        logger.error({ error, phoneNumber: input.phoneNumber }, 'WhatsApp Web send failed');
+        throw new ExternalServiceError('WhatsApp Web', errorMessage);
       }
     } catch (error) {
       logger.error({ input, error }, 'Failed to send message');
