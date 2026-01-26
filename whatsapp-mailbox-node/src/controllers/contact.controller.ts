@@ -4,7 +4,18 @@
 import { Request, Response } from 'express';
 import { ContactService } from '@services/contact.service';
 import { asyncHandler } from '@middleware/error.middleware';
-import { CreateContactInput, ContactFilters } from '@types/index';
+
+interface CreateContactInput {
+  phoneNumber: string;
+  name?: string;
+  email?: string;
+}
+
+interface ContactFilters {
+  query?: string;
+  tags?: string[];
+  isBlocked?: boolean;
+}
 
 export class ContactController {
   constructor(private contactService: ContactService) {}
@@ -43,10 +54,10 @@ export class ContactController {
     const userId = req.user!.id;
 
     const filters: ContactFilters = {
-      search: search as string,
-      tags: tags ? (Array.isArray(tags) ? tags : [tags as string]) : undefined,
+      query: search as string,
+      tags: tags ? (Array.isArray(tags) ? tags as string[] : [tags as string]) : undefined,
       isBlocked: isBlocked === 'true',
-      limit: parseInt(limit as string),
+    };
       offset: parseInt(offset as string),
     };
 

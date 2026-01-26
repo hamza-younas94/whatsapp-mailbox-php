@@ -77,7 +77,7 @@ export class AutomationService implements IAutomationService {
       return;
     }
 
-    const actions = automation.actions as AutomationAction[];
+    const actions = automation.actions as unknown as AutomationAction[];
 
     for (const action of actions) {
       await this.executeAction(action, context);

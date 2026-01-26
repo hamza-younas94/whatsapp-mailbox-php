@@ -6,7 +6,13 @@ import jwt from 'jsonwebtoken';
 import { getEnv } from '@config/env';
 import { UnauthorizedError, ForbiddenError } from '@utils/errors';
 import logger from '@utils/logger';
-import { JwtPayload, UserRole } from '@types/index';
+import { UserRole } from '@prisma/client';
+
+export interface JwtPayload {
+  userId: string;
+  email: string;
+  role: UserRole;
+}
 
 declare global {
   namespace Express {
@@ -63,6 +69,9 @@ function extractToken(req: Request): string | null {
 export function generateToken(payload: JwtPayload): string {
   const env = getEnv();
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRY,
-  });
+    expiresIn: env.JWT_EXPIRY || '7d',
+  } as jwt.SignOptions);
 }
+
+// Export aliases for compatibility
+export { authMiddleware as authenticate };

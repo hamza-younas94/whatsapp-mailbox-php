@@ -30,3 +30,6 @@ export function validateQuery(schema: ZodSchema) {
     }
   };
 }
+
+// Export alias for compatibility
+export { validate as validateRequest };

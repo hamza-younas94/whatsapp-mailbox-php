@@ -35,8 +35,8 @@ export class QuickReplyRepository extends BaseRepository<QuickReply> implements 
       where: {
         userId,
         OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { content: { contains: query, mode: 'insensitive' } },
+          { title: { contains: query } },
+          { content: { contains: query } },
         ],
       },
       take: 20,

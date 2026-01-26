@@ -17,23 +17,27 @@ export function getPrismaClient(): PrismaClient {
     });
 
     // Log queries in development
-    prisma.$on('query', (e) => {
+    prisma.$on('query', (e: any) => {
       if (process.env.NODE_ENV === 'development') {
         logger.debug({ query: e.query, params: e.params }, 'DB Query');
       }
     });
 
-    prisma.$on('error', (e) => {
+    prisma.$on('error', (e: any) => {
       logger.error({ error: e.message }, 'DB Error');
     });
 
-    prisma.$on('warn', (e) => {
+    prisma.$on('warn', (e: any) => {
       logger.warn({ warning: e.message }, 'DB Warning');
     });
   }
 
   return prisma;
 }
+
+// Default export for compatibility
+export default getPrismaClient();
+export { prisma };
 
 export async function connectDatabase(): Promise<void> {
   try {

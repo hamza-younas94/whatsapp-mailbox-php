@@ -56,6 +56,10 @@ export class SegmentService implements ISegmentService {
     logger.info({ id }, 'Segment deleted');
   }
 
+  async getSegmentContacts(segmentId: string): Promise<any[]> {
+    return this.evaluateSegment(segmentId).then(ids => ids.map(id => ({ id })));
+  }
+
   async evaluateSegment(segmentId: string): Promise<string[]> {
     return this.repository.evaluateSegment(segmentId);
   }
