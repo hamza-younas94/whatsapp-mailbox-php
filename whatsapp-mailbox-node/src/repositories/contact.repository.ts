@@ -3,7 +3,19 @@
 
 import { PrismaClient, Contact, Prisma } from '@prisma/client';
 import { BaseRepository } from './base.repository';
-import { ContactFilters, PaginatedResult } from '@types/index';
+
+interface ContactFilters {
+  query?: string;
+  tags?: string[];
+  isBlocked?: boolean;
+}
+
+interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 export interface IContactRepository {
   findById(id: string): Promise<Contact | null>;

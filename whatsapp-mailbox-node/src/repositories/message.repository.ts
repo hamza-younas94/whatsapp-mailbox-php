@@ -3,7 +3,19 @@
 
 import { PrismaClient, Message, Prisma } from '@prisma/client';
 import { BaseRepository } from './base.repository';
-import { MessageFilters, PaginatedResult } from '@types/index';
+
+interface MessageFilters {
+  query?: string;
+  status?: string;
+  messageType?: string;
+}
+
+interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 export interface IMessageRepository {
   findById(id: string): Promise<Message | null>;

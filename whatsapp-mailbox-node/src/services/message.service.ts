@@ -1,12 +1,28 @@
 // src/services/message.service.ts
 // Message business logic - Single Responsibility Principle
 
-import { Message, Prisma } from '@prisma/client';
+import { Message, Prisma, MessageType, MessageDirection, MessageStatus } from '@prisma/client';
 import { MessageRepository } from '@repositories/message.repository';
-import { CreateMessageInput, MessageDirection, MessageStatus, MessageType, PaginatedResult } from '@types/index';
 import { NotFoundError, ValidationError, ExternalServiceError } from '@utils/errors';
 import logger from '@utils/logger';
 import { WhatsAppService } from './whatsapp.service';
+
+interface CreateMessageInput {
+  contactId: string;
+  content: string;
+  messageType?: MessageType;
+  direction?: MessageDirection;
+  status?: MessageStatus;
+  mediaUrl?: string;
+  mediaType?: string;
+}
+
+interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 export interface IMessageService {
   sendMessage(userId: string, input: CreateMessageInput): Promise<Message>;

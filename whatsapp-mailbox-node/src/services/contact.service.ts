@@ -3,9 +3,27 @@
 
 import { Contact } from '@prisma/client';
 import { ContactRepository } from '@repositories/contact.repository';
-import { CreateContactInput, ContactFilters, PaginatedResult } from '@types/index';
 import { NotFoundError, ValidationError, ConflictError } from '@utils/errors';
 import logger from '@utils/logger';
+
+interface CreateContactInput {
+  phoneNumber: string;
+  name?: string;
+  email?: string;
+}
+
+interface ContactFilters {
+  query?: string;
+  tags?: string[];
+  isBlocked?: boolean;
+}
+
+interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 export interface IContactService {
   createContact(userId: string, input: CreateContactInput): Promise<Contact>;

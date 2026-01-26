@@ -4,7 +4,6 @@
 import { Request, Response } from 'express';
 import { MessageService } from '@services/message.service';
 import { asyncHandler } from '@middleware/error.middleware';
-import { CreateMessageInput } from '@types/index';
 import logger from '@utils/logger';
 
 export class MessageController {
