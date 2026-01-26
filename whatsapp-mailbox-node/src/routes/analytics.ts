@@ -35,6 +35,10 @@ router.use(authenticate);
 
 // Routes
 router.get('/stats', validateRequest(statsSchema), controller.getStats);
+router.get('/overview', controller.getStats);
 router.get('/trends', validateRequest(trendsSchema), controller.getTrends);
+router.get('/campaigns', controller.getCampaigns);
+router.get('/top-contacts', controller.getTopContacts);
+router.get('/export', controller.exportReport);
 
 export default router;

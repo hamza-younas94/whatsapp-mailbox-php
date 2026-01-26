@@ -33,6 +33,7 @@ export interface IMessageRepository {
     contactId: string,
     filters?: MessageFilters,
   ): Promise<PaginatedResult<Message>>;
+  findByUser(userId: string, filters: MessageFilters): Promise<PaginatedResult<Message>>;
   create(data: Prisma.MessageCreateInput): Promise<Message>;
   update(id: string, data: Prisma.MessageUpdateInput): Promise<Message>;
   delete(id: string): Promise<Message>;
@@ -136,5 +137,38 @@ export class MessageRepository extends BaseRepository<Message> implements IMessa
         status: 'RECEIVED',
       },
     });
+  }
+
+  async findByUser(userId: string, filters: MessageFilters): Promise<PaginatedResult<Message>> {
+    const limit = Math.min(filters.limit || 20, 100);
+    const offset = filters.offset || 0;
+
+    const where: Prisma.MessageWhereInput = {
+      userId,
+      ...(filters.direction && { direction: filters.direction as any }),
+      ...(filters.status && { status: filters.status as any }),
+      ...(filters.messageType && { messageType: filters.messageType as any }),
+      ...(filters.query && { content: { contains: filters.query } }),
+      ...(filters.startDate && { createdAt: { gte: filters.startDate } }),
+      ...(filters.endDate && { createdAt: { lte: filters.endDate } }),
+    };
+
+    const [messages, total] = await Promise.all([
+      this.prisma.message.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: { contact: true },
+      }),
+      this.prisma.message.count({ where }),
+    ]);
+
+    return {
+      data: messages,
+      total,
+      page: Math.floor(offset / limit) + 1,
+      limit,
+    };
   }
 }

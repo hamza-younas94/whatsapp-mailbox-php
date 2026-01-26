@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { ContactController } from '@controllers/contact.controller';
 import { ContactService } from '@services/contact.service';
 import { ContactRepository } from '@repositories/contact.repository';
+import { TagRepository } from '@repositories/tag.repository';
 import { authMiddleware } from '@middleware/auth.middleware';
 import { validate, validateQuery } from '@middleware/validation.middleware';
 import getPrismaClient from '@config/database';
@@ -15,7 +16,8 @@ export function createContactRoutes(): Router {
 
   const prisma = getPrismaClient();
   const contactRepository = new ContactRepository(prisma);
-  const contactService = new ContactService(contactRepository);
+  const tagRepository = new TagRepository(prisma);
+  const contactService = new ContactService(contactRepository, tagRepository);
   const controller = new ContactController(contactService);
 
   // Validation schemas
@@ -23,6 +25,7 @@ export function createContactRoutes(): Router {
     phoneNumber: z.string().regex(/^\+?[1-9]\d{1,14}$/),
     name: z.string().optional(),
     email: z.string().email().optional(),
+    tags: z.array(z.string()).optional(),
   });
 
   const updateContactSchema = z.object({
@@ -39,6 +42,13 @@ export function createContactRoutes(): Router {
   });
 
   // Routes
+  router.get(
+    '/',
+    authMiddleware,
+    validateQuery(searchContactsSchema),
+    controller.searchContacts,
+  );
+
   router.post(
     '/',
     authMiddleware,

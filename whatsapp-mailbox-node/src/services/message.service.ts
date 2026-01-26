@@ -3,6 +3,8 @@
 
 import { Message, Prisma, MessageType, MessageDirection, MessageStatus } from '@prisma/client';
 import { MessageRepository } from '@repositories/message.repository';
+import { ContactRepository } from '@repositories/contact.repository';
+import { ConversationRepository } from '@repositories/conversation.repository';
 import { NotFoundError, ValidationError, ExternalServiceError } from '@utils/errors';
 import logger from '@utils/logger';
 import { WhatsAppService } from './whatsapp.service';
@@ -44,6 +46,7 @@ export interface IMessageService {
     limit?: number,
     offset?: number,
   ): Promise<PaginatedResult<Message>>;
+  listMessages(userId: string, filters: MessageFilters): Promise<PaginatedResult<Message>>;
   markAsRead(messageId: string): Promise<Message>;
   deleteMessage(messageId: string): Promise<void>;
 }
@@ -52,6 +55,8 @@ export class MessageService implements IMessageService {
   constructor(
     private messageRepository: MessageRepository,
     private whatsAppService: WhatsAppService,
+    private contactRepository: ContactRepository,
+    private conversationRepository: ConversationRepository,
   ) {}
 
   async sendMessage(userId: string, input: CreateMessageInput): Promise<Message> {
@@ -65,11 +70,25 @@ export class MessageService implements IMessageService {
         throw new ValidationError('Message content exceeds 4096 characters');
       }
 
+      // Resolve contactId (create if phoneNumber provided)
+      let contactId = input.contactId;
+      if (!contactId && input.phoneNumber) {
+        const contact = await this.contactRepository.findOrCreate(userId, input.phoneNumber, { name: input.phoneNumber });
+        contactId = contact.id;
+      }
+
+      if (!contactId) {
+        throw new ValidationError('contactId or phoneNumber is required');
+      }
+
+      // Ensure conversation exists
+      const conversation = await this.conversationRepository.findOrCreate(userId, contactId);
+
       // Create message in database (PENDING status)
       const message = await this.messageRepository.create({
         user: { connect: { id: userId } },
-        contact: { connect: { id: input.contactId } },
-        conversation: { connect: { id: input.contactId } },
+        contact: { connect: { id: contactId } },
+        conversation: { connect: { id: conversation.id } },
         content: input.content,
         messageType: (input.messageType || MessageType.TEXT) as any,
         direction: MessageDirection.OUTGOING as any,
@@ -81,7 +100,7 @@ export class MessageService implements IMessageService {
       // Send via WhatsApp API
       try {
         const waResponse = await this.whatsAppService.sendMessage(
-          input.contactId,
+          input.phoneNumber || contactId,
           input.content,
           input.mediaUrl,
         );
@@ -187,6 +206,15 @@ export class MessageService implements IMessageService {
       logger.info({ messageId }, 'Message deleted');
     } catch (error) {
       logger.error({ messageId, error }, 'Failed to delete message');
+      throw error;
+    }
+  }
+
+  async listMessages(userId: string, filters: MessageFilters): Promise<PaginatedResult<Message>> {
+    try {
+      return await this.messageRepository.findByUser(userId, filters);
+    } catch (error) {
+      logger.error({ userId, filters, error }, 'Failed to list messages');
       throw error;
     }
   }

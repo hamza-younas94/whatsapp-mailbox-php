@@ -22,6 +22,11 @@ const sendMessageSchema = z.object({
 // Apply authentication to all routes
 router.use(authenticate);
 
+// Simplified endpoints for primary session (used by frontend)
+router.get('/status', controller.getDefaultStatus);
+router.post('/initialize', controller.initializeDefaultSession);
+router.post('/disconnect', controller.disconnectDefaultSession);
+
 // Session management
 router.post('/init', controller.initSession);
 router.get('/sessions', controller.listSessions);

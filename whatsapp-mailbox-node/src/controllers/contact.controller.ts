@@ -21,13 +21,14 @@ export class ContactController {
   constructor(private contactService: ContactService) {}
 
   createContact = asyncHandler(async (req: Request, res: Response) => {
-    const { phoneNumber, name, email } = req.body;
+    const { phoneNumber, name, email, tags } = req.body;
     const userId = req.user!.id;
 
     const input: CreateContactInput = {
       phoneNumber,
       name,
       email,
+      tags,
     };
 
     const contact = await this.contactService.createContact(userId, input);

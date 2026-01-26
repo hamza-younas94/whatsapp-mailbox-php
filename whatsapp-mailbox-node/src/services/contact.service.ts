@@ -10,6 +10,7 @@ interface CreateContactInput {
   phoneNumber: string;
   name?: string;
   email?: string;
+  tags?: string[];
 }
 
 interface ContactFilters {
@@ -36,7 +37,10 @@ export interface IContactService {
 }
 
 export class ContactService implements IContactService {
-  constructor(private contactRepository: ContactRepository) {}
+  constructor(
+    private contactRepository: ContactRepository,
+    private tagRepository?: any,
+  ) {}
 
   async createContact(userId: string, input: CreateContactInput): Promise<Contact> {
     try {
@@ -58,6 +62,17 @@ export class ContactService implements IContactService {
         name: input.name,
         email: input.email,
       });
+
+      // Add tags if provided
+      if (input.tags && input.tags.length > 0 && this.tagRepository) {
+        for (const tagName of input.tags) {
+          let tag = await this.tagRepository.findByName(userId, tagName);
+          if (!tag) {
+            tag = await this.tagRepository.create({ userId, name: tagName });
+          }
+          await this.tagRepository.addToContact(contact.id, tag.id);
+        }
+      }
 
       logger.info({ contactId: contact.id }, 'Contact created');
       return contact;

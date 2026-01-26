@@ -52,14 +52,16 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
     const limit = Math.min(filters.limit || 20, 100);
     const offset = filters.offset || 0;
 
+    const searchTerm = filters.search || filters.query;
+
     const where: Prisma.ContactWhereInput = {
       userId,
       isBlocked: filters.isBlocked ?? false,
-      ...(filters.search && {
+      ...(searchTerm && {
         OR: [
-          { name: { contains: filters.search } },
-          { phoneNumber: { contains: filters.search } },
-          { email: { contains: filters.search } },
+          { name: { contains: searchTerm } },
+          { phoneNumber: { contains: searchTerm } },
+          { email: { contains: searchTerm } },
         ],
       }),
       ...(filters.tags?.length && {
@@ -72,7 +74,7 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
         where,
         skip: offset,
         take: limit,
-        include: { tags: { include: { tag: true } }, conversations: true },
+        include: { tags: { include: { tag: true } }, _count: { select: { messages: true } } },
         orderBy: { lastMessageAt: 'desc' },
       }),
       this.prisma.contact.count({ where }),

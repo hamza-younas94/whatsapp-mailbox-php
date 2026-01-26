@@ -87,6 +87,7 @@ export function createApp(): Express {
   app.use('/api/v1/segments', segmentRoutes);
   app.use('/api/v1/broadcasts', broadcastRoutes);
   app.use('/api/v1/automations', automationRoutes);
+  app.use('/api/v1/automation', automationRoutes);
   app.use('/api/v1/analytics', analyticsRoutes);
   app.use('/api/v1/crm', crmRoutes);
   app.use('/api/v1/notes', noteRoutes);

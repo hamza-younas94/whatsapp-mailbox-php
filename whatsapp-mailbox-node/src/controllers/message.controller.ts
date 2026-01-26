@@ -18,11 +18,35 @@ interface CreateMessageInput {
 export class MessageController {
   constructor(private messageService: MessageService) {}
 
+  listMessages = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const { page = 1, limit = 20, search, direction, status } = req.query;
+
+    const filters = {
+      query: search as string | undefined,
+      direction: direction as string | undefined,
+      status: status as string | undefined,
+      limit: parseInt(limit as string),
+      offset: (parseInt(page as string) - 1) * parseInt(limit as string),
+    };
+
+    const result = await this.messageService.listMessages(userId, filters);
+
+    res.status(200).json({
+      success: true,
+      data: result.data,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+    });
+  });
+
   sendMessage = asyncHandler(async (req: Request, res: Response) => {
-    const { contactId, content, mediaUrl } = req.body;
+    const { contactId, phoneNumber, content, mediaUrl } = req.body;
     const userId = req.user!.id;
 
     const input: CreateMessageInput = {
+      phoneNumber,
       contactId,
       content,
       mediaUrl,

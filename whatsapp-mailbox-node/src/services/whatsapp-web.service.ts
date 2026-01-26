@@ -15,6 +15,7 @@ export interface WhatsAppWebSession {
   status: 'INITIALIZING' | 'QR_READY' | 'AUTHENTICATED' | 'READY' | 'DISCONNECTED';
   qrCode?: string;
   phoneNumber?: string;
+  createdAt: Date;
 }
 
 export class WhatsAppWebService extends EventEmitter {
@@ -70,6 +71,7 @@ export class WhatsAppWebService extends EventEmitter {
       userId,
       client,
       status: 'INITIALIZING',
+      createdAt: new Date(),
     };
 
     this.sessions.set(sessionId, session);

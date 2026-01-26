@@ -35,4 +35,24 @@ export class AnalyticsController {
       data: trends,
     });
   });
+
+  getCampaigns = asyncHandler(async (req: Request, res: Response) => {
+    res.status(200).json({
+      success: true,
+      data: [],
+    });
+  });
+
+  getTopContacts = asyncHandler(async (req: Request, res: Response) => {
+    res.status(200).json({
+      success: true,
+      data: [],
+    });
+  });
+
+  exportReport = asyncHandler(async (req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=report.csv');
+    res.status(200).send('Date,Sent,Received\n');
+  });
 }

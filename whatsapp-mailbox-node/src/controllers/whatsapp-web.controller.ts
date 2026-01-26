@@ -7,6 +7,96 @@ import { asyncHandler } from '@middleware/error.middleware';
 import { v4 as uuidv4 } from 'uuid';
 
 export class WhatsAppWebController {
+  private getPreferredSession(userId: string) {
+    const sessions = whatsappWebService.getUserSessions(userId);
+
+    if (!sessions.length) return undefined;
+
+    const activeSession = sessions.find((s) => s.status !== 'DISCONNECTED');
+    return activeSession || sessions[sessions.length - 1];
+  }
+
+  /**
+   * Initialize or return the current session for the user
+   */
+  initializeDefaultSession = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+
+    let session = this.getPreferredSession(userId);
+
+    if (!session || session.status === 'DISCONNECTED') {
+      const sessionId = `session_${userId}_${uuidv4()}`;
+      session = await whatsappWebService.initializeSession(userId, sessionId);
+    }
+
+    res.status(200).json({
+      success: true,
+      sessionId: session.id,
+      status: session.status,
+    });
+  });
+
+  /**
+   * Get status for the user's primary session
+   */
+  getDefaultStatus = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const session = this.getPreferredSession(userId);
+
+    if (!session) {
+      return res.status(200).json({
+        success: true,
+        isConnected: false,
+        message: 'No active session. Initialize to start.',
+      });
+    }
+
+    const payload: Record<string, unknown> = {
+      success: true,
+      sessionId: session.id,
+      status: session.status,
+      phoneNumber: session.phoneNumber,
+    };
+
+    if (session.status === 'READY') {
+      return res.status(200).json({
+        ...payload,
+        isConnected: true,
+      });
+    }
+
+    if (session.status === 'QR_READY' && session.qrCode) {
+      return res.status(200).json({
+        ...payload,
+        isConnected: false,
+        qr: session.qrCode,
+      });
+    }
+
+    return res.status(200).json({
+      ...payload,
+      isConnected: false,
+      message: 'Session initializing. Please wait...',
+    });
+  });
+
+  /**
+   * Disconnect the user's primary session
+   */
+  disconnectDefaultSession = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const session = this.getPreferredSession(userId);
+
+    if (session) {
+      await whatsappWebService.destroySession(session.id);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Session disconnected',
+    });
+  });
+
   /**
    * Initialize a new WhatsApp Web session
    */
@@ -104,9 +194,11 @@ export class WhatsAppWebController {
     res.status(200).json({
       success: true,
       data: sessions.map((s) => ({
+        id: s.id,
         sessionId: s.id,
         status: s.status,
         phoneNumber: s.phoneNumber,
+        createdAt: s.createdAt.toISOString(),
       })),
     });
   });
