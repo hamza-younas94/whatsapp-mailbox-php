@@ -69,6 +69,15 @@ export function createApp(): Express {
   app.use('/api/v1/notes', noteRoutes);
   app.use('/api/v1/whatsapp-web', whatsappWebRoutes);
 
+  // Serve index.html for all non-API routes (SPA fallback)
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api/')) {
+      res.sendFile(path.join(__dirname, '../public/index.html'));
+    } else {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Resource not found' } });
+    }
+  });
+
   // Error handling (must be last)
   setupErrorMiddleware(app);
 

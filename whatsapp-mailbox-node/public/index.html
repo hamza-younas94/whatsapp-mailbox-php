@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Mailbox - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        whatsapp: '#25D366',
+                        'whatsapp-dark': '#128C7E',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <!-- Check if user is logged in -->
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+    </script>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <i class="fab fa-whatsapp text-whatsapp text-3xl"></i>
+                    <h1 class="text-2xl font-bold text-gray-800">WhatsApp Mailbox</h1>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <span id="userName" class="text-gray-700"></span>
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Messages</p>
+                        <p id="totalMessages" class="text-3xl font-bold text-gray-800">0</p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <i class="fas fa-envelope text-blue-500 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Contacts</p>
+                        <p id="totalContacts" class="text-3xl font-bold text-gray-800">0</p>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <i class="fas fa-users text-green-500 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Active Campaigns</p>
+                        <p id="activeCampaigns" class="text-3xl font-bold text-gray-800">0</p>
+                    </div>
+                    <div class="bg-purple-100 p-3 rounded-full">
+                        <i class="fas fa-bullhorn text-purple-500 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Quick Replies</p>
+                        <p id="quickReplies" class="text-3xl font-bold text-gray-800">0</p>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded-full">
+                        <i class="fas fa-reply text-yellow-500 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button onclick="window.location.href='/messages.html'" class="bg-whatsapp hover:bg-whatsapp-dark text-white p-4 rounded-lg flex flex-col items-center space-y-2">
+                    <i class="fas fa-comments text-3xl"></i>
+                    <span>Messages</span>
+                </button>
+                <button onclick="window.location.href='/contacts.html'" class="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg flex flex-col items-center space-y-2">
+                    <i class="fas fa-address-book text-3xl"></i>
+                    <span>Contacts</span>
+                </button>
+                <button onclick="window.location.href='/broadcasts.html'" class="bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-lg flex flex-col items-center space-y-2">
+                    <i class="fas fa-broadcast-tower text-3xl"></i>
+                    <span>Broadcast</span>
+                </button>
+                <button onclick="window.location.href='/analytics.html'" class="bg-indigo-500 hover:bg-indigo-600 text-white p-4 rounded-lg flex flex-col items-center space-y-2">
+                    <i class="fas fa-chart-bar text-3xl"></i>
+                    <span>Analytics</span>
+                </button>
+                <button onclick="window.location.href='/quick-replies.html'" class="bg-yellow-500 hover:bg-yellow-600 text-white p-4 rounded-lg flex flex-col items-center space-y-2">
+                    <i class="fas fa-bolt text-3xl"></i>
+                    <span>Quick Replies</span>
+                </button>
+                <button onclick="window.location.href='/automations.html'" class="bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg flex flex-col items-center space-y-2">
+                    <i class="fas fa-robot text-3xl"></i>
+                    <span>Automation</span>
+                </button>
+                <button onclick="window.location.href='/tags.html'" class="bg-pink-500 hover:bg-pink-600 text-white p-4 rounded-lg flex flex-col items-center space-y-2">
+                    <i class="fas fa-tags text-3xl"></i>
+                    <span>Tags</span>
+                </button>
+                <button onclick="window.location.href='/qr-connect.html'" class="bg-teal-500 hover:bg-teal-600 text-white p-4 rounded-lg flex flex-col items-center space-y-2">
+                    <i class="fas fa-qrcode text-3xl"></i>
+                    <span>Connect WhatsApp</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Recent Messages -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Recent Messages</h2>
+                <a href="/messages.html" class="text-whatsapp hover:text-whatsapp-dark">View All →</a>
+            </div>
+            <div id="recentMessages" class="space-y-4">
+                <!-- Messages will be loaded here -->
+                <div class="text-center text-gray-500 py-8">
+                    <i class="fas fa-inbox text-4xl mb-2"></i>
+                    <p>Loading messages...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin + '/api/v1';
+        
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem('token');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` }),
+                ...options.headers
+            };
+            
+            const response = await fetch(url, { ...options, headers });
+            
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            return response;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        async function loadDashboard() {
+            try {
+                // Load user info
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                document.getElementById('userName').textContent = user.name || user.email || 'User';
+
+                // Load stats
+                const statsResponse = await fetchWithAuth(`${API_BASE}/analytics/stats`);
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
+                    document.getElementById('totalMessages').textContent = stats.data?.totalMessages || 0;
+                    document.getElementById('totalContacts').textContent = stats.data?.totalContacts || 0;
+                }
+
+                // Load campaigns
+                const campaignsResponse = await fetchWithAuth(`${API_BASE}/broadcasts`);
+                if (campaignsResponse.ok) {
+                    const campaigns = await campaignsResponse.json();
+                    document.getElementById('activeCampaigns').textContent = 
+                        campaigns.data?.filter(c => c.status === 'active').length || 0;
+                }
+
+                // Load quick replies
+                const repliesResponse = await fetchWithAuth(`${API_BASE}/quick-replies`);
+                if (repliesResponse.ok) {
+                    const replies = await repliesResponse.json();
+                    document.getElementById('quickReplies').textContent = replies.data?.length || 0;
+                }
+
+                // Load recent messages
+                const messagesResponse = await fetchWithAuth(`${API_BASE}/messages?limit=5`);
+                if (messagesResponse.ok) {
+                    const messages = await messagesResponse.json();
+                    displayRecentMessages(messages.data || []);
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        function displayRecentMessages(messages) {
+            const container = document.getElementById('recentMessages');
+            
+            if (messages.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                        <p>No messages yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = messages.map(msg => `
+                <div class="flex items-start space-x-4 p-4 hover:bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="bg-whatsapp text-white w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-semibold text-gray-800">${msg.contact?.name || msg.contact?.phoneNumber || 'Unknown'}</h3>
+                                <p class="text-gray-600 text-sm">${msg.content || 'No content'}</p>
+                            </div>
+                            <span class="text-xs text-gray-500">${new Date(msg.createdAt).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load dashboard on page load
+        loadDashboard();
+    </script>
+</body>
+</html>
