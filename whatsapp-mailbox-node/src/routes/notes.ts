@@ -19,10 +19,8 @@ const controller = new NoteController(service);
 
 // Validation schemas
 const createNoteSchema = z.object({
-  body: z.object({
-    contactId: z.string().cuid(),
-    content: z.string().min(1),
-  }),
+  contactId: z.string().cuid(),
+  content: z.string().min(1),
 });
 
 // Apply authentication to all routes

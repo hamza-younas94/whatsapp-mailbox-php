@@ -19,20 +19,16 @@ const controller = new CRMController(service);
 
 // Validation schemas
 const createDealSchema = z.object({
-  body: z.object({
-    title: z.string().min(1),
-    contactId: z.string().cuid(),
-    value: z.number().optional(),
-    stage: z.string(),
-    expectedCloseDate: z.string().datetime().optional(),
-    description: z.string().optional(),
-  }),
+  title: z.string().min(1),
+  contactId: z.string().cuid(),
+  value: z.number().optional(),
+  stage: z.string(),
+  expectedCloseDate: z.string().datetime().optional(),
+  description: z.string().optional(),
 });
 
 const moveDealSchema = z.object({
-  body: z.object({
-    stage: z.string(),
-  }),
+  stage: z.string(),
 });
 
 // Apply authentication to all routes

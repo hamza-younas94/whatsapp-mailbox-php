@@ -31,9 +31,7 @@ const createQuickReplySchema = z.object({
 });
 
 const searchSchema = z.object({
-  query: z.object({
-    q: z.string().min(1),
-  }),
+  q: z.string().min(1),
 });
 
 // Apply authentication to all routes

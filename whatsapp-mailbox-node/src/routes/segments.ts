@@ -21,10 +21,8 @@ const controller = new SegmentController(service);
 
 // Validation schemas
 const createSegmentSchema = z.object({
-  body: z.object({
-    name: z.string().min(1),
-    conditions: z.record(z.any()),
-  }),
+  name: z.string().min(1),
+  conditions: z.record(z.any()),
 });
 
 // Apply authentication to all routes

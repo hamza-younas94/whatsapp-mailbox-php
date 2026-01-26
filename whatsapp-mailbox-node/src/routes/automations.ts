@@ -27,26 +27,22 @@ const controller = new AutomationController(service);
 
 // Validation schemas
 const createAutomationSchema = z.object({
-  body: z.object({
-    name: z.string().min(1).max(100),
-    triggerType: z.enum(['MESSAGE_RECEIVED', 'KEYWORD', 'TAG_ADDED', 'SCHEDULE']),
-    triggerValue: z.string().optional(),
-    conditions: z.record(z.any()).optional(),
-    actions: z.array(
-      z.object({
-        type: z.enum(['SEND_MESSAGE', 'ADD_TAG', 'REMOVE_TAG', 'WAIT', 'WEBHOOK']),
-        value: z.string().optional(),
-        delay: z.number().optional(),
-      }),
-    ),
-    isActive: z.boolean().default(true),
-  }),
+  name: z.string().min(1).max(100),
+  triggerType: z.enum(['MESSAGE_RECEIVED', 'KEYWORD', 'TAG_ADDED', 'SCHEDULE']),
+  triggerValue: z.string().optional(),
+  conditions: z.record(z.any()).optional(),
+  actions: z.array(
+    z.object({
+      type: z.enum(['SEND_MESSAGE', 'ADD_TAG', 'REMOVE_TAG', 'WAIT', 'WEBHOOK']),
+      value: z.string().optional(),
+      delay: z.number().optional(),
+    }),
+  ),
+  isActive: z.boolean().default(true),
 });
 
 const toggleSchema = z.object({
-  body: z.object({
-    isActive: z.boolean(),
-  }),
+  isActive: z.boolean(),
 });
 
 // Apply authentication to all routes

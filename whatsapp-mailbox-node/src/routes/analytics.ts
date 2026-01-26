@@ -6,7 +6,7 @@ import { AnalyticsController } from '@controllers/analytics.controller';
 import { AnalyticsService } from '@services/analytics.service';
 import getPrismaClient from '@config/database';
 import { authenticate } from '@middleware/auth.middleware';
-import { validateRequest } from '@middleware/validation.middleware';
+import { validateRequest, validateQuery } from '@middleware/validation.middleware';
 import { z } from 'zod';
 
 const router = Router();

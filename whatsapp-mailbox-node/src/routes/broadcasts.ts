@@ -27,19 +27,15 @@ const controller = new BroadcastController(service);
 
 // Validation schemas
 const createBroadcastSchema = z.object({
-  body: z.object({
-    name: z.string().min(1).max(100),
-    message: z.string().min(1),
-    segmentId: z.string().cuid().optional(),
-    mediaUrl: z.string().url().optional(),
-    mediaType: z.enum(['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT']).optional(),
-  }),
+  name: z.string().min(1).max(100),
+  message: z.string().min(1),
+  segmentId: z.string().cuid().optional(),
+  mediaUrl: z.string().url().optional(),
+  mediaType: z.enum(['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT']).optional(),
 });
 
 const scheduleSchema = z.object({
-  body: z.object({
-    scheduleTime: z.string().datetime(),
-  }),
+  scheduleTime: z.string().datetime(),
 });
 
 // Apply authentication to all routes
