@@ -5,6 +5,7 @@ import { Request, Response } from 'express';
 import { MessageService } from '@services/message.service';
 import { asyncHandler } from '@middleware/error.middleware';
 import logger from '@utils/logger';
+import { requireUserId } from '@utils/auth-helpers';
 
 interface CreateMessageInput {
   phoneNumber?: string;
@@ -19,7 +20,7 @@ export class MessageController {
   constructor(private messageService: MessageService) {}
 
   listMessages = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user!.id;
+    const userId = requireUserId(req);
     const { page = 1, limit = 20, search, direction, status } = req.query;
 
     const filters = {
@@ -43,7 +44,7 @@ export class MessageController {
 
   sendMessage = asyncHandler(async (req: Request, res: Response) => {
     const { contactId, phoneNumber, content, mediaUrl } = req.body;
-    const userId = req.user!.id;
+    const userId = requireUserId(req);
 
     const input: CreateMessageInput = {
       phoneNumber,
