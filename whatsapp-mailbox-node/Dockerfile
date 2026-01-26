@@ -43,6 +43,7 @@ RUN npm ci && npm cache clean --force
 COPY src ./src
 COPY tsconfig.json .
 COPY prisma ./prisma
+COPY public ./public
 
 # Generate Prisma Client
 RUN npx prisma generate
