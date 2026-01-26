@@ -27,7 +27,30 @@ export function createApp(): Express {
   const env = getEnv();
 
   // Security middleware
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'self'", 'https:', 'data:'],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "'unsafe-eval'",
+          'https://cdn.tailwindcss.com',
+          'https://cdnjs.cloudflare.com',
+          'https://static.cloudflareinsights.com',
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'data:', 'https://cdnjs.cloudflare.com', 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'http://whatshub.nexofydigital.com:3000', 'https://whatshub.nexofydigital.com:3000'],
+        objectSrc: ["'none'"],
+        frameSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  }));
   app.use(cors({
     origin: env.CORS_ORIGIN,
     credentials: true,
