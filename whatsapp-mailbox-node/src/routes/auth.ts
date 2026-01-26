@@ -18,25 +18,19 @@ const controller = new AuthController(service);
 
 // Validation schemas
 const registerSchema = z.object({
-  body: z.object({
     email: z.string().email(),
     username: z.string().min(3).max(50),
     password: z.string().min(8),
     name: z.string().optional(),
-  }),
 });
 
 const loginSchema = z.object({
-  body: z.object({
     email: z.string().email(),
     password: z.string(),
-  }),
 });
 
 const refreshSchema = z.object({
-  body: z.object({
     refreshToken: z.string(),
-  }),
 });
 
 // Routes
