@@ -137,8 +137,18 @@ export class MessageService implements IMessageService {
 
         logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
 
+        // Get or create chat to avoid markedUnread error in whatsapp-web.js library
+        try {
+          const chat = await activeSession.client.getChatById(chatId);
+          if (!chat) {
+            throw new Error('Failed to get chat');
+          }
+          logger.info({ chatId }, 'Chat retrieved successfully');
+        } catch (err) {
+          logger.warn({ chatId, error: (err as Error).message }, 'Could not pre-fetch chat, attempting direct send anyway');
+        }
+
         // Send message directly using WhatsApp Web client
-        // No need for getNumberId - just send to the formatted number
         const waMessage = await activeSession.client.sendMessage(chatId, input.content);
 
         logger.info({ messageId: waMessage.id.id, to: chatId }, 'WhatsApp message sent successfully');
