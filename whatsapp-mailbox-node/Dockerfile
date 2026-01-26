@@ -36,6 +36,13 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
+# Harden npm for flaky networks
+RUN npm config set fetch-retries 5 \
+  && npm config set fetch-retry-mintimeout 10000 \
+  && npm config set fetch-retry-maxtimeout 60000 \
+  && npm config set registry https://registry.npmjs.org/ \
+  && npm config set network-timeout 600000
+
 # Install ALL dependencies (needed for TypeScript build)
 RUN npm ci && npm cache clean --force
 
