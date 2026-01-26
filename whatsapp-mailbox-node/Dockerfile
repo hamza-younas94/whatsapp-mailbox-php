@@ -40,8 +40,7 @@ COPY package*.json ./
 RUN npm config set fetch-retries 5 \
   && npm config set fetch-retry-mintimeout 10000 \
   && npm config set fetch-retry-maxtimeout 60000 \
-  && npm config set registry https://registry.npmjs.org/ \
-  && npm config set network-timeout 600000
+  && npm config set registry https://registry.npmjs.org/
 
 # Install ALL dependencies (needed for TypeScript build)
 RUN npm ci && npm cache clean --force
