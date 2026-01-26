@@ -4,11 +4,22 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'path';
 import { getEnv } from '@config/env';
 import { connectDatabase, disconnectDatabase } from '@config/database';
 import { setupErrorMiddleware } from '@middleware/error.middleware';
 import { createMessageRoutes } from '@routes/messages';
 import { createContactRoutes } from '@routes/contacts';
+import authRoutes from '@routes/auth';
+import quickReplyRoutes from '@routes/quick-replies';
+import tagRoutes from '@routes/tags';
+import segmentRoutes from '@routes/segments';
+import broadcastRoutes from '@routes/broadcasts';
+import automationRoutes from '@routes/automations';
+import analyticsRoutes from '@routes/analytics';
+import crmRoutes from '@routes/crm';
+import noteRoutes from '@routes/notes';
+import whatsappWebRoutes from '@routes/whatsapp-web';
 import logger from '@utils/logger';
 
 export function createApp(): Express {
@@ -26,6 +37,9 @@ export function createApp(): Express {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+  // Serve static files (QR test page)
+  app.use(express.static(path.join(__dirname, '../public')));
+
   // Logging middleware
   app.use((req, _res, next) => {
     logger.info({ method: req.method, path: req.path }, `${req.method} ${req.path}`);
@@ -42,8 +56,18 @@ export function createApp(): Express {
   });
 
   // API routes
+  app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/messages', createMessageRoutes());
   app.use('/api/v1/contacts', createContactRoutes());
+  app.use('/api/v1/quick-replies', quickReplyRoutes);
+  app.use('/api/v1/tags', tagRoutes);
+  app.use('/api/v1/segments', segmentRoutes);
+  app.use('/api/v1/broadcasts', broadcastRoutes);
+  app.use('/api/v1/automations', automationRoutes);
+  app.use('/api/v1/analytics', analyticsRoutes);
+  app.use('/api/v1/crm', crmRoutes);
+  app.use('/api/v1/notes', noteRoutes);
+  app.use('/api/v1/whatsapp-web', whatsappWebRoutes);
 
   // Error handling (must be last)
   setupErrorMiddleware(app);

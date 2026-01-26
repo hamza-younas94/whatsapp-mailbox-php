@@ -39,6 +39,7 @@ model User {
   automations   Automation[]
   notes         Note[]
   activityLogs  ActivityLog[]
+  dripCampaigns DripCampaign[]
 
   @@index([email])
   @@index([username])
@@ -76,6 +77,8 @@ model Contact {
   messages      Message[]
   tags          TagOnContact[]
   notes         Note[]
+  dripEnrollments DripEnrollment[]
+  dripScheduled   DripScheduledMessage[]
 
   @@unique([userId, phoneNumber])
   @@index([userId])
@@ -416,6 +419,98 @@ enum ConfigType {
   NUMBER
   BOOLEAN
   JSON
+}
+
+// ============================================
+// DRIP CAMPAIGNS
+// ============================================
+
+model DripCampaign {
+  id           String              @id @default(cuid())
+  userId       String
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?             @db.Text
+  triggerType  DripTriggerType
+  triggerValue String?
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  steps        DripCampaignStep[]
+  enrollments  DripEnrollment[]
+  scheduled    DripScheduledMessage[]
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+enum DripTriggerType {
+  MANUAL
+  TAG_ADDED
+  FORM_SUBMITTED
+}
+
+model DripCampaignStep {
+  id           String              @id @default(cuid())
+  campaignId   String
+  campaign     DripCampaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  sequence     Int
+  delayHours   Int
+  message      String              @db.Text
+  mediaUrl     String?
+  mediaType    MessageMediaType?
+  createdAt    DateTime            @default(now())
+
+  scheduled    DripScheduledMessage[]
+
+  @@index([campaignId])
+  @@index([sequence])
+}
+
+model DripEnrollment {
+  id           String              @id @default(cuid())
+  campaignId   String
+  campaign     DripCampaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId    String
+  contact      Contact             @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  currentStep  Int                 @default(0)
+  status       DripEnrollmentStatus
+  enrolledAt   DateTime            @default(now())
+  completedAt  DateTime?
+
+  @@unique([campaignId, contactId])
+  @@index([campaignId])
+  @@index([contactId])
+  @@index([status])
+}
+
+enum DripEnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model DripScheduledMessage {
+  id           String              @id @default(cuid())
+  campaignId   String
+  campaign     DripCampaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  stepId       String
+  step         DripCampaignStep    @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  contactId    String
+  contact      Contact             @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  message      String              @db.Text
+  mediaUrl     String?
+  mediaType    MessageMediaType?
+  scheduledFor DateTime
+  status       ScheduledMessageStatus
+  sentAt       DateTime?
+  createdAt    DateTime            @default(now())
+
+  @@index([campaignId])
+  @@index([contactId])
+  @@index([status])
+  @@index([scheduledFor])
 }
 
 model WebhookLog {

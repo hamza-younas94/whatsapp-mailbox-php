@@ -2,6 +2,21 @@
 
 A professional, production-ready WhatsApp Business mailbox built with **Node.js, Express, TypeScript, and Prisma**.
 
+## 🔥 NEW: Dual WhatsApp Connection Support
+
+### Method 1: WhatsApp Business API (Production)
+- Official Meta Business API
+- For verified businesses
+- Use endpoints: `/api/v1/messages`
+
+### Method 2: WhatsApp Web with QR Code (Development/Personal)
+- ✨ **Just added!** Scan QR code with your phone
+- Works with personal WhatsApp accounts
+- No Meta verification needed
+- Use endpoints: `/api/v1/whatsapp-web`
+
+📖 **[Complete WhatsApp Web QR Guide →](./WHATSAPP_WEB_GUIDE.md)**
+
 ## ✨ Architecture & Design Principles
 
 ### SOLID Principles Implementation
@@ -63,6 +78,33 @@ npm run dev
 # Server running at http://localhost:3000
 # API documentation at http://localhost:3000/docs
 ```
+
+## 📱 Quick Start: WhatsApp Web (QR Code)
+
+### 1. Initialize Session
+```bash
+curl -X POST http://localhost:3000/api/v1/whatsapp-web/init \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### 2. Get QR Code
+```bash
+curl -X GET http://localhost:3000/api/v1/whatsapp-web/sessions/SESSION_ID/qr \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### 3. Scan QR Code
+Open the returned QR code in browser and scan with WhatsApp mobile app.
+
+### 4. Send Message
+```bash
+curl -X POST http://localhost:3000/api/v1/whatsapp-web/sessions/SESSION_ID/send \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"to": "1234567890", "message": "Hello!"}'
+```
+
+📖 **[Full WhatsApp Web Documentation →](./WHATSAPP_WEB_GUIDE.md)**
 
 ### Production Deployment
 

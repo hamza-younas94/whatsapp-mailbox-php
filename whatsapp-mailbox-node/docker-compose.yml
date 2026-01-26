@@ -11,40 +11,50 @@ services:
       - "${PORT:-3000}:3000"
     environment:
       NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: mysql://${DB_USER:-mailbox}:${DB_PASSWORD:-password}@db:3306/${DB_NAME:-whatsapp_mailbox}
       JWT_SECRET: ${JWT_SECRET}
       WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN}
       WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
       WEBHOOK_VERIFY_TOKEN: ${WEBHOOK_VERIFY_TOKEN}
       REDIS_URL: redis://redis:6379
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - whatsapp_sessions:/app/.wwebjs_auth
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - mailbox-network
 
   db:
     image: mysql:8.0
     container_name: whatsapp-mailbox-db
     restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_DATABASE: whatsapp_mailbox
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_DATABASE: ${DB_NAME:-whatsapp_mailbox}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
       MYSQL_USER: ${DB_USER:-mailbox}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
     ports:
       - "${DB_PORT:-3306}:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${DB_USER:-mailbox}", "-p${DB_PASSWORD:-password}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - mailbox-network
 
   redis:
     image: redis:7-alpine
@@ -57,9 +67,16 @@ services:
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 5s
+      timeout: 3s
       retries: 5
+    networks:
+      - mailbox-network
+
+networks:
+  mailbox-network:
+    driver: bridge
 
 volumes:
   db_data:
   redis_data:
+  whatsapp_sessions:
