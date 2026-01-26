@@ -35,9 +35,8 @@ export function getPrismaClient(): PrismaClient {
   return prisma;
 }
 
-// Default export for compatibility
+// Default export
 export default getPrismaClient();
-export { prisma };
 
 export async function connectDatabase(): Promise<void> {
   try {

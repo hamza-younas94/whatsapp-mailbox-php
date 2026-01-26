@@ -8,6 +8,11 @@ interface MessageFilters {
   query?: string;
   status?: string;
   messageType?: string;
+  direction?: string;
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+  offset?: number;
 }
 
 interface PaginatedResult<T> {
@@ -72,7 +77,7 @@ export class MessageRepository extends BaseRepository<Message> implements IMessa
       data: messages,
       total,
       page: Math.floor(offset / limit) + 1,
-      pageSize: limit,
+      limit: limit,
       hasMore: offset + limit < total,
     };
   }
@@ -107,7 +112,7 @@ export class MessageRepository extends BaseRepository<Message> implements IMessa
       data: messages,
       total,
       page: Math.floor(offset / limit) + 1,
-      pageSize: limit,
+      limit: limit,
       hasMore: offset + limit < total,
     };
   }

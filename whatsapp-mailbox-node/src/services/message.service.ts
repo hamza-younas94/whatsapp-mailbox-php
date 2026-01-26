@@ -17,6 +17,17 @@ interface CreateMessageInput {
   mediaType?: string;
 }
 
+interface MessageFilters {
+  query?: string;
+  status?: string;
+  messageType?: string;
+  direction?: string;
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+  offset?: number;
+}
+
 interface PaginatedResult<T> {
   data: T[];
   total: number;
@@ -106,14 +117,14 @@ export class MessageService implements IMessageService {
       // Create new message
       const message = await this.messageRepository.create({
         waMessageId,
-        userId: payload.userId,
-        contactId: payload.contactId,
-        conversationId: payload.conversationId,
+        user: { connect: { id: payload.userId } },
+        contact: { connect: { id: payload.contactId } },
+        conversation: { connect: { id: payload.conversationId } },
         content: payload.content,
-        messageType: MessageType.TEXT as any,
-        direction: MessageDirection.INCOMING as any,
-        status: MessageStatus.RECEIVED as any,
-      } as Prisma.MessageCreateInput);
+        messageType: MessageType.TEXT,
+        direction: MessageDirection.INCOMING,
+        status: MessageStatus.RECEIVED,
+      } as any);
 
       logger.info({ messageId: message.id }, 'Message received');
       return message;

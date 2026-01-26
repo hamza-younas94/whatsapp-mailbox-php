@@ -6,8 +6,11 @@ import { BaseRepository } from './base.repository';
 
 interface ContactFilters {
   query?: string;
+  search?: string;
   tags?: string[];
   isBlocked?: boolean;
+  limit?: number;
+  offset?: number;
 }
 
 interface PaginatedResult<T> {

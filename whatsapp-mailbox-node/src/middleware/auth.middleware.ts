@@ -10,6 +10,7 @@ import { UserRole } from '@prisma/client';
 
 export interface JwtPayload {
   userId: string;
+  id: string;
   email: string;
   role: UserRole;
 }
