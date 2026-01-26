@@ -130,7 +130,7 @@ model Message {
   
   // Media
   mediaUrl          String?
-  mediaType         String?          @db.Enum('image', 'video', 'audio', 'document')
+  mediaType         String?
   mediaFileName     String?
   
   // Metadata
