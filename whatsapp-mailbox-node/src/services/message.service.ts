@@ -62,6 +62,11 @@ export class MessageService implements IMessageService {
 
   async sendMessage(userId: string, input: CreateMessageInput): Promise<Message> {
     try {
+      // Validate userId is present
+      if (!userId) {
+        throw new ValidationError('User ID is required - authentication failed');
+      }
+
       // Validate input
       if (!input.content && !input.mediaUrl) {
         throw new ValidationError('Message must have content or media');
