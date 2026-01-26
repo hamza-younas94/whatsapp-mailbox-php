@@ -101,15 +101,19 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
     const createData: Record<string, any> = { userId, phoneNumber };
 
     // Only include non-undefined fields
-    if (data?.name) updateData.name = data.name;
-    if (data?.email) updateData.email = data.email;
-    if (data?.name) createData.name = data.name;
-    if (data?.email) createData.email = data.email;
+    if (data?.name) {
+      updateData.name = data.name;
+      createData.name = data.name;
+    }
+    if (data?.email) {
+      updateData.email = data.email;
+      createData.email = data.email;
+    }
 
     return this.prisma.contact.upsert({
       where: { userId_phoneNumber: { userId, phoneNumber } },
       update: updateData,
-      create: createData,
+      create: createData as any,
     });
   }
 }

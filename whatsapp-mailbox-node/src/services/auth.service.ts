@@ -67,9 +67,9 @@ export class AuthService implements IAuthService {
 
     logger.info({ userId: user.id, email: user.email }, 'User registered');
 
-    // Generate tokens
-    const token = this.generateToken(user.id, '24h');
-    const refreshToken = this.generateToken(user.id, '7d');
+    // Generate tokens with full user info
+    const token = this.generateToken(user.id, user.email, user.role, '24h');
+    const refreshToken = this.generateToken(user.id, user.email, user.role, '7d');
 
     // Remove password from response
     const { passwordHash: _, ...userWithoutPassword } = user;
@@ -111,9 +111,9 @@ export class AuthService implements IAuthService {
 
     logger.info({ userId: user.id, email: user.email }, 'User logged in');
 
-    // Generate tokens
-    const token = this.generateToken(user.id, '24h');
-    const refreshToken = this.generateToken(user.id, '7d');
+    // Generate tokens with full user info
+    const token = this.generateToken(user.id, user.email, user.role, '24h');
+    const refreshToken = this.generateToken(user.id, user.email, user.role, '7d');
 
     // Remove password from response
     const { passwordHash: _, ...userWithoutPassword } = user;
@@ -128,17 +128,17 @@ export class AuthService implements IAuthService {
   async refreshToken(refreshToken: string): Promise<{ token: string }> {
     try {
       const env = getEnv();
-      const decoded = jwt.verify(refreshToken, env.JWT_SECRET) as { userId: string };
+      const decoded = jwt.verify(refreshToken, env.JWT_SECRET) as { userId: string; id: string; email: string; role: string };
 
       const user = await this.prisma.user.findUnique({
-        where: { id: decoded.userId },
+        where: { id: decoded.id || decoded.userId },
       });
 
       if (!user || !user.isActive) {
         throw new UnauthorizedError('Invalid refresh token');
       }
 
-      const newToken = this.generateToken(user.id, '24h');
+      const newToken = this.generateToken(user.id, user.email, user.role, '24h');
 
       return { token: newToken };
     } catch (error) {
@@ -149,10 +149,10 @@ export class AuthService implements IAuthService {
   async verifyToken(token: string): Promise<User> {
     try {
       const env = getEnv();
-      const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string };
+      const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string; id: string };
 
       const user = await this.prisma.user.findUnique({
-        where: { id: decoded.userId },
+        where: { id: decoded.id || decoded.userId },
       });
 
       if (!user || !user.isActive) {
@@ -165,8 +165,8 @@ export class AuthService implements IAuthService {
     }
   }
 
-  private generateToken(userId: string, expiresIn: string): string {
+  private generateToken(userId: string, email: string, role: string, expiresIn: string): string {
     const env = getEnv();
-    return jwt.sign({ userId }, env.JWT_SECRET, { expiresIn } as any);
+    return jwt.sign({ userId, id: userId, email, role }, env.JWT_SECRET, { expiresIn } as any);
   }
 }

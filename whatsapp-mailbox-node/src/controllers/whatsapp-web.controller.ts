@@ -20,7 +20,15 @@ export class WhatsAppWebController {
    * Initialize or return the current session for the user
    */
   initializeDefaultSession = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user!.id;
+    const userId = req.user?.id || req.user?.userId;
+    
+    if (!userId) {
+      console.error('ERROR: userId is undefined in initializeDefaultSession', { user: req.user });
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required - userId not found',
+      });
+    }
 
     let session = this.getPreferredSession(userId);
 
@@ -40,7 +48,16 @@ export class WhatsAppWebController {
    * Get status for the user's primary session
    */
   getDefaultStatus = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user!.id;
+    const userId = req.user?.id || req.user?.userId;
+    
+    if (!userId) {
+      console.error('ERROR: userId is undefined in getDefaultStatus', { user: req.user });
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required - userId not found',
+      });
+    }
+
     const session = this.getPreferredSession(userId);
 
     if (!session) {
