@@ -30,7 +30,7 @@ const trendsSchema = z.object({
 router.use(authenticate);
 
 // Routes
-router.get('/stats', validateQuery(statsSchema), controller.getStats);
+router.get('/stats', controller.getStats);
 router.get('/overview', controller.getStats);
 router.get('/trends', validateQuery(trendsSchema), controller.getTrends);
 router.get('/campaigns', controller.getCampaigns);
