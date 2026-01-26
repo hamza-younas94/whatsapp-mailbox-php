@@ -13,9 +13,6 @@ import getPrismaClient from '@config/database';
 export function createContactRoutes(): Router {
   const router = Router();
 
-  // Initialize dependencies
-  const prisma = getPrismaClient();
-  const getPrismaClient();
   const contactRepository = new ContactRepository(prisma);
   const contactService = new ContactService(contactRepository);
   const controller = new ContactController(contactService);

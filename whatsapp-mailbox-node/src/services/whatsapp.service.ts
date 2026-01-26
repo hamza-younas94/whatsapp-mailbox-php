@@ -26,13 +26,13 @@ export class WhatsAppService implements IWhatsAppService {
 
     // Add request/response logging
     this.client.interceptors.response.use(
-      (response) => {
+      (response: any) => {
         logger.debug({ status: response.status }, 'WhatsApp API success');
         return response;
       },
-      (error) => {
+      (error: any) => {
         logger.error(
-          { status: error.response?.status, data: error.response?.data },
+          { status: (error as any).response?.status, data: (error as any).response?.data },
           'WhatsApp API error',
         );
         return Promise.reject(error);
@@ -70,9 +70,9 @@ export class WhatsAppService implements IWhatsAppService {
       return {
         messageId: response.data.messages?.[0]?.id || response.data.messageId,
       };
-    } catch (error) {
+    } catch (error: any) {
       const errorMessage = axios.isAxiosError(error)
-        ? error.response?.data?.error?.message || error.message
+        ? (error as any).response?.data?.error?.message || (error as any).message
         : 'Unknown error';
       throw new ExternalServiceError('WhatsApp API', errorMessage);
     }
@@ -82,9 +82,9 @@ export class WhatsAppService implements IWhatsAppService {
     try {
       const response = await this.client.get(`/${mediaId}`);
       return response.data.url;
-    } catch (error) {
+    } catch (error: any) {
       const errorMessage = axios.isAxiosError(error)
-        ? error.response?.data?.error?.message || error.message
+        ? (error as any).response?.data?.error?.message || (error as any).message
         : 'Unknown error';
       throw new ExternalServiceError('WhatsApp API', errorMessage);
     }

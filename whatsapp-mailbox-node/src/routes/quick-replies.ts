@@ -12,6 +12,7 @@ import { z } from 'zod';
 
 const router = Router();
 
+
 // Initialize dependencies
 const repository = new QuickReplyRepository(prisma);
 const service = new QuickReplyService(repository);

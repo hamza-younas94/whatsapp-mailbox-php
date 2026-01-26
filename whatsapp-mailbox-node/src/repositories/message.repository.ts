@@ -58,7 +58,7 @@ export class MessageRepository extends BaseRepository<Message> implements IMessa
     const where: Prisma.MessageWhereInput = {
       conversationId,
       ...(filters?.status && { status: filters.status }),
-      ...(filters?.direction && { direction: filters.direction }),
+      ...(filters?.direction && { direction: filters.direction as any }),
       ...(filters?.startDate && { createdAt: { gte: filters.startDate } }),
       ...(filters?.endDate && { createdAt: { lte: filters.endDate } }),
     };
@@ -93,7 +93,7 @@ export class MessageRepository extends BaseRepository<Message> implements IMessa
       userId,
       contactId,
       ...(filters?.status && { status: filters.status }),
-      ...(filters?.direction && { direction: filters.direction }),
+      ...(filters?.direction && { direction: filters.direction as any }),
     };
 
     const [messages, total] = await Promise.all([

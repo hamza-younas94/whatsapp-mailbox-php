@@ -28,7 +28,7 @@ export abstract class BaseRepository<T> implements IRepository<T> {
         where: { id },
       });
     } catch (error) {
-      logger.error({ id, error }, `Failed to find ${this.modelName}`);
+      logger.error({ id, error }, `Failed to find ${String(this.modelName)}`);
       throw error;
     }
   }
@@ -40,7 +40,7 @@ export abstract class BaseRepository<T> implements IRepository<T> {
         take: Math.min(take, 100), // Max 100 items per query
       });
     } catch (error) {
-      logger.error({ error }, `Failed to find all ${this.modelName}`);
+      logger.error({ error }, `Failed to find all ${String(this.modelName)}`);
       throw error;
     }
   }
@@ -51,7 +51,7 @@ export abstract class BaseRepository<T> implements IRepository<T> {
         data,
       });
     } catch (error) {
-      logger.error({ data, error }, `Failed to create ${this.modelName}`);
+      logger.error({ data, error }, `Failed to create ${String(this.modelName)}`);
       throw error;
     }
   }
@@ -63,7 +63,7 @@ export abstract class BaseRepository<T> implements IRepository<T> {
         data,
       });
     } catch (error) {
-      logger.error({ id, data, error }, `Failed to update ${this.modelName}`);
+      logger.error({ id, data, error }, `Failed to update ${String(this.modelName)}`);
       throw error;
     }
   }
@@ -74,7 +74,7 @@ export abstract class BaseRepository<T> implements IRepository<T> {
         where: { id },
       });
     } catch (error) {
-      logger.error({ id, error }, `Failed to delete ${this.modelName}`);
+      logger.error({ id, error }, `Failed to delete ${String(this.modelName)}`);
       throw error;
     }
   }
@@ -83,7 +83,7 @@ export abstract class BaseRepository<T> implements IRepository<T> {
     try {
       return await this.model.count({ where });
     } catch (error) {
-      logger.error({ error }, `Failed to count ${this.modelName}`);
+      logger.error({ error }, `Failed to count ${String(this.modelName)}`);
       throw error;
     }
   }

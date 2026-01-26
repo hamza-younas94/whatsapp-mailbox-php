@@ -11,6 +11,7 @@ import { z } from 'zod';
 
 const router = Router();
 
+
 // Initialize dependencies
 const service = new CRMService(prisma);
 const controller = new CRMController(service);

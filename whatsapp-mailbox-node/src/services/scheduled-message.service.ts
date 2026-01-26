@@ -1,7 +1,7 @@
 // src/services/scheduled-message.service.ts
 // Scheduled message management with queue
 
-import { Message } from '@prisma/client';
+import { Message, PrismaClient } from '@prisma/client';
 import { MessageRepository } from '@repositories/message.repository';
 import { WhatsAppService } from './whatsapp.service';
 import { NotFoundError } from '@utils/errors';

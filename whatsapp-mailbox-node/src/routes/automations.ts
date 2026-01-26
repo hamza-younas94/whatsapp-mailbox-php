@@ -15,12 +15,13 @@ import { z } from 'zod';
 
 const router = Router();
 
+
 // Initialize dependencies
 const automationRepo = new AutomationRepository(prisma);
 const tagRepo = new TagRepository(prisma);
 const whatsappService = new WhatsAppService();
 const tagService = new TagService(tagRepo);
-const service = new AutomationService(automationRepo, whatsappService, tagService);
+const service = new AutomationService(automationRepo, {} as any, tagService);
 const controller = new AutomationController(service);
 
 // Validation schemas

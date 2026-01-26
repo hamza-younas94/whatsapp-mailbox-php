@@ -12,6 +12,7 @@ import { z } from 'zod';
 const router = Router();
 
 // Initialize dependencies
+const prisma = getPrismaClient();
 const service = new AnalyticsService(prisma);
 const controller = new AnalyticsController(service);
 

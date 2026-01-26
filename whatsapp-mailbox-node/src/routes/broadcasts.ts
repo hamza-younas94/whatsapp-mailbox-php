@@ -15,12 +15,13 @@ import { z } from 'zod';
 
 const router = Router();
 
+
 // Initialize dependencies
 const campaignRepo = new CampaignRepository(prisma);
 const segmentRepo = new SegmentRepository(prisma);
 const messageRepo = new MessageRepository(prisma);
 const whatsappService = new WhatsAppService();
-const service = new BroadcastService(campaignRepo, segmentRepo, messageRepo, whatsappService);
+const service = new BroadcastService(campaignRepo, segmentRepo, messageRepo);
 const controller = new BroadcastController(service);
 
 // Validation schemas
