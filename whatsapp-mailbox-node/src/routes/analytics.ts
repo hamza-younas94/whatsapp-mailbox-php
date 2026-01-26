@@ -18,25 +18,21 @@ const controller = new AnalyticsController(service);
 
 // Validation schemas
 const statsSchema = z.object({
-  query: z.object({
-    startDate: z.string().datetime().optional(),
-    endDate: z.string().datetime().optional(),
-  }),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
 });
 
 const trendsSchema = z.object({
-  query: z.object({
-    days: z.string().regex(/^\d+$/).optional(),
-  }),
+  days: z.string().regex(/^\d+$/).optional(),
 });
 
 // Apply authentication to all routes
 router.use(authenticate);
 
 // Routes
-router.get('/stats', validateRequest(statsSchema), controller.getStats);
+router.get('/stats', validateQuery(statsSchema), controller.getStats);
 router.get('/overview', controller.getStats);
-router.get('/trends', validateRequest(trendsSchema), controller.getTrends);
+router.get('/trends', validateQuery(trendsSchema), controller.getTrends);
 router.get('/campaigns', controller.getCampaigns);
 router.get('/top-contacts', controller.getTopContacts);
 router.get('/export', controller.exportReport);

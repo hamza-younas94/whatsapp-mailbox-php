@@ -80,9 +80,15 @@ export class WhatsAppWebService extends EventEmitter {
     this.setupClientEvents(session);
 
     // Initialize the client
-    await client.initialize();
-
-    logger.info({ userId, sessionId }, 'WhatsApp Web session initialized');
+    try {
+      logger.info({ userId, sessionId }, 'Starting WhatsApp Web client initialization...');
+      await client.initialize();
+      logger.info({ userId, sessionId }, 'WhatsApp Web client.initialize() completed');
+    } catch (error) {
+      logger.error({ userId, sessionId, error }, 'Failed to initialize WhatsApp Web client');
+      session.status = 'DISCONNECTED';
+      throw error;
+    }
 
     return session;
   }
@@ -92,6 +98,11 @@ export class WhatsAppWebService extends EventEmitter {
    */
   private setupClientEvents(session: WhatsAppWebSession): void {
     const { client, id } = session;
+
+    // Loading screen event (for debugging)
+    client.on('loading_screen', (percent, message) => {
+      logger.info({ sessionId: id, percent, message }, 'WhatsApp Web loading');
+    });
 
     // QR Code event
     client.on('qr', async (qr) => {
