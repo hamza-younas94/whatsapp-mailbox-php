@@ -57,9 +57,9 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
       isBlocked: filters.isBlocked ?? false,
       ...(filters.search && {
         OR: [
-          { name: { contains: filters.search, mode: 'insensitive' } },
+          { name: { contains: filters.search } },
           { phoneNumber: { contains: filters.search } },
-          { email: { contains: filters.search, mode: 'insensitive' } },
+          { email: { contains: filters.search } },
         ],
       }),
       ...(filters.tags?.length && {

@@ -8,7 +8,7 @@ import { CampaignRepository } from '@repositories/campaign.repository';
 import { SegmentRepository } from '@repositories/segment.repository';
 import { MessageRepository } from '@repositories/message.repository';
 import { WhatsAppService } from '@services/whatsapp.service';
-import { prisma } from '@config/database';
+import getPrismaClient from '@config/database';
 import { authenticate } from '@middleware/auth.middleware';
 import { validateRequest } from '@middleware/validation.middleware';
 import { z } from 'zod';

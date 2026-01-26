@@ -5,7 +5,7 @@ import { Router } from 'express';
 import { QuickReplyController } from '@controllers/quick-reply.controller';
 import { QuickReplyService } from '@services/quick-reply.service';
 import { QuickReplyRepository } from '@repositories/quick-reply.repository';
-import { prisma } from '@config/database';
+import getPrismaClient from '@config/database';
 import { authenticate } from '@middleware/auth.middleware';
 import { validateRequest } from '@middleware/validation.middleware';
 import { z } from 'zod';

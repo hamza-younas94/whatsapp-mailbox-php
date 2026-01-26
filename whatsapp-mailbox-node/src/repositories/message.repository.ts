@@ -78,7 +78,6 @@ export class MessageRepository extends BaseRepository<Message> implements IMessa
       total,
       page: Math.floor(offset / limit) + 1,
       limit: limit,
-      hasMore: offset + limit < total,
     };
   }
 
@@ -113,7 +112,6 @@ export class MessageRepository extends BaseRepository<Message> implements IMessa
       total,
       page: Math.floor(offset / limit) + 1,
       limit: limit,
-      hasMore: offset + limit < total,
     };
   }
 

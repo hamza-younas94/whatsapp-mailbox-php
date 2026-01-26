@@ -5,7 +5,7 @@ import { Router } from 'express';
 import { SegmentController } from '@controllers/segment.controller';
 import { SegmentService } from '@services/segment.service';
 import { SegmentRepository } from '@repositories/segment.repository';
-import { prisma } from '@config/database';
+import getPrismaClient from '@config/database';
 import { authenticate } from '@middleware/auth.middleware';
 import { validateRequest } from '@middleware/validation.middleware';
 import { z } from 'zod';

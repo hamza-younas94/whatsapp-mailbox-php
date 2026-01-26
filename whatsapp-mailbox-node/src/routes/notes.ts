@@ -4,7 +4,7 @@
 import { Router } from 'express';
 import { NoteController } from '@controllers/note.controller';
 import { NoteService } from '@services/note.service';
-import { prisma } from '@config/database';
+import getPrismaClient from '@config/database';
 import { authenticate } from '@middleware/auth.middleware';
 import { validateRequest } from '@middleware/validation.middleware';
 import { z } from 'zod';

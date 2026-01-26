@@ -133,7 +133,7 @@ export class DripCampaignService implements IDripCampaignService {
       try {
         // Send message
         await this.whatsappService.sendMessage({
-          to: scheduled.contact.phone,
+          to: scheduled.contact.phoneNumber,
           message: scheduled.message,
           mediaUrl: scheduled.mediaUrl || undefined,
           mediaType: scheduled.mediaType || undefined,

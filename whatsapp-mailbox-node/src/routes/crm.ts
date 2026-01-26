@@ -4,7 +4,7 @@
 import { Router } from 'express';
 import { CRMController } from '@controllers/crm.controller';
 import { CRMService } from '@services/crm.service';
-import { prisma } from '@config/database';
+import getPrismaClient from '@config/database';
 import { authenticate } from '@middleware/auth.middleware';
 import { validateRequest } from '@middleware/validation.middleware';
 import { z } from 'zod';

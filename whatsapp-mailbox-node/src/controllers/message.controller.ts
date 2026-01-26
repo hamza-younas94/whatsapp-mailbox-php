@@ -6,6 +6,15 @@ import { MessageService } from '@services/message.service';
 import { asyncHandler } from '@middleware/error.middleware';
 import logger from '@utils/logger';
 
+interface CreateMessageInput {
+  phoneNumber?: string;
+  contactId?: string;
+  content: string;
+  messageType?: string;
+  mediaUrl?: string;
+  mediaType?: string;
+}
+
 export class MessageController {
   constructor(private messageService: MessageService) {}
 

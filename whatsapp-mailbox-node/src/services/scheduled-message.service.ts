@@ -49,7 +49,7 @@ export class ScheduledMessageService implements IScheduledMessageService {
   }
 
   async getScheduledMessages(userId: string): Promise<Message[]> {
-    return this.messageRepository.findMany({
+    return this.prisma.message.findMany({
       where: {
         userId,
         status: 'PENDING',
@@ -77,7 +77,7 @@ export class ScheduledMessageService implements IScheduledMessageService {
     const now = new Date();
 
     // Find messages that are due
-    const dueMessages = await this.messageRepository.findMany({
+    const dueMessages = await this.prisma.message.findMany({
       where: {
         status: 'PENDING',
         scheduledAt: { lte: now },
