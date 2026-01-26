@@ -36,16 +36,22 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install ALL dependencies (needed for TypeScript build)
+RUN npm ci && npm cache clean --force
 
 # Copy source code
 COPY src ./src
 COPY tsconfig.json .
 COPY prisma ./prisma
 
+# Generate Prisma Client
+RUN npx prisma generate
+
 # Build TypeScript
 RUN npm run build
+
+# Remove devDependencies to reduce image size
+RUN npm prune --production
 
 # Create directory for WhatsApp Web sessions
 RUN mkdir -p .wwebjs_auth && chmod 777 .wwebjs_auth

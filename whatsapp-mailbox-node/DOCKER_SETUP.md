@@ -49,25 +49,25 @@ npm install
 ### 4. Build & Start Containers
 ```bash
 # Build the image
-docker-compose build
+docker compose build
 
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # Check status
-docker-compose ps
+docker compose ps
 ```
 
 ### 5. Run Database Migrations
 ```bash
 # Generate Prisma client
-docker-compose exec app npx prisma generate
+docker compose exec app npx prisma generate
 
 # Run migrations
-docker-compose exec app npx prisma migrate deploy
+docker compose exec app npx prisma migrate deploy
 
 # (Optional) Seed demo data
-docker-compose exec app npm run db:seed
+docker compose exec app npm run db:seed
 ```
 
 ## Verify Installation
@@ -75,10 +75,10 @@ docker-compose exec app npm run db:seed
 ### Check Services
 ```bash
 # View logs
-docker-compose logs -f app
+docker compose logs -f app
 
 # Check all containers are running
-docker-compose ps
+docker compose ps
 
 # Expected output:
 # whatsapp-mailbox        running    0.0.0.0:3000->3000/tcp
@@ -115,67 +115,67 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
 ### Start/Stop Services
 ```bash
 # Start
-docker-compose up -d
+docker compose up -d
 
 # Stop
-docker-compose stop
+docker compose stop
 
 # Restart
-docker-compose restart
+docker compose restart
 
 # Stop and remove containers
-docker-compose down
+docker compose down
 
 # Stop and remove with volumes (deletes data!)
-docker-compose down -v
+docker compose down -v
 ```
 
 ### View Logs
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Specific service
-docker-compose logs -f app
-docker-compose logs -f db
-docker-compose logs -f redis
+docker compose logs -f app
+docker compose logs -f db
+docker compose logs -f redis
 
 # Last 100 lines
-docker-compose logs --tail=100 app
+docker compose logs --tail=100 app
 ```
 
 ### Database Access
 ```bash
 # Connect to MySQL
-docker-compose exec db mysql -u mailbox -p whatsapp_mailbox
+docker compose exec db mysql -u mailbox -p whatsapp_mailbox
 
 # Backup database
-docker-compose exec db mysqldump -u root -p whatsapp_mailbox > backup.sql
+docker compose exec db mysqldump -u root -p whatsapp_mailbox > backup.sql
 
 # Restore database
-docker-compose exec -T db mysql -u root -p whatsapp_mailbox < backup.sql
+docker compose exec -T db mysql -u root -p whatsapp_mailbox < backup.sql
 ```
 
 ### Application Shell
 ```bash
 # Access app container
-docker-compose exec app /bin/bash
+docker compose exec app /bin/bash
 
 # Run Prisma commands
-docker-compose exec app npx prisma studio
-docker-compose exec app npx prisma migrate dev
+docker compose exec app npx prisma studio
+docker compose exec app npx prisma migrate dev
 ```
 
 ### Clean Up
 ```bash
 # Remove stopped containers
-docker-compose rm
+docker compose rm
 
 # Remove unused images
 docker image prune -a
 
 # Remove all (containers, networks, volumes)
-docker-compose down -v
+docker compose down -v
 docker system prune -a
 ```
 
@@ -197,7 +197,7 @@ DB_ROOT_PASSWORD=<strong_root_password>
 ### 2. Secure Database
 ```bash
 # Don't expose MySQL to public
-# Edit docker-compose.yml, remove:
+# Edit docker compose.yml, remove:
 ports:
   - "3306:3306"  # Remove this line
 ```
@@ -255,8 +255,8 @@ After=docker.service
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/root/whatsapp-mailbox-php/whatsapp-mailbox-node
-ExecStart=/usr/bin/docker-compose up -d
-ExecStop=/usr/bin/docker-compose down
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
 TimeoutStartSec=0
 
 [Install]
@@ -275,7 +275,7 @@ cat > /usr/local/bin/check-mailbox.sh << 'EOF'
 if ! curl -f http://localhost:3000/health > /dev/null 2>&1; then
     echo "App is down, restarting..."
     cd /root/whatsapp-mailbox-php/whatsapp-mailbox-node
-    docker-compose restart app
+    docker compose restart app
     echo "$(date): App restarted" >> /var/log/mailbox-monitor.log
 fi
 EOF
@@ -303,35 +303,35 @@ kill -9 <PID>
 ### Container Won't Start
 ```bash
 # Check logs
-docker-compose logs app
+docker compose logs app
 
 # Remove and rebuild
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+docker compose down
+docker compose build --no-cache
+docker compose up -d
 ```
 
 ### Database Connection Error
 ```bash
 # Check database is running
-docker-compose ps db
+docker compose ps db
 
 # Check connection
-docker-compose exec app nc -zv db 3306
+docker compose exec app nc -zv db 3306
 
 # Reset database
-docker-compose down -v
-docker-compose up -d
-docker-compose exec app npx prisma migrate deploy
+docker compose down -v
+docker compose up -d
+docker compose exec app npx prisma migrate deploy
 ```
 
 ### WhatsApp Web Session Issues
 ```bash
 # Clear sessions
-docker-compose exec app rm -rf .wwebjs_auth/*
+docker compose exec app rm -rf .wwebjs_auth/*
 
 # Restart app
-docker-compose restart app
+docker compose restart app
 ```
 
 ### Out of Disk Space
