@@ -1,6 +1,7 @@
 // src/services/whatsapp.service.ts
 // WhatsApp API integration - External service adapter
 
+// @ts-ignore
 import axios, { AxiosInstance } from 'axios';
 import { getEnv } from '@config/env';
 import logger from '@utils/logger';

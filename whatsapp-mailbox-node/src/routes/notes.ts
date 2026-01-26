@@ -13,6 +13,7 @@ const router = Router();
 
 
 // Initialize dependencies
+  const prisma = getPrismaClient();
 const service = new NoteService(prisma);
 const controller = new NoteController(service);
 

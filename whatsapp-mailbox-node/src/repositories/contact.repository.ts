@@ -83,7 +83,6 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
       total,
       page: Math.floor(offset / limit) + 1,
       limit,
-      hasMore: offset + limit < total,
     };
   }
 

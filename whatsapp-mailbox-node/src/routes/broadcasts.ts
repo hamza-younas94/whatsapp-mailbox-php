@@ -17,6 +17,7 @@ const router = Router();
 
 
 // Initialize dependencies
+  const prisma = getPrismaClient();
 const campaignRepo = new CampaignRepository(prisma);
 const segmentRepo = new SegmentRepository(prisma);
 const messageRepo = new MessageRepository(prisma);

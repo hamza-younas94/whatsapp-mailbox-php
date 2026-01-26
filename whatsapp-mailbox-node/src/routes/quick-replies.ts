@@ -14,6 +14,7 @@ const router = Router();
 
 
 // Initialize dependencies
+  const prisma = getPrismaClient();
 const repository = new QuickReplyRepository(prisma);
 const service = new QuickReplyService(repository);
 const controller = new QuickReplyController(service);

@@ -14,6 +14,7 @@ const router = Router();
 
 
 // Initialize dependencies
+  const prisma = getPrismaClient();
 const repository = new SegmentRepository(prisma);
 const service = new SegmentService(repository);
 const controller = new SegmentController(service);

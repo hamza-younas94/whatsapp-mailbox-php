@@ -14,6 +14,7 @@ import getPrismaClient from '@config/database';
 export function createMessageRoutes(): Router {
   const router = Router();
 
+  const prisma = getPrismaClient();
   const messageRepository = new MessageRepository(prisma);
   const whatsAppService = new WhatsAppService();
   const messageService = new MessageService(messageRepository, whatsAppService);

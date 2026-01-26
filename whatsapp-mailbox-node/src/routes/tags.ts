@@ -14,6 +14,7 @@ const router = Router();
 
 
 // Initialize dependencies
+  const prisma = getPrismaClient();
 const repository = new TagRepository(prisma);
 const service = new TagService(repository);
 const controller = new TagController(service);

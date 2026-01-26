@@ -13,6 +13,7 @@ const router = Router();
 
 
 // Initialize dependencies
+  const prisma = getPrismaClient();
 const service = new CRMService(prisma);
 const controller = new CRMController(service);
 

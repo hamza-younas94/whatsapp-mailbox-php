@@ -17,6 +17,7 @@ const router = Router();
 
 
 // Initialize dependencies
+  const prisma = getPrismaClient();
 const automationRepo = new AutomationRepository(prisma);
 const tagRepo = new TagRepository(prisma);
 const whatsappService = new WhatsAppService();
