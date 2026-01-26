@@ -7,22 +7,18 @@ set -e
 echo "Pulling latest code..."
 git pull
 
-echo "Building new image..."
-docker compose build
+echo "Building new image (code changes only)..."
+docker compose build --no-cache app
 
-echo "Stopping containers (but keeping volumes)..."
-docker compose stop
-
-echo "Starting containers..."
-docker compose up -d
+echo "Updating containers without recreating them..."
+docker compose up -d --no-recreate
 
 echo "Waiting for app to start..."
-sleep 5
+sleep 3
 
 echo "Checking health..."
 docker compose ps
 
 echo ""
-echo "✅ Deployed! WhatsApp session should be preserved."
-echo "If WhatsApp is still connected, you can use it immediately."
-echo "Otherwise, go to QR Connect page to reconnect."
+echo "✅ Deployed! WhatsApp session preserved."
+echo "If WhatsApp was connected before, it should still be connected."
