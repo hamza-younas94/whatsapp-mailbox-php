@@ -58,8 +58,6 @@ export class ContactController {
       tags: tags ? (Array.isArray(tags) ? tags as string[] : [tags as string]) : undefined,
       isBlocked: isBlocked === 'true',
     };
-      offset: parseInt(offset as string),
-    };
 
     const result = await this.contactService.searchContacts(userId, filters);
 
