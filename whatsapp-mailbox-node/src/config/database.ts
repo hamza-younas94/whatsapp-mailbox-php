@@ -35,9 +35,6 @@ export function getPrismaClient(): PrismaClient {
   return prisma;
 }
 
-// Default export
-export default getPrismaClient();
-
 export async function connectDatabase(): Promise<void> {
   try {
     const client = getPrismaClient();
@@ -55,3 +52,5 @@ export async function disconnectDatabase(): Promise<void> {
     logger.info('Database disconnected');
   }
 }
+
+export default getPrismaClient;

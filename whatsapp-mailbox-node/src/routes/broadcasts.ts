@@ -21,7 +21,7 @@ const campaignRepo = new CampaignRepository(prisma);
 const segmentRepo = new SegmentRepository(prisma);
 const messageRepo = new MessageRepository(prisma);
 const whatsappService = new WhatsAppService();
-const service = new BroadcastService(campaignRepo, segmentRepo, messageRepo);
+const service = new BroadcastService(campaignRepo, segmentRepo, messageRepo as any);
 const controller = new BroadcastController(service);
 
 // Validation schemas

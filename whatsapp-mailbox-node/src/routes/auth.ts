@@ -11,8 +11,8 @@ import { z } from 'zod';
 
 const router = Router();
 
-
 // Initialize dependencies
+const prisma = getPrismaClient();
 const service = new AuthService(prisma);
 const controller = new AuthController(service);
 

@@ -74,7 +74,6 @@ export class MessageService implements IMessageService {
         messageType: (input.messageType || MessageType.TEXT) as any,
         direction: MessageDirection.OUTGOING as any,
         status: MessageStatus.PENDING as any,
-        status: MessageStatus.PENDING as any,
         mediaUrl: input.mediaUrl,
         mediaType: input.mediaType?.toString(),
       } as Prisma.MessageCreateInput);

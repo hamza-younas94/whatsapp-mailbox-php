@@ -94,12 +94,12 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
   ): Promise<Contact> {
     return this.prisma.contact.upsert({
       where: { userId_phoneNumber: { userId, phoneNumber } },
-      update: data || {},
+      update: (data || {}) as any,
       create: {
         userId,
         phoneNumber,
         ...data,
-      },
+      } as any,
     });
   }
 }

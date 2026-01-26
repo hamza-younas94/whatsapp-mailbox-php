@@ -28,7 +28,7 @@ export class MessageController {
       mediaUrl,
     };
 
-    const message = await this.messageService.sendMessage(userId, input);
+    const message = await this.messageService.sendMessage(userId, input as any);
 
     res.status(201).json({
       success: true,
