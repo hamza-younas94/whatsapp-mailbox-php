@@ -137,10 +137,19 @@ export class MessageService implements IMessageService {
 
         logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
 
-        // Send message using WhatsApp Web client
-        const waMessage = await activeSession.client.sendMessage(chatId, input.content);
+        // Ensure number is registered on WhatsApp and get the proper ID
+        const numberId = await activeSession.client.getNumberId(formattedNumber);
+        
+        if (!numberId) {
+          throw new ValidationError(`Phone number ${phoneNumber} is not registered on WhatsApp`);
+        }
 
-        logger.info({ messageId: waMessage.id.id, chatId }, 'WhatsApp message sent successfully');
+        logger.info({ numberId: numberId._serialized }, 'Number ID retrieved');
+
+        // Send message using the registered number ID
+        const waMessage = await activeSession.client.sendMessage(numberId._serialized, input.content);
+
+        logger.info({ messageId: waMessage.id.id, to: numberId._serialized }, 'WhatsApp message sent successfully');
 
         // Update message with WhatsApp message ID
         return await this.messageRepository.update(message.id, {
