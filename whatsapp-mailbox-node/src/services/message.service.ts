@@ -137,21 +137,34 @@ export class MessageService implements IMessageService {
 
         logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
 
-        // Get or create chat to avoid markedUnread error in whatsapp-web.js library
-        try {
-          const chat = await activeSession.client.getChatById(chatId);
-          if (!chat) {
-            throw new Error('Failed to get chat');
+        // Send message with retry logic for markedUnread error
+        let waMessage: any = null;
+        let lastError: Error | null = null;
+        
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            waMessage = await activeSession.client.sendMessage(chatId, input.content);
+            logger.info({ messageId: waMessage.id.id, to: chatId, attempt }, 'WhatsApp message sent successfully');
+            break; // Success, exit retry loop
+          } catch (err) {
+            lastError = err as Error;
+            const errorMsg = lastError.message || '';
+            
+            // If it's the markedUnread error, wait and retry
+            if (errorMsg.includes('markedUnread') && attempt < 3) {
+              logger.warn({ chatId, attempt, error: errorMsg }, 'markedUnread error, retrying...');
+              await new Promise(resolve => setTimeout(resolve, 500 * attempt)); // Wait 500ms, 1s, 1.5s
+              continue;
+            }
+            
+            // For other errors or final attempt, throw
+            throw lastError;
           }
-          logger.info({ chatId }, 'Chat retrieved successfully');
-        } catch (err) {
-          logger.warn({ chatId, error: (err as Error).message }, 'Could not pre-fetch chat, attempting direct send anyway');
         }
 
-        // Send message directly using WhatsApp Web client
-        const waMessage = await activeSession.client.sendMessage(chatId, input.content);
-
-        logger.info({ messageId: waMessage.id.id, to: chatId }, 'WhatsApp message sent successfully');
+        if (!waMessage) {
+          throw lastError || new Error('Failed to send message after 3 attempts');
+        }
 
         // Update message with WhatsApp message ID
         return await this.messageRepository.update(message.id, {
