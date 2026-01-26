@@ -108,10 +108,26 @@ export class MessageService implements IMessageService {
       try {
         // Get user's active WhatsApp Web session
         const sessions = whatsappWebService.getUserSessions(userId);
-        const activeSession = sessions.find((s) => s.status === 'READY');
+        
+        logger.info({ 
+          userId, 
+          totalSessions: sessions.length,
+          sessionStatuses: sessions.map(s => ({ id: s.id, status: s.status }))
+        }, 'Checking WhatsApp Web sessions');
+
+        const activeSession = sessions.find((s) => s.status === 'READY' || s.status === 'AUTHENTICATED');
 
         if (!activeSession) {
-          throw new ValidationError('WhatsApp is not connected. Please connect your WhatsApp first.');
+          const statusList = sessions.map(s => s.status).join(', ') || 'none';
+          throw new ValidationError(`WhatsApp is not connected (statuses: ${statusList}). Please scan the QR code to connect.`);
+        }
+
+        // Check if client is actually ready
+        const state = await activeSession.client.getState();
+        logger.info({ state, sessionId: activeSession.id }, 'WhatsApp Web client state');
+
+        if (state !== 'CONNECTED') {
+          throw new ValidationError(`WhatsApp client is ${state}. Please reconnect.`);
         }
 
         // Format phone number for WhatsApp Web (e.g., 923462115115@c.us)
@@ -119,8 +135,12 @@ export class MessageService implements IMessageService {
         const formattedNumber = phoneNumber.replace(/[^0-9]/g, ''); // Remove non-digits
         const chatId = `${formattedNumber}@c.us`;
 
+        logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
+
         // Send message using WhatsApp Web client
         const waMessage = await activeSession.client.sendMessage(chatId, input.content);
+
+        logger.info({ messageId: waMessage.id.id, chatId }, 'WhatsApp message sent successfully');
 
         // Update message with WhatsApp message ID
         return await this.messageRepository.update(message.id, {
@@ -134,7 +154,7 @@ export class MessageService implements IMessageService {
         });
 
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        logger.error({ error, phoneNumber: input.phoneNumber }, 'WhatsApp Web send failed');
+        logger.error({ error, phoneNumber: input.phoneNumber, errorMessage }, 'WhatsApp Web send failed');
         throw new ExternalServiceError('WhatsApp Web', errorMessage);
       }
     } catch (error) {
