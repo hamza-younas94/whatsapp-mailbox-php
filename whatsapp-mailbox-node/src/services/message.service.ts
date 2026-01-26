@@ -137,38 +137,11 @@ export class MessageService implements IMessageService {
 
         logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
 
-        // Get the number ID with timeout
-        let numberId: any = null;
-        try {
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('getNumberId timeout')), 5000)
-          );
-          numberId = await Promise.race([
-            activeSession.client.getNumberId(formattedNumber),
-            timeoutPromise
-          ]);
-        } catch (error) {
-          logger.warn({ phoneNumber, error: (error as Error).message }, 'getNumberId failed or timed out, trying direct send');
-          // Continue without number ID - try direct send
-        }
+        // Send message directly using WhatsApp Web client
+        // No need for getNumberId - just send to the formatted number
+        const waMessage = await activeSession.client.sendMessage(chatId, input.content);
 
-        if (!numberId) {
-          logger.info({ chatId }, 'Sending directly without getNumberId');
-          // Send directly to the formatted number
-          const waMessage = await activeSession.client.sendMessage(chatId, input.content);
-          logger.info({ messageId: waMessage.id.id, to: chatId }, 'WhatsApp message sent successfully');
-          return await this.messageRepository.update(message.id, {
-            waMessageId: waMessage.id.id,
-            status: MessageStatus.SENT,
-          });
-        }
-
-        logger.info({ numberId: numberId._serialized }, 'Number ID retrieved');
-
-        // Send message using the registered number ID
-        const waMessage = await activeSession.client.sendMessage(numberId._serialized, input.content);
-
-        logger.info({ messageId: waMessage.id.id, to: numberId._serialized }, 'WhatsApp message sent successfully');
+        logger.info({ messageId: waMessage.id.id, to: chatId }, 'WhatsApp message sent successfully');
 
         // Update message with WhatsApp message ID
         return await this.messageRepository.update(message.id, {
