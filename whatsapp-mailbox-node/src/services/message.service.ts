@@ -10,7 +10,8 @@ import logger from '@utils/logger';
 import { WhatsAppService } from './whatsapp.service';
 
 interface CreateMessageInput {
-  contactId: string;
+  phoneNumber?: string;
+  contactId?: string;
   content: string;
   messageType?: MessageType;
   direction?: MessageDirection;

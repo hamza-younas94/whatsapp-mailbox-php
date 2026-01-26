@@ -9,6 +9,7 @@ interface CreateContactInput {
   phoneNumber: string;
   name?: string;
   email?: string;
+  tags?: string[];
 }
 
 interface ContactFilters {
