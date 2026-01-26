@@ -15,7 +15,8 @@ export function createMessageRoutes(): Router {
   const router = Router();
 
   // Initialize dependencies
-  const prisma = getPrismaClient(); // getPrismaClient();
+  const prisma = getPrismaClient();
+  const getPrismaClient();
   const messageRepository = new MessageRepository(prisma);
   const whatsAppService = new WhatsAppService();
   const messageService = new MessageService(messageRepository, whatsAppService);

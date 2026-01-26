@@ -132,12 +132,10 @@ export class DripCampaignService implements IDripCampaignService {
     for (const scheduled of dueMessages) {
       try {
         // Send message
-        await this.whatsappService.sendMessage({
-          to: scheduled.contact.phoneNumber,
-          message: scheduled.message,
-          mediaUrl: scheduled.mediaUrl || undefined,
-          mediaType: scheduled.mediaType || undefined,
-        });
+        await this.whatsappService.sendMessage(
+          scheduled.contact.phoneNumber,
+          scheduled.message
+        );
 
         // Mark as sent
         await this.prisma.dripScheduledMessage.update({

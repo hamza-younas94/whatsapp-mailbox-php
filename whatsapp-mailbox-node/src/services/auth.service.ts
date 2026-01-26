@@ -167,6 +167,6 @@ export class AuthService implements IAuthService {
 
   private generateToken(userId: string, expiresIn: string): string {
     const env = getEnv();
-    return jwt.sign({ userId }, env.JWT_SECRET, { expiresIn });
+    return jwt.sign({ userId }, env.JWT_SECRET, { expiresIn } as any);
   }
 }

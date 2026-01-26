@@ -14,20 +14,20 @@ export function getPrismaClient(): PrismaClient {
         { emit: 'event', level: 'error' },
         { emit: 'event', level: 'warn' },
       ],
-    });
+    }) as any;
 
     // Log queries in development
-    prisma.$on('query', (e: any) => {
+    (prisma as any).$on('query', (e: any) => {
       if (process.env.NODE_ENV === 'development') {
         logger.debug({ query: e.query, params: e.params }, 'DB Query');
       }
     });
 
-    prisma.$on('error', (e: any) => {
+    (prisma as any).$on('error', (e: any) => {
       logger.error({ error: e.message }, 'DB Error');
     });
 
-    prisma.$on('warn', (e: any) => {
+    (prisma as any).$on('warn', (e: any) => {
       logger.warn({ warning: e.message }, 'DB Warning');
     });
   }

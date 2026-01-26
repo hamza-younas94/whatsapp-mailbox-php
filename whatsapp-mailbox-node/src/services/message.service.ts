@@ -67,12 +67,13 @@ export class MessageService implements IMessageService {
 
       // Create message in database (PENDING status)
       const message = await this.messageRepository.create({
-        userId,
-        contactId: input.contactId,
-        conversationId: input.contactId, // Simplified for demo
+        user: { connect: { id: userId } },
+        contact: { connect: { id: input.contactId } },
+        conversation: { connect: { id: input.contactId } },
         content: input.content,
         messageType: (input.messageType || MessageType.TEXT) as any,
         direction: MessageDirection.OUTGOING as any,
+        status: MessageStatus.PENDING as any,
         status: MessageStatus.PENDING as any,
         mediaUrl: input.mediaUrl,
         mediaType: input.mediaType?.toString(),

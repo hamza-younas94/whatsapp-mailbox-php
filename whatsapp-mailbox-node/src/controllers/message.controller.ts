@@ -8,7 +8,7 @@ import logger from '@utils/logger';
 
 interface CreateMessageInput {
   phoneNumber?: string;
-  contactId?: string;
+  contactId: string;
   content: string;
   messageType?: string;
   mediaUrl?: string;

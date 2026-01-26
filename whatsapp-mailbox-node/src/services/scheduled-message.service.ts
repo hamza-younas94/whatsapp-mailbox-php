@@ -25,6 +25,7 @@ export class ScheduledMessageService implements IScheduledMessageService {
   constructor(
     private messageRepository: MessageRepository,
     private whatsAppService: WhatsAppService,
+    private prisma: PrismaClient
   ) {}
 
   async scheduleMessage(userId: string, input: ScheduleMessageInput): Promise<Message> {
