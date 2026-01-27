@@ -243,18 +243,33 @@ export class MessageService implements IMessageService {
 
         // Better error message extraction
         let errorMessage = 'Unknown error';
-        if (error instanceof Error) {
-          errorMessage = error.message || error.toString();
-        } else if (typeof error === 'string') {
-          errorMessage = error;
-        } else if (error && typeof error === 'object') {
-          errorMessage = JSON.stringify(error);
+        try {
+          if (error instanceof Error) {
+            errorMessage = error.message || error.name || error.toString();
+            // Check for nested error properties
+            if ((error as any).description) {
+              errorMessage = (error as any).description;
+            } else if ((error as any).text) {
+              errorMessage = (error as any).text;
+            } else if ((error as any).error) {
+              errorMessage = String((error as any).error);
+            }
+          } else if (typeof error === 'string') {
+            errorMessage = error;
+          } else if (error && typeof error === 'object') {
+            // Try to extract meaningful error message from object
+            const errObj = error as any;
+            errorMessage = errObj.message || errObj.error || errObj.description || errObj.text || JSON.stringify(error);
+          }
+        } catch (parseError) {
+          errorMessage = String(error);
         }
         
         logger.error({ 
           error, 
           errorType: typeof error,
           errorConstructor: error?.constructor?.name,
+          errorStack: error instanceof Error ? error.stack : undefined,
           phoneNumber: input.phoneNumber || 'N/A',
           contactId: input.contactId || 'N/A',
           errorMessage 
