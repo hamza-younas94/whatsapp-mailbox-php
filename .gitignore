@@ -8,3 +8,10 @@ error.log
 Thumbs.db
 /storage/cache/
 /storage/logs/*.log
+
+# Node.js build artifacts
+whatsapp-mailbox-node/dist/
+whatsapp-mailbox-node/node_modules/
+whatsapp-mailbox-node/.wwebjs_auth/
+whatsapp-mailbox-node/frontend/dist/
+whatsapp-mailbox-node/frontend/node_modules/
