@@ -222,8 +222,13 @@ export class MessageService implements IMessageService {
             'WhatsApp send timed out',
           );
         } else {
+          // Ensure content is not empty
+          if (!input.content || input.content.trim().length === 0) {
+            throw new ValidationError('Message content cannot be empty');
+          }
+          
           waMessage = await withTimeout(
-            activeSession.client.sendMessage(targetChatId as any, input.content || ''),
+            activeSession.client.sendMessage(targetChatId as any, input.content.trim()),
             30000,
             'WhatsApp send timed out',
           );
