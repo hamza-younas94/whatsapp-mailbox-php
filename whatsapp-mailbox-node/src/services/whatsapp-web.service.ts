@@ -55,9 +55,11 @@ export class WhatsAppWebService extends EventEmitter {
         clientId: sessionId,
         dataPath: this.sessionDir,
       }),
+      authTimeoutMs: 180000,
+      qrMaxRetries: 6,
       puppeteer: {
         headless: true,
-        protocolTimeout: 120000,
+        protocolTimeout: 180000, // Allow slow Chromium responses to avoid Runtime.callFunctionOn timeouts
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -66,6 +68,7 @@ export class WhatsAppWebService extends EventEmitter {
           '--no-first-run',
           '--no-zygote',
           '--disable-gpu',
+          '--single-process',
         ],
       },
     });
