@@ -21,6 +21,7 @@ import crmRoutes from '@routes/crm';
 import noteRoutes from '@routes/notes';
 import whatsappWebRoutes from '@routes/whatsapp-web';
 import { whatsappWebService } from '@services/whatsapp-web.service';
+import { MessageType } from '@prisma/client';
 import { MessageRepository } from '@repositories/message.repository';
 import { ContactRepository } from '@repositories/contact.repository';
 import { ConversationRepository } from '@repositories/conversation.repository';
@@ -122,7 +123,7 @@ export function createApp(): Express {
 function setupIncomingMessageListener(): void {
   whatsappWebService.on('message', async (event: any) => {
     try {
-      const { sessionId, from, body, hasMedia, timestamp } = event;
+      const { sessionId, from, body, hasMedia, timestamp, waMessageId, messageType } = event;
       
       logger.info({ sessionId, from, body: body?.substring(0, 50), hasMedia, timestamp }, 'RAW incoming message event');
       
@@ -150,16 +151,22 @@ function setupIncomingMessageListener(): void {
       // Get or create conversation
       const conversation = await conversationRepo.findOrCreate(userId, contact.id);
 
+      // Derive a Prisma-safe message type from WhatsApp message metadata
+      const normalizedType = normalizeMessageType(messageType, hasMedia);
+
+      // Ensure we never violate the unique constraint on waMessageId
+      const safeWaMessageId = waMessageId || `${from}-${timestamp}-${Date.now()}`;
+
       // Save message to database
       await messageRepo.create({
         user: { connect: { id: userId } },
         contact: { connect: { id: contact.id } },
         conversation: { connect: { id: conversation.id } },
         content: body,
-        messageType: hasMedia ? 'MEDIA' : 'TEXT',
+        messageType: normalizedType as any,
         direction: 'INCOMING',
         status: 'RECEIVED',
-        waMessageId: from, // Use sender ID as reference
+        waMessageId: safeWaMessageId,
       } as any);
 
       logger.info({ userId, phoneNumber, contactId: contact.id }, 'Saved incoming message to database');
@@ -169,6 +176,28 @@ function setupIncomingMessageListener(): void {
   });
 
   logger.info('WhatsApp incoming message listener initialized');
+}
+
+function normalizeMessageType(rawType?: string, hasMedia?: boolean): MessageType {
+  switch (rawType) {
+    case 'image':
+      return MessageType.IMAGE;
+    case 'video':
+      return MessageType.VIDEO;
+    case 'audio':
+    case 'ptt':
+      return MessageType.AUDIO;
+    case 'document':
+      return MessageType.DOCUMENT;
+    case 'location':
+      return MessageType.LOCATION;
+    case 'contact_card':
+      return MessageType.CONTACT;
+    case 'sticker':
+      return MessageType.IMAGE;
+    default:
+      return hasMedia ? MessageType.DOCUMENT : MessageType.TEXT;
+  }
 }
 
 export async function startServer(): Promise<void> {

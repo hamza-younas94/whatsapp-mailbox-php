@@ -146,12 +146,20 @@ export class WhatsAppWebService extends EventEmitter {
 
     // Message event
     client.on('message', async (message: WAMessage) => {
+      // Ignore WhatsApp status broadcast system messages to avoid duplicate IDs
+      if (message.from === 'status@broadcast') {
+        logger.debug({ sessionId: id }, 'Ignoring status broadcast message');
+        return;
+      }
+
       this.emit('message', {
         sessionId: id,
         from: message.from,
         body: message.body,
         hasMedia: message.hasMedia,
         timestamp: message.timestamp,
+        waMessageId: message.id?._serialized,
+        messageType: message.type,
       });
 
       logger.debug({ sessionId: id, from: message.from }, 'Message received');
