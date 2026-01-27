@@ -153,10 +153,15 @@ export class MessageService implements IMessageService {
 
         // Get all chats and search for existing chat first
         const chats = await activeSession.client.getChats();
-        const existingChat = chats.find(c => c.id._serialized === chatId);
+        const chatId = `${formattedNumber}@c.us`;
+        const chatIdLid = `${formattedNumber}@lid`;
+        
+        const existingChat = chats.find(c => 
+          c.id._serialized === chatId || c.id._serialized === chatIdLid
+        );
         
         if (existingChat) {
-          logger.info({ chatId }, 'Found existing chat, sending via chat object');
+          logger.info({ chatId: existingChat.id._serialized }, 'Found existing chat, sending via chat object');
           const waMessage = await withTimeout(
             existingChat.sendMessage(input.content),
             30000,
@@ -271,7 +276,7 @@ export class MessageService implements IMessageService {
 
   async deleteMessage(messageId: string): Promise<void> {
     try {
-      const message = await this.messageRepository.findById(messageId);
+   ssage = await this.messageRepository.findById(messageId);
       if (!message) {
         throw new NotFoundError('Message');
       }
