@@ -49,7 +49,7 @@ export class WhatsAppWebController {
       
       // Check if session is already being initialized (prevent duplicate calls)
       const existingSession = whatsappWebService.getSession(sessionId);
-      if (existingSession && (existingSession.status === 'INITIALIZING' || existingSession.status === 'CONNECTING')) {
+      if (existingSession && existingSession.status === 'INITIALIZING') {
         // Session is already initializing, return current status
         return res.status(200).json({
           success: true,
