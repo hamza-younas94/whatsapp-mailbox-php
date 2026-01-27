@@ -79,6 +79,24 @@ export class MessageController {
     });
   });
 
+  getMessagesByContact = asyncHandler(async (req: Request, res: Response) => {
+    const { contactId } = req.params;
+    const { limit = 50, offset = 0 } = req.query;
+    const userId = requireUserId(req);
+
+    const result = await this.messageService.getMessagesByContact(
+      userId,
+      contactId,
+      parseInt(limit as string),
+      parseInt(offset as string),
+    );
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  });
+
   markAsRead = asyncHandler(async (req: Request, res: Response) => {
     const { messageId } = req.params;
 

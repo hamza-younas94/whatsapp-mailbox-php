@@ -71,6 +71,13 @@ export function createMessageRoutes(): Router {
     controller.getMessages,
   );
 
+  router.get(
+    '/contact/:contactId',
+    authMiddleware,
+    validateQuery(getMessagesSchema),
+    controller.getMessagesByContact,
+  );
+
   router.put(
     '/:messageId/read',
     authMiddleware,
