@@ -20,6 +20,11 @@ import analyticsRoutes from '@routes/analytics';
 import crmRoutes from '@routes/crm';
 import noteRoutes from '@routes/notes';
 import whatsappWebRoutes from '@routes/whatsapp-web';
+import { whatsappWebService } from '@services/whatsapp-web.service';
+import { MessageRepository } from '@repositories/message.repository';
+import { ContactRepository } from '@repositories/contact.repository';
+import { ConversationRepository } from '@repositories/conversation.repository';
+import { getPrismaClient } from '@config/database';
 import logger from '@utils/logger';
 
 export function createApp(): Express {
@@ -105,7 +110,63 @@ export function createApp(): Express {
   // Error handling (must be last)
   setupErrorMiddleware(app);
 
+  // Setup WhatsApp message listener to capture incoming messages
+  setupIncomingMessageListener();
+
   return app;
+}
+
+/**
+ * Listen for incoming WhatsApp messages and save them to database
+ */
+function setupIncomingMessageListener(): void {
+  whatsappWebService.on('message', async (event: any) => {
+    try {
+      const { sessionId, from, body, hasMedia } = event;
+      
+      // Get the session to find the userId
+      const session = whatsappWebService.getSession(sessionId);
+      if (!session) {
+        logger.warn({ sessionId }, 'Incoming message but no session found');
+        return;
+      }
+
+      const userId = session.userId;
+      const phoneNumber = from.replace('@c.us', '');
+
+      logger.info({ userId, phoneNumber, body: body.substring(0, 50) }, 'Received incoming WhatsApp message');
+
+      // Create repositories with prisma client
+      const db = getPrismaClient();
+      const contactRepo = new ContactRepository(db);
+      const conversationRepo = new ConversationRepository(db);
+      const messageRepo = new MessageRepository(db);
+
+      // Get or create contact
+      const contact = await contactRepo.findOrCreate(userId, phoneNumber, { name: phoneNumber });
+
+      // Get or create conversation
+      const conversation = await conversationRepo.findOrCreate(userId, contact.id);
+
+      // Save message to database
+      await messageRepo.create({
+        user: { connect: { id: userId } },
+        contact: { connect: { id: contact.id } },
+        conversation: { connect: { id: conversation.id } },
+        content: body,
+        messageType: hasMedia ? 'MEDIA' : 'TEXT',
+        direction: 'INCOMING',
+        status: 'RECEIVED',
+        waMessageId: from, // Use sender ID as reference
+      } as any);
+
+      logger.info({ userId, phoneNumber, contactId: contact.id }, 'Saved incoming message to database');
+    } catch (error) {
+      logger.error({ error, event }, 'Failed to save incoming WhatsApp message');
+    }
+  });
+
+  logger.info('WhatsApp incoming message listener initialized');
 }
 
 export async function startServer(): Promise<void> {
