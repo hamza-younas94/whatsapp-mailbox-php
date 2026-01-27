@@ -181,12 +181,13 @@ export class MessageService implements IMessageService {
           throw new ValidationError('Phone number is not registered on WhatsApp');
         }
 
+        logger.info({ numberId }, 'Number verified, sending to new chat');
         const waMessage = await withTimeout(
-          activeSession.client.sendMessage(chatId, input.content),
+          activeSession.client.sendMessage(numberId, input.content),
           30000,
           'WhatsApp send timed out (new chat)',
         );
-        logger.info({ messageId: waMessage.id.id, to: chatId }, 'WhatsApp message sent successfully');
+        logger.info({ messageId: waMessage.id.id, to: numberId }, 'WhatsApp message sent successfully to new chat');
 
         // Update message with WhatsApp message ID
         return await this.messageRepository.update(message.id, {
