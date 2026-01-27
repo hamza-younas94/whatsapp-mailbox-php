@@ -175,15 +175,17 @@ export class MessageService implements IMessageService {
           throw new ValidationError('Phone number is not registered on WhatsApp');
         }
 
-        logger.info({ numberId: numberId._serialized }, 'Number verified, sending message');
+        // Extract the actual ID string (may be object with _serialized or direct string)
+        const numberIdString = typeof numberId === 'string' ? numberId : (numberId._serialized || numberId.toString());
+        logger.info({ numberId: numberIdString, type: typeof numberId, hasSerialzied: '_serialized' in (numberId as any) }, 'Number verified, sending message');
         
         // Send directly via numberId to avoid stale chat object issues
         const waMessage = await withTimeout(
-          activeSession.client.sendMessage(numberId._serialized, input.content),
+          activeSession.client.sendMessage(numberIdString, input.content),
           30000,
           'WhatsApp send timed out',
         );
-        logger.info({ messageId: waMessage.id.id, to: numberId._serialized }, 'WhatsApp message sent successfully');
+        logger.info({ messageId: waMessage.id.id, to: numberIdString }, 'WhatsApp message sent successfully');
 
         // Update message with WhatsApp message ID
         return await this.messageRepository.update(message.id, {
