@@ -51,8 +51,8 @@ export const messageAPI = {
   },
 
   // Send message
-  async sendMessage(phoneNumber: string, content: string, mediaUrl?: string) {
-    const payload: any = { phoneNumber, content };
+  async sendMessage(contactId: string, content: string, mediaUrl?: string) {
+    const payload: any = { contactId, content };
     if (mediaUrl) {
       payload.mediaUrl = mediaUrl;
     }

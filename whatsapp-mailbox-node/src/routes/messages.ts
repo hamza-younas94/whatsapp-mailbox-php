@@ -26,7 +26,7 @@ export function createMessageRoutes(): Router {
 
   // Validation schemas
   const sendMessageSchema = z.object({
-    contactId: z.string().uuid().optional(),
+    contactId: z.string().min(1).optional(), // CUID format, not UUID
     phoneNumber: z.string().regex(/^\+?[1-9]\d{1,14}$/).optional(),
     content: z.string().max(4096).optional(),
     mediaUrl: z.string().url().optional(),
