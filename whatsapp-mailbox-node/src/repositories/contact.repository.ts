@@ -74,7 +74,21 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
         where,
         skip: offset,
         take: limit,
-        include: { tags: { include: { tag: true } }, _count: { select: { messages: true } } },
+        include: { 
+          tags: { include: { tag: true } }, 
+          _count: { select: { messages: true } },
+          messages: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              content: true,
+              messageType: true,
+              direction: true,
+              createdAt: true,
+            },
+          },
+        },
         orderBy: { lastMessageAt: 'desc' },
       }),
       this.prisma.contact.count({ where }),

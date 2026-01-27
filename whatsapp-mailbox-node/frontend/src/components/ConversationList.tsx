@@ -42,17 +42,46 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       // Transform contacts into conversation format
       const transformedConversations: Conversation[] = contacts
         .filter((contact: any) => contact && contact.id) // Filter out null/undefined
-        .map((contact: any) => ({
-          id: contact.id || `contact-${contact.phoneNumber}`,
-          contact: {
-            id: contact.id,
-            phoneNumber: contact.phoneNumber || '',
-            name: contact.name,
-          },
-          unreadCount: contact._count?.messages || 0,
-          lastMessage: undefined, // Will be populated if available
-          lastMessageAt: contact.lastMessageAt,
-        }));
+        .map((contact: any) => {
+          // Get the last message from the messages array
+          const lastMessageObj = contact.messages && contact.messages.length > 0 
+            ? contact.messages[0] 
+            : null;
+          
+          // Format last message preview
+          let lastMessagePreview: string | undefined;
+          if (lastMessageObj) {
+            if (lastMessageObj.content) {
+              // Truncate long messages
+              lastMessagePreview = lastMessageObj.content.length > 50 
+                ? lastMessageObj.content.substring(0, 50) + '...'
+                : lastMessageObj.content;
+            } else if (lastMessageObj.messageType && lastMessageObj.messageType !== 'TEXT') {
+              // Show media type indicators
+              const typeLabels: Record<string, string> = {
+                'IMAGE': '📷 Image',
+                'VIDEO': '🎥 Video',
+                'AUDIO': '🎵 Audio',
+                'DOCUMENT': '📄 Document',
+                'LOCATION': '📍 Location',
+                'CONTACT': '👤 Contact',
+              };
+              lastMessagePreview = typeLabels[lastMessageObj.messageType] || 'Media';
+            }
+          }
+
+          return {
+            id: contact.id || `contact-${contact.phoneNumber}`,
+            contact: {
+              id: contact.id,
+              phoneNumber: contact.phoneNumber || '',
+              name: contact.name,
+            },
+            unreadCount: contact._count?.messages || 0,
+            lastMessage: lastMessagePreview,
+            lastMessageAt: lastMessageObj?.createdAt || contact.lastMessageAt,
+          };
+        });
       
       setConversations(transformedConversations);
     } catch (err) {
