@@ -37,6 +37,17 @@ export class WhatsAppWebController {
     // Check if session is already being initialized (prevent duplicate calls)
     const existingSession = whatsappWebService.getSession(sessionId);
     if (existingSession) {
+      // If session is READY or AUTHENTICATED, return immediately - DO NOT initialize again
+      if (existingSession.status === 'READY' || existingSession.status === 'AUTHENTICATED') {
+        return res.status(200).json({
+          success: true,
+          sessionId: existingSession.id,
+          status: existingSession.status,
+          message: 'Session is already connected',
+          ...(existingSession.phoneNumber && { phoneNumber: existingSession.phoneNumber }),
+        });
+      }
+      
       // If session is INITIALIZING, return current status without initializing again
       if (existingSession.status === 'INITIALIZING') {
         return res.status(200).json({
@@ -48,14 +59,25 @@ export class WhatsAppWebController {
         });
       }
       
+      // If QR_READY, return it without initializing again
+      if (existingSession.status === 'QR_READY') {
+        return res.status(200).json({
+          success: true,
+          sessionId: existingSession.id,
+          status: existingSession.status,
+          message: 'QR code is ready. Please scan it.',
+          ...(existingSession.qrCode && { qr: existingSession.qrCode }),
+        });
+      }
+      
       // If session exists and is not disconnected, return it immediately
       if (existingSession.status !== 'DISCONNECTED') {
         return res.status(200).json({
           success: true,
           sessionId: existingSession.id,
           status: existingSession.status,
-          ...(existingSession.status === 'QR_READY' && existingSession.qrCode && { qr: existingSession.qrCode }),
-          ...(existingSession.status === 'READY' && existingSession.phoneNumber && { phoneNumber: existingSession.phoneNumber }),
+          ...(existingSession.qrCode && { qr: existingSession.qrCode }),
+          ...(existingSession.phoneNumber && { phoneNumber: existingSession.phoneNumber }),
         });
       }
     }
