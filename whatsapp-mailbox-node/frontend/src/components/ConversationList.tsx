@@ -41,23 +41,30 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       
       // Transform contacts into conversation format
       const transformedConversations: Conversation[] = contacts
-        .filter((contact: any) => contact && contact.id) // Filter out null/undefined
+        .filter((contact: any) => {
+          // Filter out null/undefined
+          return contact && contact.id;
+        })
         .map((contact: any) => {
-          // Get the last message from the messages array
+          // Get the last message from the messages array (already sorted by createdAt desc)
           const lastMessageObj = contact.messages && contact.messages.length > 0 
             ? contact.messages[0] 
             : null;
           
           // Format last message preview
-          let lastMessagePreview: string | undefined;
+          let lastMessagePreview: string | undefined = 'No messages yet';
+          
           if (lastMessageObj) {
-            if (lastMessageObj.content) {
+            // Handle text messages
+            if (lastMessageObj.content && lastMessageObj.content.trim()) {
               // Truncate long messages
-              lastMessagePreview = lastMessageObj.content.length > 50 
-                ? lastMessageObj.content.substring(0, 50) + '...'
-                : lastMessageObj.content;
-            } else if (lastMessageObj.messageType && lastMessageObj.messageType !== 'TEXT') {
-              // Show media type indicators
+              const content = lastMessageObj.content.trim();
+              lastMessagePreview = content.length > 50 
+                ? content.substring(0, 50) + '...'
+                : content;
+            } 
+            // Handle media messages
+            else if (lastMessageObj.messageType && lastMessageObj.messageType !== 'TEXT') {
               const typeLabels: Record<string, string> = {
                 'IMAGE': '📷 Image',
                 'VIDEO': '🎥 Video',
@@ -66,7 +73,13 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 'LOCATION': '📍 Location',
                 'CONTACT': '👤 Contact',
               };
-              lastMessagePreview = typeLabels[lastMessageObj.messageType] || 'Media';
+              lastMessagePreview = typeLabels[lastMessageObj.messageType] || '📎 Media';
+            }
+            // If message has no content and no type, show direction indicator
+            else {
+              lastMessagePreview = lastMessageObj.direction === 'INCOMING' 
+                ? '📥 Message received' 
+                : '📤 Message sent';
             }
           }
 
@@ -81,6 +94,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             lastMessage: lastMessagePreview,
             lastMessageAt: lastMessageObj?.createdAt || contact.lastMessageAt,
           };
+        })
+        // Sort by lastMessageAt descending (most recent first)
+        .sort((a, b) => {
+          const dateA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+          const dateB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+          return dateB - dateA;
         });
       
       setConversations(transformedConversations);

@@ -89,7 +89,10 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
             },
           },
         },
-        orderBy: { lastMessageAt: 'desc' },
+        orderBy: [
+          { lastMessageAt: 'desc' },
+          { createdAt: 'desc' }, // Fallback if lastMessageAt is null
+        ],
       }),
       this.prisma.contact.count({ where }),
     ]);
