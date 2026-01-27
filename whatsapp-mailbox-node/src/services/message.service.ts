@@ -246,37 +246,8 @@ export class MessageService implements IMessageService {
           status: MessageStatus.FAILED,
         });
 
-        // Extract error message - log full error for debugging
-        let errorMessage = 'Unknown error';
-        if (error instanceof Error) {
-          errorMessage = error.message || error.name || error.toString();
-          // Log full error details for debugging
-          logger.error({ 
-            error: {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
-              toString: error.toString(),
-              fullError: error
-            },
-            phoneNumber: input.phoneNumber || 'N/A',
-            contactId: input.contactId || 'N/A',
-          }, 'WhatsApp Web send failed - full error details');
-        } else {
-          errorMessage = String(error);
-          logger.error({ 
-            error,
-            errorType: typeof error,
-            phoneNumber: input.phoneNumber || 'N/A',
-            contactId: input.contactId || 'N/A',
-          }, 'WhatsApp Web send failed - non-Error object');
-        }
-        
-        // Use a more descriptive error message if the extracted one is too short or cryptic
-        if (!errorMessage || errorMessage.length < 3 || errorMessage === 't') {
-          errorMessage = 'Failed to send message via WhatsApp Web. Please check if WhatsApp is connected and try again.';
-        }
-        
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.error({ error, phoneNumber: input.phoneNumber, contactId: input.contactId, errorMessage }, 'WhatsApp Web send failed');
         throw new ExternalServiceError('WhatsApp Web', errorMessage);
       }
     } catch (error) {
