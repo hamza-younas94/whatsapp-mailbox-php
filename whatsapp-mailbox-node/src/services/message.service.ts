@@ -130,19 +130,34 @@ export class MessageService implements IMessageService {
           throw new ValidationError(`WhatsApp client is ${state}. Please reconnect.`);
         }
 
-        // Format phone number and resolve a valid chat id from WhatsApp
+        // Format phone number
         const phoneNumber = input.phoneNumber || '';
         const formattedNumber = phoneNumber.replace(/[^0-9]/g, ''); // Remove non-digits
+        const chatId = `${formattedNumber}@c.us`;
 
+        logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
+
+        // Get all chats and search for existing chat first
+        const chats = await activeSession.client.getChats();
+        const existingChat = chats.find(c => c.id._serialized === chatId);
+        
+        if (existingChat) {
+          logger.info({ chatId }, 'Found existing chat, sending via chat object');
+          const waMessage = await existingChat.sendMessage(input.content);
+          logger.info({ messageId: waMessage.id.id }, 'Message sent via existing chat');
+          return await this.messageRepository.update(message.id, {
+            waMessageId: waMessage.id.id,
+            status: MessageStatus.SENT,
+          });
+        }
+
+        // Fallback: verify number exists and send to new chat
+        logger.info({ chatId }, 'No existing chat found, verifying number');
         const numberId = await activeSession.client.getNumberId(formattedNumber);
         if (!numberId) {
           throw new ValidationError('Phone number is not registered on WhatsApp');
         }
 
-        const chatId = numberId._serialized;
-        logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
-
-        // Send message directly - v1.34.4 handles chat initialization internally
         const waMessage = await activeSession.client.sendMessage(chatId, input.content);
         logger.info({ messageId: waMessage.id.id, to: chatId }, 'WhatsApp message sent successfully');
 

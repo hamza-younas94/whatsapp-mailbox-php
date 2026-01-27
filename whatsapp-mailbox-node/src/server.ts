@@ -122,7 +122,9 @@ export function createApp(): Express {
 function setupIncomingMessageListener(): void {
   whatsappWebService.on('message', async (event: any) => {
     try {
-      const { sessionId, from, body, hasMedia } = event;
+      const { sessionId, from, body, hasMedia, timestamp } = event;
+      
+      logger.info({ sessionId, from, body: body?.substring(0, 50), hasMedia, timestamp }, 'RAW incoming message event');
       
       // Get the session to find the userId
       const session = whatsappWebService.getSession(sessionId);
@@ -132,9 +134,9 @@ function setupIncomingMessageListener(): void {
       }
 
       const userId = session.userId;
-      const phoneNumber = from.replace('@c.us', '');
+      const phoneNumber = from.replace('@c.us', '').replace('@g.us', '');
 
-      logger.info({ userId, phoneNumber, body: body.substring(0, 50) }, 'Received incoming WhatsApp message');
+      logger.info({ userId, phoneNumber, body: body?.substring(0, 50) }, 'Processing incoming WhatsApp message');
 
       // Create repositories with prisma client
       const db = getPrismaClient();
