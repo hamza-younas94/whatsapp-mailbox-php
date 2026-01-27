@@ -164,42 +164,26 @@ export class MessageService implements IMessageService {
 
         logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
 
-        // Get all chats and search for existing chat first
-        const chats = await activeSession.client.getChats();
-        const chatIdLid = `${formattedNumber}@lid`;
-        
-        const existingChat = chats.find(c => 
-          c.id._serialized === chatId || c.id._serialized === chatIdLid
+        // Verify number is registered and get numberId
+        const numberId = await withTimeout(
+          activeSession.client.getNumberId(formattedNumber),
+          30000,
+          'WhatsApp getNumberId timed out',
         );
         
-        if (existingChat) {
-          logger.info({ chatId: existingChat.id._serialized }, 'Found existing chat, sending via chat object');
-          const waMessage = await withTimeout(
-            existingChat.sendMessage(input.content),
-            30000,
-            'WhatsApp send timed out (existing chat)',
-          );
-          logger.info({ messageId: waMessage.id.id }, 'Message sent via existing chat');
-          return await this.messageRepository.update(message.id, {
-            waMessageId: waMessage.id.id,
-            status: MessageStatus.SENT,
-          });
-        }
-
-        // Fallback: verify number exists and send to new chat
-        logger.info({ chatId }, 'No existing chat found, verifying number');
-        const numberId = await activeSession.client.getNumberId(formattedNumber);
         if (!numberId) {
           throw new ValidationError('Phone number is not registered on WhatsApp');
         }
 
-        logger.info({ numberId }, 'Number verified, sending to new chat');
+        logger.info({ numberId: numberId._serialized }, 'Number verified, sending message');
+        
+        // Send directly via numberId to avoid stale chat object issues
         const waMessage = await withTimeout(
           activeSession.client.sendMessage(numberId._serialized, input.content),
           30000,
-          'WhatsApp send timed out (new chat)',
+          'WhatsApp send timed out',
         );
-        logger.info({ messageId: waMessage.id.id, to: numberId }, 'WhatsApp message sent successfully to new chat');
+        logger.info({ messageId: waMessage.id.id, to: numberId._serialized }, 'WhatsApp message sent successfully');
 
         // Update message with WhatsApp message ID
         return await this.messageRepository.update(message.id, {
