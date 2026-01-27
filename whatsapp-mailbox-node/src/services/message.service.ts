@@ -130,12 +130,35 @@ export class MessageService implements IMessageService {
           throw new ValidationError(`WhatsApp client is ${state}. Please reconnect.`);
         }
 
-        // Format phone number for WhatsApp Web (e.g., 923462115115@c.us)
+        // Format phone number and resolve a valid chat id from WhatsApp
         const phoneNumber = input.phoneNumber || '';
         const formattedNumber = phoneNumber.replace(/[^0-9]/g, ''); // Remove non-digits
-        const chatId = `${formattedNumber}@c.us`;
 
+        const numberId = await activeSession.client.getNumberId(formattedNumber);
+        if (!numberId) {
+          throw new ValidationError('Phone number is not registered on WhatsApp');
+        }
+
+        const chatId = numberId._serialized;
         logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
+
+        // Ensure chat object is hydrated before sending to avoid markedUnread errors
+        const ensureChatReady = async () => {
+          const chat = await activeSession.client.getChatById(chatId);
+          if (!chat) {
+            throw new Error('Chat not initialized');
+          }
+          try {
+            await chat.sendSeen(); // primes chat state
+          } catch (err) {
+            logger.warn({ chatId, err }, 'sendSeen failed, continuing');
+          }
+          try {
+            await chat.fetchMessages({ limit: 1 });
+          } catch (err) {
+            logger.warn({ chatId, err }, 'fetchMessages prime failed, continuing');
+          }
+        };
 
         // Add delay to allow WhatsApp internals to stabilize before sending
         logger.info({ delayMs: 2000 }, 'Waiting before send...');
@@ -148,6 +171,7 @@ export class MessageService implements IMessageService {
         for (let attempt = 1; attempt <= 3; attempt++) {
           try {
             logger.info({ chatId, attempt, msg: 'Attempt to send' }, 'Attempting to send message');
+            await ensureChatReady();
             waMessage = await activeSession.client.sendMessage(chatId, input.content);
             logger.info({ messageId: waMessage.id.id, to: chatId, attempt }, 'WhatsApp message sent successfully');
             break; // Success, exit retry loop
