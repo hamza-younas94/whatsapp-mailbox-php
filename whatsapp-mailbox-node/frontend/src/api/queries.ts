@@ -67,6 +67,41 @@ export const messageAPI = {
   },
 };
 
+export const sessionAPI = {
+  // Initialize WhatsApp Web session
+  async initializeSession() {
+    try {
+      const { data } = await api.post('/whatsapp-web/initialize');
+      return data.data;
+    } catch (error: any) {
+      console.error('Session initialization error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Get session status
+  async getSessionStatus() {
+    try {
+      const { data } = await api.get('/whatsapp-web/status');
+      return data.data;
+    } catch (error: any) {
+      console.error('Session status error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Disconnect session
+  async disconnectSession() {
+    try {
+      const { data } = await api.post('/whatsapp-web/disconnect');
+      return data.data;
+    } catch (error: any) {
+      console.error('Session disconnect error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+};
+
 export const contactAPI = {
   // Search/list contacts
   async searchContacts(search?: string, limit = 20, offset = 0) {

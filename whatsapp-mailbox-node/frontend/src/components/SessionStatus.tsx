@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { subscribeToSessionStatus } from '@/api/socket';
+import { sessionAPI } from '@/api/queries';
 import '@/styles/session-status.css';
 
 type SessionState = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'QR_READY' | 'UNKNOWN';
@@ -18,7 +19,44 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
   const [showQR, setShowQR] = useState(false);
   const [qrData, setQRData] = useState<QRData | null>(null);
   const [message, setMessage] = useState('Initializing...');
+  const [isInitializing, setIsInitializing] = useState(false);
 
+  // Auto-initialize session on component mount
+  useEffect(() => {
+    const initializeSession = async () => {
+      if (isInitializing) return;
+      
+      try {
+        setIsInitializing(true);
+        setMessage('Starting WhatsApp session...');
+        console.log('Auto-initializing WhatsApp session...');
+        
+        const result = await sessionAPI.initializeSession();
+        console.log('Session initialization result:', result);
+        
+        // Session initialization will emit socket events
+        // Let the socket subscription handle the status updates
+      } catch (error: any) {
+        console.error('Failed to initialize session:', error);
+        // If initialization fails, let user manually reconnect
+        setStatus('DISCONNECTED');
+        setMessage('Failed to initialize session. Click reconnect to try again.');
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    // Check if auth token exists before trying to initialize
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      initializeSession();
+    } else {
+      setMessage('Please log in first');
+      setStatus('DISCONNECTED');
+    }
+  }, [isInitializing]);
+
+  // Subscribe to session status updates via socket
   useEffect(() => {
     const unsubscribe = subscribeToSessionStatus((data) => {
       const newStatus = (data.status || 'UNKNOWN') as SessionState;
@@ -52,9 +90,19 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
     return unsubscribe;
   }, [onQRRequired]);
 
-  const handleReconnect = () => {
-    // Emit reconnect event via socket
-    window.location.reload();
+  const handleReconnect = async () => {
+    try {
+      setIsInitializing(true);
+      setMessage('Reconnecting to WhatsApp...');
+      const result = await sessionAPI.initializeSession();
+      console.log('Reconnection result:', result);
+    } catch (error) {
+      console.error('Failed to reconnect:', error);
+      setMessage('Failed to reconnect. Reloading page...');
+      setTimeout(() => window.location.reload(), 2000);
+    } finally {
+      setIsInitializing(false);
+    }
   };
 
   const statusClass = status.toLowerCase();
@@ -68,8 +116,8 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
         </div>
 
         {status === 'DISCONNECTED' && (
-          <button className="reconnect-btn" onClick={handleReconnect}>
-            Reconnect
+          <button className="reconnect-btn" onClick={handleReconnect} disabled={isInitializing}>
+            {isInitializing ? 'Reconnecting...' : 'Reconnect'}
           </button>
         )}
       </div>
