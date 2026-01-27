@@ -182,10 +182,9 @@ export class MessageService implements IMessageService {
           isObject: typeof numberId === 'object'
         }, 'Number verified, sending message');
         
-        // Send with sendSeen: false to avoid markedUnread error (GitHub issue #5718)
-        // This prevents whatsapp-web.js from triggering chat state updates that break
+        // Send message (removed sendSeen: false option as it may not be supported)
         const waMessage = await withTimeout(
-          activeSession.client.sendMessage(numberId as any, input.content, { sendSeen: false }),
+          activeSession.client.sendMessage(numberId as any, input.content),
           30000,
           'WhatsApp send timed out',
         );

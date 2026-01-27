@@ -159,8 +159,8 @@ export class WhatsAppWebService extends EventEmitter {
       if (message.body.toLowerCase() === 'ping') {
         try {
           logger.info({ sessionId: id, from: message.from }, 'Ping received, replying with pong');
-          // Use client.sendMessage with sendSeen: false to avoid markedUnread error (issue #5718)
-          await client.sendMessage(message.from, 'pong', { sendSeen: false });
+          // Send pong without sendSeen option
+          await client.sendMessage(message.from, 'pong');
           logger.info({ sessionId: id, from: message.from }, 'Pong sent successfully');
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : String(error);
