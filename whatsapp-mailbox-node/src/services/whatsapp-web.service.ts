@@ -55,6 +55,13 @@ export class WhatsAppWebService extends EventEmitter {
         clientId: sessionId,
         dataPath: this.sessionDir,
       }),
+      // Pin a known-good WhatsApp Web version to avoid markedUnread/sendSeen breakage (issue #5718)
+      webVersion: '2.3000.1031490220-alpha',
+      webVersionCache: {
+        type: 'remote',
+        remotePath:
+          'https://raw.githubusercontent.com/wppconnect-team/wa-version/refs/heads/main/html/2.3000.1031490220-alpha.html',
+      },
       authTimeoutMs: 300000,
       qrMaxRetries: 6,
       puppeteer: {
