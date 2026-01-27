@@ -68,7 +68,7 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    localStorage.setItem('token', data.data.token);
+                    localStorage.setItem('authToken', data.data.token);
                     localStorage.setItem('user', JSON.stringify(data.data.user));
                     window.location.href = '/';
                 } else {
@@ -82,7 +82,7 @@
         });
 
         // Redirect if already logged in
-        if (localStorage.getItem('token')) {
+        if (localStorage.getItem('authToken')) {
             window.location.href = '/';
         }
     </script>

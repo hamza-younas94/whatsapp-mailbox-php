@@ -10,7 +10,7 @@
 </head>
 <body class="bg-gray-50">
     <script>
-        if (!localStorage.getItem('token')) window.location.href = '/login.html';
+        if (!localStorage.getItem('authToken')) window.location.href = '/login.html';
     </script>
 
     <nav class="bg-white shadow-lg">
@@ -105,7 +105,7 @@
         let currentPage = 1;
         
         async function fetchWithAuth(url, options = {}) {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             const headers = {
                 'Content-Type': 'application/json',
                 ...(token && { 'Authorization': `Bearer ${token}` }),
@@ -113,7 +113,7 @@
             };
             const response = await fetch(url, { ...options, headers });
             if (response.status === 401) {
-                localStorage.removeItem('token');
+                localStorage.removeItem('authToken');
                 window.location.href = '/login.html';
             }
             return response;
