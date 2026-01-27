@@ -57,6 +57,7 @@ export class WhatsAppWebService extends EventEmitter {
       }),
       puppeteer: {
         headless: true,
+        protocolTimeout: 120000,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',

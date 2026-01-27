@@ -63,6 +63,20 @@ export class MessageService implements IMessageService {
 
   async sendMessage(userId: string, input: CreateMessageInput): Promise<Message> {
     try {
+      const withTimeout = async <T>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> => {
+        let timer: NodeJS.Timeout;
+        try {
+          return await Promise.race([
+            promise,
+            new Promise<T>((_, reject) => {
+              timer = setTimeout(() => reject(new Error(errorMsg)), ms);
+            }),
+          ]);
+        } finally {
+          clearTimeout(timer!);
+        }
+      };
+
       // Validate userId is present
       if (!userId) {
         throw new ValidationError('User ID is required - authentication failed');
@@ -143,7 +157,11 @@ export class MessageService implements IMessageService {
         
         if (existingChat) {
           logger.info({ chatId }, 'Found existing chat, sending via chat object');
-          const waMessage = await existingChat.sendMessage(input.content);
+          const waMessage = await withTimeout(
+            existingChat.sendMessage(input.content),
+            30000,
+            'WhatsApp send timed out (existing chat)',
+          );
           logger.info({ messageId: waMessage.id.id }, 'Message sent via existing chat');
           return await this.messageRepository.update(message.id, {
             waMessageId: waMessage.id.id,
@@ -158,7 +176,11 @@ export class MessageService implements IMessageService {
           throw new ValidationError('Phone number is not registered on WhatsApp');
         }
 
-        const waMessage = await activeSession.client.sendMessage(chatId, input.content);
+        const waMessage = await withTimeout(
+          activeSession.client.sendMessage(chatId, input.content),
+          30000,
+          'WhatsApp send timed out (new chat)',
+        );
         logger.info({ messageId: waMessage.id.id, to: chatId }, 'WhatsApp message sent successfully');
 
         // Update message with WhatsApp message ID
