@@ -116,8 +116,26 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, onUnload })
 
     try {
       setSending(true);
-      await messageAPI.sendMessage(contactId, content, mediaUrl);
-      // Message will appear via socket subscription
+      const sentMessage = await messageAPI.sendMessage(contactId, content, mediaUrl);
+      
+      // Add message to UI immediately (optimistic update)
+      if (sentMessage) {
+        setMessages((prev) => [...prev, {
+          id: sentMessage.id,
+          contactId: sentMessage.contactId || contactId,
+          content: sentMessage.content || content,
+          direction: 'OUTGOING',
+          status: sentMessage.status || 'PENDING',
+          createdAt: sentMessage.createdAt || new Date().toISOString(),
+          mediaUrl: sentMessage.mediaUrl || mediaUrl,
+          mediaType: sentMessage.mediaType,
+        }]);
+      }
+      
+      // Reload messages after a short delay to ensure we have the latest
+      setTimeout(() => {
+        loadMessages(50, 0);
+      }, 500);
     } catch (error) {
       console.error('Failed to send message:', error);
       alert('Failed to send message');

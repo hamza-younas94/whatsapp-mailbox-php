@@ -139,11 +139,48 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
       checkAndInitialize();
     }, 500);
 
+    // Set up polling to check session status periodically if not connected
+    const pollInterval = setInterval(async () => {
+      if (!mounted || hasInitialized) return;
+      
+      const token = localStorage.getItem('authToken');
+      if (!token) return;
+
+      try {
+        const currentStatus = await sessionAPI.getSessionStatus();
+        
+        if (!mounted) return;
+        
+        // If connected, update status and stop polling
+        if (currentStatus.isConnected || currentStatus.status === 'READY' || currentStatus.status === 'AUTHENTICATED') {
+          setStatus('CONNECTED');
+          setMessage('Connected to WhatsApp');
+          setHasInitialized(true);
+          clearInterval(pollInterval);
+          return;
+        }
+        
+        // If QR code available, show it
+        if (currentStatus.qr && currentStatus.status === 'QR_READY') {
+          setStatus('QR_READY');
+          setMessage('Scan QR code to connect');
+          setQRData({ qr: currentStatus.qr, sessionId: currentStatus.sessionId });
+          setShowQR(true);
+          onQRRequired?.({ qr: currentStatus.qr, sessionId: currentStatus.sessionId });
+          setHasInitialized(true);
+          clearInterval(pollInterval);
+        }
+      } catch (error) {
+        console.error('Error polling session status:', error);
+      }
+    }, 3000); // Poll every 3 seconds
+
     return () => {
       mounted = false;
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
+      clearInterval(pollInterval);
     };
   }, []); // Empty dependency array - only run once on mount
 
