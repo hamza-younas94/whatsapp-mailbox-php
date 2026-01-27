@@ -2,7 +2,6 @@
 // Message business logic - Single Responsibility Principle
 
 import { Message, Prisma, MessageType, MessageDirection, MessageStatus } from '@prisma/client';
-import { MessageMedia } from 'whatsapp-web.js';
 import { MessageRepository } from '@repositories/message.repository';
 import { ContactRepository } from '@repositories/contact.repository';
 import { ConversationRepository } from '@repositories/conversation.repository';
@@ -79,13 +78,8 @@ export class MessageService implements IMessageService {
       };
 
       const sanitizePhone = (raw: string): string => {
-        if (!raw) return '';
-        // Remove @domain if present (WhatsApp format)
         const base = raw.split('@')[0];
-        // Remove all non-digit characters
         const digits = base.replace(/\D/g, '');
-        // Return last 20 digits (max phone number length)
-        // This handles numbers starting with 0, +, or country codes
         return digits.slice(-20);
       };
 
@@ -107,8 +101,8 @@ export class MessageService implements IMessageService {
       let contactId = input.contactId;
       if (!contactId && input.phoneNumber) {
         const sanitizedPhone = sanitizePhone(input.phoneNumber);
-        if (!sanitizedPhone || sanitizedPhone.length < 10) {
-          throw new ValidationError(`Phone number is invalid. Got: "${input.phoneNumber}", sanitized: "${sanitizedPhone}". Please provide a valid phone number with at least 10 digits.`);
+        if (!sanitizedPhone) {
+          throw new ValidationError('Phone number is invalid after sanitization');
         }
         const contact = await this.contactRepository.findOrCreate(userId, sanitizedPhone, { name: sanitizedPhone });
         contactId = contact.id;
@@ -122,14 +116,12 @@ export class MessageService implements IMessageService {
       const conversation = await this.conversationRepository.findOrCreate(userId, contactId);
 
       // Create message in database (PENDING status)
-      const messageTypeToUse = input.messageType || (input.mediaUrl ? MessageType.DOCUMENT : MessageType.TEXT);
-
       const message = await this.messageRepository.create({
         user: { connect: { id: userId } },
         contact: { connect: { id: contactId } },
         conversation: { connect: { id: conversation.id } },
         content: input.content,
-        messageType: messageTypeToUse as any,
+        messageType: (input.messageType || MessageType.TEXT) as any,
         direction: MessageDirection.OUTGOING as any,
         status: MessageStatus.PENDING as any,
         mediaUrl: input.mediaUrl,
@@ -178,8 +170,8 @@ export class MessageService implements IMessageService {
 
         // Format phone number
         const sanitizedPhone = sanitizePhone(phoneNumberToUse);
-        if (!sanitizedPhone || sanitizedPhone.length < 10) {
-          throw new ValidationError(`Phone number is invalid after sanitization. Got: "${phoneNumberToUse}", sanitized: "${sanitizedPhone}"`);
+        if (!sanitizedPhone) {
+          throw new ValidationError('Phone number is invalid after sanitization');
         }
         const formattedNumber = sanitizedPhone;
         const chatId = `${formattedNumber}@c.us`;
@@ -207,32 +199,12 @@ export class MessageService implements IMessageService {
         // Normalize target chat id for sendMessage
         const targetChatId = typeof numberId === 'object' ? numberId._serialized : numberId;
         
-        let waMessage: any;
-
-        if (input.mediaUrl) {
-          const media = await withTimeout(
-            MessageMedia.fromUrl(input.mediaUrl),
-            30000,
-            'WhatsApp media fetch timed out',
-          );
-
-          waMessage = await withTimeout(
-            activeSession.client.sendMessage(targetChatId as any, media, { caption: input.content || '' }),
-            30000,
-            'WhatsApp send timed out',
-          );
-        } else {
-          // Ensure content is not empty
-          if (!input.content || input.content.trim().length === 0) {
-            throw new ValidationError('Message content cannot be empty');
-          }
-          
-          waMessage = await withTimeout(
-            activeSession.client.sendMessage(targetChatId as any, input.content.trim()),
-            30000,
-            'WhatsApp send timed out',
-          );
-        }
+        // Send message (removed sendSeen: false option as it may not be supported)
+        const waMessage = await withTimeout(
+          activeSession.client.sendMessage(targetChatId as any, input.content),
+          30000,
+          'WhatsApp send timed out',
+        );
         logger.info({ messageId: waMessage.id.id }, 'WhatsApp message sent successfully');
 
         // Update message with WhatsApp message ID
@@ -247,7 +219,7 @@ export class MessageService implements IMessageService {
         });
 
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        logger.error({ error, phoneNumber: input.phoneNumber, contactId: input.contactId, errorMessage }, 'WhatsApp Web send failed');
+        logger.error({ error, phoneNumber: input.phoneNumber, errorMessage }, 'WhatsApp Web send failed');
         throw new ExternalServiceError('WhatsApp Web', errorMessage);
       }
     } catch (error) {
@@ -280,30 +252,6 @@ export class MessageService implements IMessageService {
       return message;
     } catch (error) {
       logger.error({ waMessageId, payload, error }, 'Failed to receive message');
-      throw error;
-    }
-  }
-
-  async getMessagesByContact(
-    userId: string,
-    contactId: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<PaginatedResult<Message>> {
-    try {
-      const contact = await this.contactRepository.findById(contactId);
-      if (!contact || contact.userId !== userId) {
-        throw new NotFoundError('Contact');
-      }
-
-      const conversation = await this.conversationRepository.findOrCreate(userId, contactId);
-
-      return await this.messageRepository.findByConversation(conversation.id, {
-        limit,
-        offset,
-      });
-    } catch (error) {
-      logger.error({ contactId, error }, 'Failed to get messages by contact');
       throw error;
     }
   }
