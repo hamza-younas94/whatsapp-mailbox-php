@@ -125,8 +125,14 @@ function setupIncomingMessageListener(): void {
     try {
       const { sessionId, from, body, hasMedia, timestamp, waMessageId, messageType } = event;
       
-      logger.info({ sessionId, from, body: body?.substring(0, 50), hasMedia, timestamp }, 'RAW incoming message event');
+      logger.info({ sessionId, from, body: body?.substring(0, 50), hasMedia, timestamp, messageType }, 'RAW incoming message event');
       
+      // Skip messages with no content and no media (read receipts, delivery confirmations, etc.)
+      if (!body && !hasMedia) {
+        logger.debug({ sessionId, from, messageType }, 'Skipping empty message with no media');
+        return;
+      }
+
       // Get the session to find the userId
       const session = whatsappWebService.getSession(sessionId);
       if (!session) {
@@ -135,9 +141,9 @@ function setupIncomingMessageListener(): void {
       }
 
       const userId = session.userId;
-      const phoneNumber = from.replace('@c.us', '').replace('@g.us', '');
+      const phoneNumber = from.replace('@c.us', '').replace('@g.us', '').replace('@lid', '');
 
-      logger.info({ userId, phoneNumber, body: body?.substring(0, 50) }, 'Processing incoming WhatsApp message');
+      logger.info({ userId, phoneNumber, body: body?.substring(0, 50), messageType }, 'Processing incoming WhatsApp message');
 
       // Create repositories with prisma client
       const db = getPrismaClient();
