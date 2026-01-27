@@ -20,25 +20,73 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
   const [qrData, setQRData] = useState<QRData | null>(null);
   const [message, setMessage] = useState('Initializing...');
   const [isInitializing, setIsInitializing] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Auto-initialize session on component mount
+  // Check session status first, then initialize if needed
   useEffect(() => {
-    const initializeSession = async () => {
-      if (isInitializing) return;
-      
+    const checkAndInitialize = async () => {
+      // Prevent multiple initialization attempts
+      if (hasInitialized || isInitializing) return;
+
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setMessage('Please log in first');
+        setStatus('DISCONNECTED');
+        return;
+      }
+
       try {
         setIsInitializing(true);
-        setMessage('Starting WhatsApp session...');
-        console.log('Auto-initializing WhatsApp session...');
         
-        const result = await sessionAPI.initializeSession();
-        console.log('Session initialization result:', result);
+        // First, check current session status
+        const currentStatus = await sessionAPI.getSessionStatus();
+        console.log('Current session status:', currentStatus);
         
-        // Session initialization will emit socket events
-        // Let the socket subscription handle the status updates
+        // If already connected or ready, update status
+        if (currentStatus.isConnected || currentStatus.status === 'READY') {
+          setStatus('CONNECTED');
+          setMessage('Connected to WhatsApp');
+          setHasInitialized(true);
+          setIsInitializing(false);
+          return;
+        }
+
+        // If QR code is available, show it
+        if (currentStatus.qr) {
+          setStatus('QR_READY');
+          setMessage('Scan QR code to connect');
+          setQRData({ qr: currentStatus.qr, sessionId: currentStatus.sessionId });
+          setShowQR(true);
+          onQRRequired?.({ qr: currentStatus.qr, sessionId: currentStatus.sessionId });
+          setHasInitialized(true);
+          setIsInitializing(false);
+          return;
+        }
+
+        // If no active session, initialize one
+        if (!currentStatus.isConnected && currentStatus.status !== 'QR_READY') {
+          setMessage('Starting WhatsApp session...');
+          console.log('Auto-initializing WhatsApp session...');
+          
+          const result = await sessionAPI.initializeSession();
+          console.log('Session initialization result:', result);
+          
+          // If result has QR code, show it
+          if (result.qr) {
+            setStatus('QR_READY');
+            setMessage('Scan QR code to connect');
+            setQRData({ qr: result.qr, sessionId: result.sessionId });
+            setShowQR(true);
+            onQRRequired?.({ qr: result.qr, sessionId: result.sessionId });
+          } else if (result.status === 'READY') {
+            setStatus('CONNECTED');
+            setMessage('Connected to WhatsApp');
+          }
+        }
+        
+        setHasInitialized(true);
       } catch (error: any) {
         console.error('Failed to initialize session:', error);
-        // If initialization fails, let user manually reconnect
         setStatus('DISCONNECTED');
         setMessage('Failed to initialize session. Click reconnect to try again.');
       } finally {
@@ -46,15 +94,8 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
       }
     };
 
-    // Check if auth token exists before trying to initialize
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      initializeSession();
-    } else {
-      setMessage('Please log in first');
-      setStatus('DISCONNECTED');
-    }
-  }, [isInitializing]);
+    checkAndInitialize();
+  }, []); // Empty dependency array - only run once on mount
 
   // Subscribe to session status updates via socket
   useEffect(() => {
@@ -93,13 +134,28 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
   const handleReconnect = async () => {
     try {
       setIsInitializing(true);
+      setHasInitialized(false); // Reset to allow re-initialization
       setMessage('Reconnecting to WhatsApp...');
       const result = await sessionAPI.initializeSession();
       console.log('Reconnection result:', result);
+      
+      // Update status based on result
+      if (result.qr) {
+        setStatus('QR_READY');
+        setMessage('Scan QR code to connect');
+        setQRData({ qr: result.qr, sessionId: result.sessionId });
+        setShowQR(true);
+        onQRRequired?.({ qr: result.qr, sessionId: result.sessionId });
+      } else if (result.status === 'READY') {
+        setStatus('CONNECTED');
+        setMessage('Connected to WhatsApp');
+      }
+      
+      setHasInitialized(true);
     } catch (error) {
       console.error('Failed to reconnect:', error);
-      setMessage('Failed to reconnect. Reloading page...');
-      setTimeout(() => window.location.reload(), 2000);
+      setMessage('Failed to reconnect. Please try again.');
+      setStatus('DISCONNECTED');
     } finally {
       setIsInitializing(false);
     }

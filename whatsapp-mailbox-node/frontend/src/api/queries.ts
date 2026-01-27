@@ -72,7 +72,8 @@ export const sessionAPI = {
   async initializeSession() {
     try {
       const { data } = await api.post('/whatsapp-web/initialize');
-      return data.data;
+      // Handle both {success, sessionId, status} and {data: {...}} response formats
+      return data.data || data;
     } catch (error: any) {
       console.error('Session initialization error:', error.response?.data || error.message);
       throw error;
@@ -83,7 +84,8 @@ export const sessionAPI = {
   async getSessionStatus() {
     try {
       const { data } = await api.get('/whatsapp-web/status');
-      return data.data;
+      // Handle both direct response and nested data response
+      return data.data || data;
     } catch (error: any) {
       console.error('Session status error:', error.response?.data || error.message);
       throw error;
