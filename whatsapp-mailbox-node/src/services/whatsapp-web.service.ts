@@ -24,7 +24,10 @@ export class WhatsAppWebService extends EventEmitter {
 
   constructor() {
     super();
-    this.sessionDir = path.join(process.cwd(), '.wwebjs_auth');
+    // Allow persistent session directory override so deployments keep sessions
+    this.sessionDir = process.env.WWEBJS_AUTH_DIR
+      ? path.resolve(process.env.WWEBJS_AUTH_DIR)
+      : path.join(process.cwd(), '.wwebjs_auth');
     
     // Ensure session directory exists
     if (!fs.existsSync(this.sessionDir)) {
