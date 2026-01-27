@@ -21,17 +21,13 @@ const controller = new TagController(service);
 
 // Validation schemas
 const createTagSchema = z.object({
-  body: z.object({
-    name: z.string().min(1).max(50),
-    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-  }),
+  name: z.string().min(1).max(50),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
 });
 
 const addTagToContactSchema = z.object({
-  body: z.object({
-    contactId: z.string().cuid(),
-    tagId: z.string().cuid(),
-  }),
+  contactId: z.string().cuid(),
+  tagId: z.string().cuid(),
 });
 
 // Apply authentication to all routes

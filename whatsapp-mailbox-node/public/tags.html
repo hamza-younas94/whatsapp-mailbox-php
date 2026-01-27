@@ -114,10 +114,19 @@
         }
 
         async function loadTags() {
-            const response = await fetchWithAuth(`${API_BASE}/tags`);
-            if (response.ok) {
-                const data = await response.json();
-                displayTags(data.data || []);
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/tags`);
+                if (response.ok) {
+                    const result = await response.json();
+                    displayTags(result.data || []);
+                } else {
+                    const result = await response.json();
+                    console.error('Error loading tags:', result.error);
+                    displayTags([]);
+                }
+            } catch (error) {
+                console.error('Error loading tags:', error);
+                displayTags([]);
             }
         }
 
@@ -183,15 +192,24 @@
         }
 
         async function editTag(id) {
-            const response = await fetchWithAuth(`${API_BASE}/tags/${id}`);
-            if (response.ok) {
-                const tag = await response.json();
-                document.getElementById('modalTitle').textContent = 'Edit Tag';
-                document.getElementById('tagId').value = tag.id;
-                document.getElementById('name').value = tag.name;
-                document.getElementById('description').value = tag.description || '';
-                selectColor(tag.color || 'blue');
-                document.getElementById('tagModal').classList.remove('hidden');
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/tags/${id}`);
+                if (response.ok) {
+                    const result = await response.json();
+                    const tag = result.data || result;
+                    document.getElementById('modalTitle').textContent = 'Edit Tag';
+                    document.getElementById('tagId').value = tag.id;
+                    document.getElementById('name').value = tag.name || '';
+                    document.getElementById('description').value = tag.description || '';
+                    selectColor(tag.color || 'blue');
+                    document.getElementById('tagModal').classList.remove('hidden');
+                } else {
+                    const result = await response.json();
+                    alert(`Error: ${result.error?.message || 'Failed to load tag'}`);
+                }
+            } catch (error) {
+                console.error('Error loading tag:', error);
+                alert('An error occurred. Please try again.');
             }
         }
 
@@ -215,18 +233,38 @@
             const color = document.getElementById('color').value;
             const description = document.getElementById('description').value;
 
-            const data = { name, color, description };
+            // Validation
+            if (!name || name.trim().length === 0) {
+                alert('Please enter a tag name');
+                return;
+            }
+
+            const data = { 
+                name: name.trim(), 
+                ...(color && { color }), 
+                ...(description && { description: description.trim() })
+            };
             const url = id ? `${API_BASE}/tags/${id}` : `${API_BASE}/tags`;
             const method = id ? 'PUT' : 'POST';
 
-            const response = await fetchWithAuth(url, {
-                method,
-                body: JSON.stringify(data)
-            });
+            try {
+                const response = await fetchWithAuth(url, {
+                    method,
+                    body: JSON.stringify(data)
+                });
 
-            if (response.ok) {
-                hideModal();
-                loadTags();
+                const result = await response.json();
+
+                if (response.ok) {
+                    hideModal();
+                    loadTags();
+                } else {
+                    const errorMsg = result.error?.message || 'Failed to save tag';
+                    alert(`Error: ${errorMsg}`);
+                }
+            } catch (error) {
+                console.error('Error saving tag:', error);
+                alert('An error occurred. Please try again.');
             }
         });
 

@@ -12,11 +12,9 @@ const controller = new WhatsAppWebController();
 
 // Validation schemas
 const sendMessageSchema = z.object({
-  body: z.object({
-    to: z.string().min(10),
-    message: z.string().min(1),
-    mediaUrl: z.string().url().optional(),
-  }),
+  to: z.string().min(10),
+  message: z.string().min(1),
+  mediaUrl: z.string().url().optional(),
 });
 
 // Apply authentication to all routes

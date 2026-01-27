@@ -21,13 +21,12 @@ const controller = new QuickReplyController(service);
 
 // Validation schemas
 const createQuickReplySchema = z.object({
-  body: z.object({
-    shortcut: z.string().min(1).max(50),
-    message: z.string().min(1),
-    mediaUrl: z.string().url().optional(),
-    mediaType: z.enum(['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT']).optional(),
-    category: z.string().max(50).optional(),
-  }),
+  shortcut: z.string().min(1).max(50),
+  message: z.string().min(1),
+  mediaUrl: z.string().url().optional(),
+  mediaType: z.enum(['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT']).optional(),
+  category: z.string().max(50).optional(),
+  isActive: z.boolean().optional(),
 });
 
 const searchSchema = z.object({

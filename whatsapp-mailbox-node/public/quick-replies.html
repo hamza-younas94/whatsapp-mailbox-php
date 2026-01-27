@@ -118,13 +118,22 @@
         }
 
         async function loadQuickReplies() {
-            const search = document.getElementById('searchInput').value;
-            const params = new URLSearchParams({ ...(search && { search }) });
+            try {
+                const search = document.getElementById('searchInput').value;
+                const params = new URLSearchParams({ ...(search && { search }) });
 
-            const response = await fetchWithAuth(`${API_BASE}/quick-replies?${params}`);
-            if (response.ok) {
-                const data = await response.json();
-                displayQuickReplies(data.data || []);
+                const response = await fetchWithAuth(`${API_BASE}/quick-replies?${params}`);
+                if (response.ok) {
+                    const result = await response.json();
+                    displayQuickReplies(result.data || []);
+                } else {
+                    const result = await response.json();
+                    console.error('Error loading quick replies:', result.error);
+                    displayQuickReplies([]);
+                }
+            } catch (error) {
+                console.error('Error loading quick replies:', error);
+                displayQuickReplies([]);
             }
         }
 
@@ -184,16 +193,25 @@
         }
 
         async function editQuickReply(id) {
-            const response = await fetchWithAuth(`${API_BASE}/quick-replies/${id}`);
-            if (response.ok) {
-                const reply = await response.json();
-                document.getElementById('modalTitle').textContent = 'Edit Quick Reply';
-                document.getElementById('quickReplyId').value = reply.id;
-                document.getElementById('shortcut').value = reply.shortcut;
-                document.getElementById('message').value = reply.message;
-                document.getElementById('category').value = reply.category || '';
-                document.getElementById('isActive').checked = reply.isActive;
-                document.getElementById('quickReplyModal').classList.remove('hidden');
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/quick-replies/${id}`);
+                if (response.ok) {
+                    const result = await response.json();
+                    const reply = result.data || result;
+                    document.getElementById('modalTitle').textContent = 'Edit Quick Reply';
+                    document.getElementById('quickReplyId').value = reply.id;
+                    document.getElementById('shortcut').value = reply.shortcut || '';
+                    document.getElementById('message').value = reply.message || '';
+                    document.getElementById('category').value = reply.category || '';
+                    document.getElementById('isActive').checked = reply.isActive !== false;
+                    document.getElementById('quickReplyModal').classList.remove('hidden');
+                } else {
+                    const result = await response.json();
+                    alert(`Error: ${result.error?.message || 'Failed to load quick reply'}`);
+                }
+            } catch (error) {
+                console.error('Error loading quick reply:', error);
+                alert('An error occurred. Please try again.');
             }
         }
 
@@ -213,23 +231,44 @@
             e.preventDefault();
             
             const id = document.getElementById('quickReplyId').value;
-            const shortcut = document.getElementById('shortcut').value;
-            const message = document.getElementById('message').value;
-            const category = document.getElementById('category').value;
+            const shortcut = document.getElementById('shortcut').value.trim();
+            const message = document.getElementById('message').value.trim();
+            const category = document.getElementById('category').value.trim();
             const isActive = document.getElementById('isActive').checked;
 
-            const data = { shortcut, message, category, isActive };
+            // Validation
+            if (!shortcut || !message) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const data = { 
+                shortcut, 
+                message, 
+                ...(category && { category }), 
+                isActive 
+            };
             const url = id ? `${API_BASE}/quick-replies/${id}` : `${API_BASE}/quick-replies`;
             const method = id ? 'PUT' : 'POST';
 
-            const response = await fetchWithAuth(url, {
-                method,
-                body: JSON.stringify(data)
-            });
+            try {
+                const response = await fetchWithAuth(url, {
+                    method,
+                    body: JSON.stringify(data)
+                });
 
-            if (response.ok) {
-                hideModal();
-                loadQuickReplies();
+                const result = await response.json();
+
+                if (response.ok) {
+                    hideModal();
+                    loadQuickReplies();
+                } else {
+                    const errorMsg = result.error?.message || 'Failed to save quick reply';
+                    alert(`Error: ${errorMsg}`);
+                }
+            } catch (error) {
+                console.error('Error saving quick reply:', error);
+                alert('An error occurred. Please try again.');
             }
         });
 
