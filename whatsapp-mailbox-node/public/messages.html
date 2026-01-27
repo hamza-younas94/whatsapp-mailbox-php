@@ -208,18 +208,39 @@
 
         document.getElementById('newMessageForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const phoneNumber = document.getElementById('phoneNumber').value;
-            const content = document.getElementById('messageContent').value;
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const content = document.getElementById('messageContent').value.trim();
 
-            const response = await fetchWithAuth(`${API_BASE}/messages`, {
-                method: 'POST',
-                body: JSON.stringify({ phoneNumber, content })
-            });
+            // Validation
+            if (!phoneNumber || phoneNumber.length < 10) {
+                alert('Please enter a valid phone number (at least 10 digits)');
+                return;
+            }
 
-            if (response.ok) {
-                document.getElementById('newMessageModal').classList.add('hidden');
-                document.getElementById('newMessageForm').reset();
-                loadMessages();
+            if (!content) {
+                alert('Please enter a message');
+                return;
+            }
+
+            try {
+                const response = await fetchWithAuth(`${API_BASE}/messages`, {
+                    method: 'POST',
+                    body: JSON.stringify({ phoneNumber, content })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('newMessageModal').classList.add('hidden');
+                    document.getElementById('newMessageForm').reset();
+                    loadMessages();
+                } else {
+                    const errorMsg = result.error?.message || 'Failed to send message';
+                    alert(`Error: ${errorMsg}`);
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('An error occurred. Please try again.');
             }
         });
 

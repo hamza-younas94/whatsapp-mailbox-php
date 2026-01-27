@@ -79,8 +79,13 @@ export class MessageService implements IMessageService {
       };
 
       const sanitizePhone = (raw: string): string => {
+        if (!raw) return '';
+        // Remove @domain if present (WhatsApp format)
         const base = raw.split('@')[0];
+        // Remove all non-digit characters
         const digits = base.replace(/\D/g, '');
+        // Return last 20 digits (max phone number length)
+        // This handles numbers starting with 0, +, or country codes
         return digits.slice(-20);
       };
 
@@ -102,8 +107,8 @@ export class MessageService implements IMessageService {
       let contactId = input.contactId;
       if (!contactId && input.phoneNumber) {
         const sanitizedPhone = sanitizePhone(input.phoneNumber);
-        if (!sanitizedPhone) {
-          throw new ValidationError('Phone number is invalid after sanitization');
+        if (!sanitizedPhone || sanitizedPhone.length < 10) {
+          throw new ValidationError(`Phone number is invalid. Got: "${input.phoneNumber}", sanitized: "${sanitizedPhone}". Please provide a valid phone number with at least 10 digits.`);
         }
         const contact = await this.contactRepository.findOrCreate(userId, sanitizedPhone, { name: sanitizedPhone });
         contactId = contact.id;
