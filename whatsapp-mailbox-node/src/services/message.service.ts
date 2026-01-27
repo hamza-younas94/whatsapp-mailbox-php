@@ -142,61 +142,9 @@ export class MessageService implements IMessageService {
         const chatId = numberId._serialized;
         logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
 
-        // Ensure chat object is hydrated before sending to avoid markedUnread errors
-        const ensureChatReady = async () => {
-          const chat = await activeSession.client.getChatById(chatId);
-          if (!chat) {
-            throw new Error('Chat not initialized');
-          }
-          try {
-            await chat.sendSeen(); // primes chat state
-          } catch (err) {
-            logger.warn({ chatId, err }, 'sendSeen failed, continuing');
-          }
-          try {
-            await chat.fetchMessages({ limit: 1 });
-          } catch (err) {
-            logger.warn({ chatId, err }, 'fetchMessages prime failed, continuing');
-          }
-        };
-
-        // Add delay to allow WhatsApp internals to stabilize before sending
-        logger.info({ delayMs: 2000 }, 'Waiting before send...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Send message with retry logic for markedUnread error
-        let waMessage: any = null;
-        let lastError: Error | null = null;
-        
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          try {
-            logger.info({ chatId, attempt, msg: 'Attempt to send' }, 'Attempting to send message');
-            await ensureChatReady();
-            waMessage = await activeSession.client.sendMessage(chatId, input.content);
-            logger.info({ messageId: waMessage.id.id, to: chatId, attempt }, 'WhatsApp message sent successfully');
-            break; // Success, exit retry loop
-          } catch (err) {
-            lastError = err as Error;
-            const errorMsg = lastError.message || '';
-            
-            logger.error({ chatId, attempt, errorMsg }, 'Send attempt failed');
-            
-            // markedUnread error indicates chat isn't fully initialized - retry with longer delays
-            if (errorMsg.includes('markedUnread') && attempt < 3) {
-              const waitMs = 3000 * attempt;
-              logger.warn({ chatId, attempt, waitMs, error: errorMsg }, 'markedUnread error, retrying with delay...');
-              await new Promise(resolve => setTimeout(resolve, waitMs));
-              continue;
-            }
-            
-            // For other errors or final attempt, throw
-            throw lastError;
-          }
-        }
-
-        if (!waMessage) {
-          throw lastError || new Error('Failed to send message after 3 attempts');
-        }
+        // Send message directly - v1.34.4 handles chat initialization internally
+        const waMessage = await activeSession.client.sendMessage(chatId, input.content);
+        logger.info({ messageId: waMessage.id.id, to: chatId }, 'WhatsApp message sent successfully');
 
         // Update message with WhatsApp message ID
         return await this.messageRepository.update(message.id, {
