@@ -55,11 +55,11 @@ export class WhatsAppWebService extends EventEmitter {
         clientId: sessionId,
         dataPath: this.sessionDir,
       }),
-      authTimeoutMs: 180000,
+      authTimeoutMs: 300000,
       qrMaxRetries: 6,
       puppeteer: {
         headless: true,
-        protocolTimeout: 180000, // Allow slow Chromium responses to avoid Runtime.callFunctionOn timeouts
+        protocolTimeout: 600000, // 10 minutes - heavy WhatsApp Web tabs can stall on slow servers
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
