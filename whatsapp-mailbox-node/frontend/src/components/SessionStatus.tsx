@@ -52,12 +52,13 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
         
         if (!mounted) return;
         
-        // If already connected or ready, update status
-        if (currentStatus.isConnected || currentStatus.status === 'READY') {
+        // If already connected or ready, update status and STOP
+        if (currentStatus.isConnected || currentStatus.status === 'READY' || currentStatus.status === 'AUTHENTICATED') {
           setStatus('CONNECTED');
           setMessage('Connected to WhatsApp');
           setHasInitialized(true);
           setIsInitializing(false);
+          console.log('Session is already ready, stopping initialization checks');
           return;
         }
 
@@ -73,17 +74,31 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
           return;
         }
 
-        // If status is INITIALIZING, wait a bit and check again
+        // If status is INITIALIZING, wait a bit and check again (but don't call initialize again)
         if (currentStatus.status === 'INITIALIZING') {
           console.log('Session is already initializing, waiting...');
           setMessage('Connecting to WhatsApp...');
+          setStatus('INITIALIZING');
+          setHasInitialized(true);
+          setIsInitializing(false);
+          // Don't call initialize again - just wait
+          return;
+        }
+
+        // If QR_READY, just show it and stop
+        if (currentStatus.status === 'QR_READY' && currentStatus.qr) {
+          setStatus('QR_READY');
+          setMessage('Scan QR code to connect');
+          setQRData({ qr: currentStatus.qr, sessionId: currentStatus.sessionId });
+          setShowQR(true);
+          onQRRequired?.({ qr: currentStatus.qr, sessionId: currentStatus.sessionId });
           setHasInitialized(true);
           setIsInitializing(false);
           return;
         }
 
-        // If no active session, initialize one
-        if (!currentStatus.isConnected && currentStatus.status !== 'QR_READY') {
+        // Only initialize if no active session and not already initializing
+        if (!currentStatus.isConnected && currentStatus.status !== 'QR_READY' && currentStatus.status !== 'INITIALIZING') {
           setMessage('Starting WhatsApp session...');
           console.log('Auto-initializing WhatsApp session...');
           
