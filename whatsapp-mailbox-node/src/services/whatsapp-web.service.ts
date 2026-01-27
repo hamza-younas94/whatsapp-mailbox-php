@@ -59,7 +59,6 @@ export class WhatsAppWebService extends EventEmitter {
       qrMaxRetries: 6,
       puppeteer: {
         headless: true,
-        protocolTimeout: 600000, // 10 minutes - heavy WhatsApp Web tabs can stall on slow servers
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -160,8 +159,8 @@ export class WhatsAppWebService extends EventEmitter {
       if (message.body.toLowerCase() === 'ping') {
         try {
           logger.info({ sessionId: id, from: message.from }, 'Ping received, replying with pong');
-          // Use client.sendMessage directly instead of message.reply() for reliability
-          await client.sendMessage(message.from, 'pong');
+          // Use client.sendMessage with sendSeen: false to avoid markedUnread error (issue #5718)
+          await client.sendMessage(message.from, 'pong', { sendSeen: false });
           logger.info({ sessionId: id, from: message.from }, 'Pong sent successfully');
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : String(error);

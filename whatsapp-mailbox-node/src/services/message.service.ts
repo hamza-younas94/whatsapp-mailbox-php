@@ -182,10 +182,10 @@ export class MessageService implements IMessageService {
           isObject: typeof numberId === 'object'
         }, 'Number verified, sending message');
         
-        // Send using the ContactId object directly - cast as any to bypass type check
-        // whatsapp-web.js v1.34.4 sendMessage accepts both string and ContactId object
+        // Send with sendSeen: false to avoid markedUnread error (GitHub issue #5718)
+        // This prevents whatsapp-web.js from triggering chat state updates that break
         const waMessage = await withTimeout(
-          activeSession.client.sendMessage(numberId as any, input.content),
+          activeSession.client.sendMessage(numberId as any, input.content, { sendSeen: false }),
           30000,
           'WhatsApp send timed out',
         );
