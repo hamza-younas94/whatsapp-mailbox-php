@@ -256,6 +256,30 @@ export class MessageService implements IMessageService {
     }
   }
 
+  async getMessagesByContact(
+    userId: string,
+    contactId: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<PaginatedResult<Message>> {
+    try {
+      const contact = await this.contactRepository.findById(contactId);
+      if (!contact || contact.userId !== userId) {
+        throw new NotFoundError('Contact');
+      }
+
+      const conversation = await this.conversationRepository.findOrCreate(userId, contactId);
+
+      return await this.messageRepository.findByConversation(conversation.id, {
+        limit,
+        offset,
+      });
+    } catch (error) {
+      logger.error({ contactId, error }, 'Failed to get messages by contact');
+      throw error;
+    }
+  }
+
   async getMessages(
     userId: string,
     conversationId: string,
