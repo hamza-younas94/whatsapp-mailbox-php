@@ -166,7 +166,6 @@ export class MessageService implements IMessageService {
 
         // Get all chats and search for existing chat first
         const chats = await activeSession.client.getChats();
-        const chatId = `${formattedNumber}@c.us`;
         const chatIdLid = `${formattedNumber}@lid`;
         
         const existingChat = chats.find(c => 
@@ -196,7 +195,7 @@ export class MessageService implements IMessageService {
 
         logger.info({ numberId }, 'Number verified, sending to new chat');
         const waMessage = await withTimeout(
-          activeSession.client.sendMessage(numberId, input.content),
+          activeSession.client.sendMessage(numberId._serialized, input.content),
           30000,
           'WhatsApp send timed out (new chat)',
         );
@@ -290,7 +289,7 @@ export class MessageService implements IMessageService {
 
   async deleteMessage(messageId: string): Promise<void> {
     try {
-   ssage = await this.messageRepository.findById(messageId);
+      const message = await this.messageRepository.findById(messageId);
       if (!message) {
         throw new NotFoundError('Message');
       }
