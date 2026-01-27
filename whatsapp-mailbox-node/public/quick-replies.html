@@ -56,18 +56,25 @@
                 <input type="hidden" id="quickReplyId">
                 
                 <div>
-                    <label class="block text-gray-700 mb-2">Shortcut *</label>
-                    <input type="text" id="shortcut" required
+                    <label class="block text-gray-700 mb-2">Title *</label>
+                    <input type="text" id="title" required
                         class="w-full px-4 py-2 border rounded-lg"
-                        placeholder="e.g., /welcome">
-                    <p class="text-sm text-gray-500 mt-1">Type this to quickly insert the message</p>
+                        placeholder="e.g., Welcome Message">
                 </div>
                 
                 <div>
                     <label class="block text-gray-700 mb-2">Message *</label>
-                    <textarea id="message" required rows="4"
+                    <textarea id="content" required rows="4"
                         class="w-full px-4 py-2 border rounded-lg"
                         placeholder="Your quick reply message..."></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 mb-2">Shortcut (optional)</label>
+                    <input type="text" id="shortcut"
+                        class="w-full px-4 py-2 border rounded-lg"
+                        placeholder="e.g., /welcome">
+                    <p class="text-sm text-gray-500 mt-1">Type this to quickly insert the message</p>
                 </div>
 
                 <div>
@@ -152,9 +159,11 @@
             container.innerHTML = replies.map(reply => `
                 <div class="border rounded-lg p-4 hover:shadow-md transition">
                     <div class="flex justify-between items-start mb-2">
+                        ${reply.shortcut ? `
                         <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
                             ${reply.shortcut}
                         </span>
+                        ` : '<span></span>'}
                         <div class="flex space-x-2">
                             <button onclick="editQuickReply('${reply.id}')" 
                                 class="text-blue-600 hover:text-blue-800">
@@ -167,7 +176,8 @@
                         </div>
                     </div>
                     
-                    <p class="text-gray-700 mb-2 line-clamp-3">${reply.message}</p>
+                    <h3 class="font-semibold text-gray-800 mb-1">${reply.title || 'Untitled'}</h3>
+                    <p class="text-gray-700 mb-2 line-clamp-3">${reply.content || ''}</p>
                     
                     <div class="flex justify-between items-center text-sm">
                         ${reply.category ? `
@@ -200,10 +210,10 @@
                     const reply = result.data || result;
                     document.getElementById('modalTitle').textContent = 'Edit Quick Reply';
                     document.getElementById('quickReplyId').value = reply.id;
+                    document.getElementById('title').value = reply.title || '';
+                    document.getElementById('content').value = reply.content || '';
                     document.getElementById('shortcut').value = reply.shortcut || '';
-                    document.getElementById('message').value = reply.message || '';
                     document.getElementById('category').value = reply.category || '';
-                    document.getElementById('isActive').checked = reply.isActive !== false;
                     document.getElementById('quickReplyModal').classList.remove('hidden');
                 } else {
                     const result = await response.json();
@@ -231,22 +241,22 @@
             e.preventDefault();
             
             const id = document.getElementById('quickReplyId').value;
+            const title = document.getElementById('title').value.trim();
+            const content = document.getElementById('content').value.trim();
             const shortcut = document.getElementById('shortcut').value.trim();
-            const message = document.getElementById('message').value.trim();
             const category = document.getElementById('category').value.trim();
-            const isActive = document.getElementById('isActive').checked;
 
             // Validation
-            if (!shortcut || !message) {
-                alert('Please fill in all required fields');
+            if (!title || !content) {
+                alert('Please fill in Title and Message fields');
                 return;
             }
 
             const data = { 
-                shortcut, 
-                message, 
-                ...(category && { category }), 
-                isActive 
+                title,
+                content,
+                ...(shortcut && { shortcut }), 
+                ...(category && { category })
             };
             const url = id ? `${API_BASE}/quick-replies/${id}` : `${API_BASE}/quick-replies`;
             const method = id ? 'PUT' : 'POST';
