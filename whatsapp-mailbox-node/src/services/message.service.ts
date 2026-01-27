@@ -246,39 +246,36 @@ export class MessageService implements IMessageService {
           status: MessageStatus.FAILED,
         });
 
-        // Better error message extraction
+        // Extract error message - log full error for debugging
         let errorMessage = 'Unknown error';
-        try {
-          if (error instanceof Error) {
-            errorMessage = error.message || error.name || error.toString();
-            // Check for nested error properties
-            if ((error as any).description) {
-              errorMessage = (error as any).description;
-            } else if ((error as any).text) {
-              errorMessage = (error as any).text;
-            } else if ((error as any).error) {
-              errorMessage = String((error as any).error);
-            }
-          } else if (typeof error === 'string') {
-            errorMessage = error;
-          } else if (error && typeof error === 'object') {
-            // Try to extract meaningful error message from object
-            const errObj = error as any;
-            errorMessage = errObj.message || errObj.error || errObj.description || errObj.text || JSON.stringify(error);
-          }
-        } catch (parseError) {
+        if (error instanceof Error) {
+          errorMessage = error.message || error.name || error.toString();
+          // Log full error details for debugging
+          logger.error({ 
+            error: {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+              toString: error.toString(),
+              fullError: error
+            },
+            phoneNumber: input.phoneNumber || 'N/A',
+            contactId: input.contactId || 'N/A',
+          }, 'WhatsApp Web send failed - full error details');
+        } else {
           errorMessage = String(error);
+          logger.error({ 
+            error,
+            errorType: typeof error,
+            phoneNumber: input.phoneNumber || 'N/A',
+            contactId: input.contactId || 'N/A',
+          }, 'WhatsApp Web send failed - non-Error object');
         }
         
-        logger.error({ 
-          error, 
-          errorType: typeof error,
-          errorConstructor: error?.constructor?.name,
-          errorStack: error instanceof Error ? error.stack : undefined,
-          phoneNumber: input.phoneNumber || 'N/A',
-          contactId: input.contactId || 'N/A',
-          errorMessage 
-        }, 'WhatsApp Web send failed');
+        // Use a more descriptive error message if the extracted one is too short or cryptic
+        if (!errorMessage || errorMessage.length < 3 || errorMessage === 't') {
+          errorMessage = 'Failed to send message via WhatsApp Web. Please check if WhatsApp is connected and try again.';
+        }
         
         throw new ExternalServiceError('WhatsApp Web', errorMessage);
       }
