@@ -18,6 +18,34 @@ const App: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<Conversation | undefined>();
   const [isMobile, setIsMobile] = useState(false);
   const [showList, setShowList] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const urlToken = new URLSearchParams(window.location.search).get('token');
+    
+    if (urlToken) {
+      // Token provided in URL query param (from login page redirect)
+      localStorage.setItem('authToken', urlToken);
+      setIsAuthenticated(true);
+      // Clean URL by removing token param
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (token) {
+      // Token already in localStorage
+      setIsAuthenticated(true);
+    } else {
+      // No token found - redirect to login
+      setIsAuthenticated(false);
+      // Redirect to login page
+      const loginUrl = '/login.html';
+      console.log('No auth token found, redirecting to:', loginUrl);
+      window.location.href = loginUrl;
+    }
+    
+    setIsCheckingAuth(false);
+  }, []);
 
   // Check if mobile
   useEffect(() => {
