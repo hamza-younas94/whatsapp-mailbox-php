@@ -156,6 +156,17 @@ export class WhatsAppWebService extends EventEmitter {
         return;
       }
 
+      // Ping-pong test command (wwebjs.dev guide pattern)
+      if (message.body.toLowerCase() === 'ping') {
+        try {
+          logger.info({ sessionId: id, from: message.from }, 'Ping received, replying with pong');
+          await message.reply('pong');
+          logger.info({ sessionId: id, from: message.from }, 'Pong sent successfully');
+        } catch (error) {
+          logger.error({ error, sessionId: id, from: message.from }, 'Failed to send pong reply');
+        }
+      }
+
       this.emit('message', {
         sessionId: id,
         from: message.from,
