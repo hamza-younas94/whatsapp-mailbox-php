@@ -136,28 +136,51 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, onUnload })
 
     try {
       setSending(true);
+      
+      // Add optimistic message immediately
+      const tempId = `temp-${Date.now()}`;
+      const optimisticMessage: Message = {
+        id: tempId,
+        contactId,
+        content,
+        direction: 'OUTGOING',
+        status: 'PENDING',
+        createdAt: new Date().toISOString(),
+        mediaUrl,
+      };
+      setMessages((prev) => [...prev, optimisticMessage]);
+      
+      // Send message
       const sentMessage = await messageAPI.sendMessage(contactId, content, mediaUrl);
       
-      // Add message to UI immediately (optimistic update)
+      // Replace optimistic message with real message
       if (sentMessage) {
-        setMessages((prev) => [...prev, {
-          id: sentMessage.id,
-          contactId: sentMessage.contactId || contactId,
-          content: sentMessage.content || content,
-          direction: 'OUTGOING',
-          status: sentMessage.status || 'PENDING',
-          createdAt: sentMessage.createdAt || new Date().toISOString(),
-          mediaUrl: sentMessage.mediaUrl || mediaUrl,
-          mediaType: sentMessage.mediaType,
-        }]);
+        setMessages((prev) => 
+          prev.map(msg => 
+            msg.id === tempId 
+              ? {
+                  id: sentMessage.id,
+                  contactId: sentMessage.contactId || contactId,
+                  content: sentMessage.content || content,
+                  direction: 'OUTGOING',
+                  status: sentMessage.status || 'SENT',
+                  createdAt: sentMessage.createdAt || new Date().toISOString(),
+                  mediaUrl: sentMessage.mediaUrl || mediaUrl,
+                  mediaType: sentMessage.mediaType,
+                }
+              : msg
+          )
+        );
       }
       
-      // Reload messages after a short delay to ensure we have the latest
+      // Reload messages after a short delay to ensure we have the latest from server
       setTimeout(() => {
         loadMessages(50, 0);
-      }, 500);
+      }, 1000);
     } catch (error) {
       console.error('Failed to send message:', error);
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter(msg => msg.id !== `temp-${Date.now()}`));
       alert('Failed to send message');
     } finally {
       setSending(false);
