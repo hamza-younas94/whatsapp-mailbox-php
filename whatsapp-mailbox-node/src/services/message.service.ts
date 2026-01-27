@@ -181,10 +181,13 @@ export class MessageService implements IMessageService {
           type: typeof numberId,
           isObject: typeof numberId === 'object'
         }, 'Number verified, sending message');
+
+        // Normalize target chat id for sendMessage
+        const targetChatId = typeof numberId === 'object' ? numberId._serialized : numberId;
         
         // Send message (removed sendSeen: false option as it may not be supported)
         const waMessage = await withTimeout(
-          activeSession.client.sendMessage(numberId as any, input.content),
+          activeSession.client.sendMessage(targetChatId as any, input.content),
           30000,
           'WhatsApp send timed out',
         );
