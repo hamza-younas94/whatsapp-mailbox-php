@@ -1,0 +1,58 @@
+import { z } from 'zod';
+declare const envSchema: z.ZodObject<{
+    NODE_ENV: z.ZodDefault<z.ZodEnum<["development", "production", "test"]>>;
+    PORT: z.ZodDefault<z.ZodNumber>;
+    APP_URL: z.ZodString;
+    DATABASE_URL: z.ZodString;
+    JWT_SECRET: z.ZodString;
+    JWT_EXPIRY: z.ZodDefault<z.ZodString>;
+    WHATSAPP_ACCESS_TOKEN: z.ZodString;
+    WHATSAPP_PHONE_NUMBER_ID: z.ZodString;
+    WEBHOOK_VERIFY_TOKEN: z.ZodString;
+    REDIS_URL: z.ZodDefault<z.ZodString>;
+    REDIS_DB: z.ZodDefault<z.ZodNumber>;
+    LOG_LEVEL: z.ZodDefault<z.ZodEnum<["debug", "info", "warn", "error"]>>;
+    LOG_FORMAT: z.ZodDefault<z.ZodEnum<["json", "pretty"]>>;
+    CORS_ORIGIN: z.ZodDefault<z.ZodString>;
+    RATE_LIMIT_WINDOW_MS: z.ZodDefault<z.ZodNumber>;
+    RATE_LIMIT_MAX_REQUESTS: z.ZodDefault<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    NODE_ENV: "development" | "production" | "test";
+    LOG_LEVEL: "info" | "error" | "warn" | "debug";
+    PORT: number;
+    APP_URL: string;
+    DATABASE_URL: string;
+    JWT_SECRET: string;
+    JWT_EXPIRY: string;
+    WHATSAPP_ACCESS_TOKEN: string;
+    WHATSAPP_PHONE_NUMBER_ID: string;
+    WEBHOOK_VERIFY_TOKEN: string;
+    REDIS_URL: string;
+    REDIS_DB: number;
+    LOG_FORMAT: "json" | "pretty";
+    CORS_ORIGIN: string;
+    RATE_LIMIT_WINDOW_MS: number;
+    RATE_LIMIT_MAX_REQUESTS: number;
+}, {
+    APP_URL: string;
+    DATABASE_URL: string;
+    JWT_SECRET: string;
+    WHATSAPP_ACCESS_TOKEN: string;
+    WHATSAPP_PHONE_NUMBER_ID: string;
+    WEBHOOK_VERIFY_TOKEN: string;
+    NODE_ENV?: "development" | "production" | "test" | undefined;
+    LOG_LEVEL?: "info" | "error" | "warn" | "debug" | undefined;
+    PORT?: number | undefined;
+    JWT_EXPIRY?: string | undefined;
+    REDIS_URL?: string | undefined;
+    REDIS_DB?: number | undefined;
+    LOG_FORMAT?: "json" | "pretty" | undefined;
+    CORS_ORIGIN?: string | undefined;
+    RATE_LIMIT_WINDOW_MS?: number | undefined;
+    RATE_LIMIT_MAX_REQUESTS?: number | undefined;
+}>;
+export type Environment = z.infer<typeof envSchema>;
+export declare function loadEnv(): Environment;
+export declare function getEnv(): Environment;
+export default getEnv;
+//# sourceMappingURL=env.d.ts.map

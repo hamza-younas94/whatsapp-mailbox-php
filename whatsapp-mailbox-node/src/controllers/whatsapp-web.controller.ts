@@ -31,26 +31,14 @@ export class WhatsAppWebController {
 
     let session = this.getPreferredSession(userId);
 
-    // If session exists and is not disconnected, return it immediately
-    if (session && session.status !== 'DISCONNECTED') {
-      return res.status(200).json({
-        success: true,
-        sessionId: session.id,
-        status: session.status,
-        ...(session.status === 'QR_READY' && session.qrCode && { qr: session.qrCode }),
-        ...(session.status === 'READY' && session.phoneNumber && { phoneNumber: session.phoneNumber }),
-      });
-    }
-
-    // Only initialize if no session exists or session is disconnected
-    if (!session || session.status === 'DISCONNECTED') {
-      // Use deterministic sessionId per user so sessions persist across PM2 restarts
-      const sessionId = `session_${userId}`;
-      
-      // Check if session is already being initialized (prevent duplicate calls)
-      const existingSession = whatsappWebService.getSession(sessionId);
-      if (existingSession && existingSession.status === 'INITIALIZING') {
-        // Session is already initializing, return current status
+    // Use deterministic sessionId per user so sessions persist across PM2 restarts
+    const sessionId = `session_${userId}`;
+    
+    // Check if session is already being initialized (prevent duplicate calls)
+    const existingSession = whatsappWebService.getSession(sessionId);
+    if (existingSession) {
+      // If session is INITIALIZING, return current status without initializing again
+      if (existingSession.status === 'INITIALIZING') {
         return res.status(200).json({
           success: true,
           sessionId: existingSession.id,
@@ -59,7 +47,31 @@ export class WhatsAppWebController {
           ...(existingSession.qrCode && { qr: existingSession.qrCode }),
         });
       }
+      
+      // If session exists and is not disconnected, return it immediately
+      if (existingSession.status !== 'DISCONNECTED') {
+        return res.status(200).json({
+          success: true,
+          sessionId: existingSession.id,
+          status: existingSession.status,
+          ...(existingSession.status === 'QR_READY' && existingSession.qrCode && { qr: existingSession.qrCode }),
+          ...(existingSession.status === 'READY' && existingSession.phoneNumber && { phoneNumber: existingSession.phoneNumber }),
+        });
+      }
+    }
 
+    // Check if session is in the initializing set (even if not in sessions map yet)
+    if (whatsappWebService.isInitializing(sessionId)) {
+      return res.status(200).json({
+        success: true,
+        sessionId,
+        status: 'INITIALIZING',
+        message: 'Session is already initializing. Please wait...',
+      });
+    }
+
+    // Only initialize if no session exists or session is disconnected
+    if (!session || session.status === 'DISCONNECTED') {
       // Initialize new session
       session = await whatsappWebService.initializeSession(userId, sessionId);
     }

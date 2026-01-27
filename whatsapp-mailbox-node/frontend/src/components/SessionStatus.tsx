@@ -24,14 +24,22 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
 
   // Check session status first, then initialize if needed
   useEffect(() => {
+    let mounted = true;
+    let timeoutId: NodeJS.Timeout | null = null;
+
     const checkAndInitialize = async () => {
       // Prevent multiple initialization attempts
-      if (hasInitialized || isInitializing) return;
+      if (hasInitialized || isInitializing) {
+        console.log('Skipping initialization - already initialized or in progress');
+        return;
+      }
 
       const token = localStorage.getItem('authToken');
       if (!token) {
-        setMessage('Please log in first');
-        setStatus('DISCONNECTED');
+        if (mounted) {
+          setMessage('Please log in first');
+          setStatus('DISCONNECTED');
+        }
         return;
       }
 
@@ -41,6 +49,8 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
         // First, check current session status
         const currentStatus = await sessionAPI.getSessionStatus();
         console.log('Current session status:', currentStatus);
+        
+        if (!mounted) return;
         
         // If already connected or ready, update status
         if (currentStatus.isConnected || currentStatus.status === 'READY') {
@@ -63,6 +73,15 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
           return;
         }
 
+        // If status is INITIALIZING, wait a bit and check again
+        if (currentStatus.status === 'INITIALIZING') {
+          console.log('Session is already initializing, waiting...');
+          setMessage('Connecting to WhatsApp...');
+          setHasInitialized(true);
+          setIsInitializing(false);
+          return;
+        }
+
         // If no active session, initialize one
         if (!currentStatus.isConnected && currentStatus.status !== 'QR_READY') {
           setMessage('Starting WhatsApp session...');
@@ -70,6 +89,8 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
           
           const result = await sessionAPI.initializeSession();
           console.log('Session initialization result:', result);
+          
+          if (!mounted) return;
           
           // If result has QR code, show it
           if (result.qr) {
@@ -87,14 +108,28 @@ const SessionStatus: React.FC<SessionStatusProps> = ({ onQRRequired }) => {
         setHasInitialized(true);
       } catch (error: any) {
         console.error('Failed to initialize session:', error);
-        setStatus('DISCONNECTED');
-        setMessage('Failed to initialize session. Click reconnect to try again.');
+        if (mounted) {
+          setStatus('DISCONNECTED');
+          setMessage('Failed to initialize session. Click reconnect to try again.');
+        }
       } finally {
-        setIsInitializing(false);
+        if (mounted) {
+          setIsInitializing(false);
+        }
       }
     };
 
-    checkAndInitialize();
+    // Debounce initialization check by 500ms
+    timeoutId = setTimeout(() => {
+      checkAndInitialize();
+    }, 500);
+
+    return () => {
+      mounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, []); // Empty dependency array - only run once on mount
 
   // Subscribe to session status updates via socket

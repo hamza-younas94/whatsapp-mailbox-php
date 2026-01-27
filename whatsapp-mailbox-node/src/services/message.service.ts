@@ -162,10 +162,24 @@ export class MessageService implements IMessageService {
           throw new ValidationError(`WhatsApp client is ${state}. Please reconnect.`);
         }
 
+        // Get phone number - either from input or from contact
+        let phoneNumberToUse = input.phoneNumber;
+        if (!phoneNumberToUse && contactId) {
+          const contact = await this.contactRepository.findById(contactId);
+          if (!contact) {
+            throw new ValidationError('Contact not found');
+          }
+          phoneNumberToUse = contact.phoneNumber;
+        }
+
+        if (!phoneNumberToUse) {
+          throw new ValidationError('Phone number is required to send message');
+        }
+
         // Format phone number
-        const sanitizedPhone = sanitizePhone(input.phoneNumber || '');
-        if (!sanitizedPhone) {
-          throw new ValidationError('Phone number is invalid after sanitization');
+        const sanitizedPhone = sanitizePhone(phoneNumberToUse);
+        if (!sanitizedPhone || sanitizedPhone.length < 10) {
+          throw new ValidationError(`Phone number is invalid after sanitization. Got: "${phoneNumberToUse}", sanitized: "${sanitizedPhone}"`);
         }
         const formattedNumber = sanitizedPhone;
         const chatId = `${formattedNumber}@c.us`;
@@ -227,8 +241,25 @@ export class MessageService implements IMessageService {
           status: MessageStatus.FAILED,
         });
 
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        logger.error({ error, phoneNumber: input.phoneNumber, errorMessage }, 'WhatsApp Web send failed');
+        // Better error message extraction
+        let errorMessage = 'Unknown error';
+        if (error instanceof Error) {
+          errorMessage = error.message || error.toString();
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        } else if (error && typeof error === 'object') {
+          errorMessage = JSON.stringify(error);
+        }
+        
+        logger.error({ 
+          error, 
+          errorType: typeof error,
+          errorConstructor: error?.constructor?.name,
+          phoneNumber: input.phoneNumber || 'N/A',
+          contactId: input.contactId || 'N/A',
+          errorMessage 
+        }, 'WhatsApp Web send failed');
+        
         throw new ExternalServiceError('WhatsApp Web', errorMessage);
       }
     } catch (error) {
