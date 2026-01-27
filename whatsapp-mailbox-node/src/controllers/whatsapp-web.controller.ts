@@ -4,7 +4,6 @@
 import { Request, Response } from 'express';
 import { whatsappWebService } from '@services/whatsapp-web.service';
 import { asyncHandler } from '@middleware/error.middleware';
-import { v4 as uuidv4 } from 'uuid';
 
 export class WhatsAppWebController {
   private getPreferredSession(userId: string) {
@@ -33,7 +32,8 @@ export class WhatsAppWebController {
     let session = this.getPreferredSession(userId);
 
     if (!session || session.status === 'DISCONNECTED') {
-      const sessionId = `session_${userId}_${uuidv4()}`;
+      // Use deterministic sessionId per user so sessions persist across PM2 restarts
+      const sessionId = `session_${userId}`;
       session = await whatsappWebService.initializeSession(userId, sessionId);
     }
 
@@ -119,7 +119,8 @@ export class WhatsAppWebController {
    */
   initSession = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const sessionId = `session_${userId}_${uuidv4()}`;
+    // Use deterministic sessionId per user so sessions persist across PM2 restarts
+    const sessionId = `session_${userId}`;
 
     const session = await whatsappWebService.initializeSession(userId, sessionId);
 
