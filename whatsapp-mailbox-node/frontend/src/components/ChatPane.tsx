@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { messageAPI } from '@/api/queries';
-import { subscribeToMessage, subscribeToMessageStatus } from '@/api/socket';
+import { subscribeToMessage, subscribeToMessageStatus, getSocket } from '@/api/socket';
 import MessageBubble from '@/components/MessageBubble';
 import MessageComposer from '@/components/MessageComposer';
 import '@/styles/chat-pane.css';
@@ -70,10 +70,17 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, onUnload })
     // Load initial messages
     loadMessages(50, 0);
 
-    // Subscribe to new messages
+    // Subscribe to new messages (incoming)
     messageSubscriptionRef.current = subscribeToMessage((msg) => {
       if (msg.contactId === contactId) {
-        setMessages((prev) => [...prev, msg]);
+        setMessages((prev) => [...prev, {
+          id: msg.id,
+          contactId: msg.contactId,
+          content: msg.content,
+          direction: 'INCOMING',
+          status: 'RECEIVED',
+          createdAt: msg.createdAt,
+        }]);
       }
     });
 
@@ -85,11 +92,24 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, onUnload })
         )
       );
     });
-
+    
+    // Also subscribe to message:sent event for outgoing messages
+    const socket = getSocket();
+    const handleMessageSent = (msg: any) => {
+      if (msg.contactId === contactId || msg.conversationId) {
+        // Reload messages to get the latest
+        setTimeout(() => loadMessages(50, 0), 300);
+      }
+    };
+    socket.on('message:sent', handleMessageSent);
+    
     return () => {
       messageSubscriptionRef.current?.();
       statusSubscriptionRef.current?.();
+      socket.off('message:sent', handleMessageSent);
     };
+
+    // Cleanup is handled in the subscription setup above
   }, [contactId, loadMessages]);
 
   // Auto-scroll to bottom on new messages
