@@ -141,9 +141,13 @@ function setupIncomingMessageListener(): void {
       }
 
       const userId = session.userId;
-      const phoneNumber = from.replace('@c.us', '').replace('@g.us', '').replace('@lid', '');
+      const sanitizedPhone = sanitizePhone(from);
+      if (!sanitizedPhone) {
+        logger.warn({ sessionId, from }, 'Skipping message with no usable phone number');
+        return;
+      }
 
-      logger.info({ userId, phoneNumber, body: body?.substring(0, 50), messageType }, 'Processing incoming WhatsApp message');
+      logger.info({ userId, phoneNumber: sanitizedPhone, body: body?.substring(0, 50), messageType }, 'Processing incoming WhatsApp message');
 
       // Create repositories with prisma client
       const db = getPrismaClient();
@@ -152,7 +156,7 @@ function setupIncomingMessageListener(): void {
       const messageRepo = new MessageRepository(db);
 
       // Get or create contact
-      const contact = await contactRepo.findOrCreate(userId, phoneNumber, { name: phoneNumber });
+      const contact = await contactRepo.findOrCreate(userId, sanitizedPhone, { name: sanitizedPhone });
 
       // Get or create conversation
       const conversation = await conversationRepo.findOrCreate(userId, contact.id);
@@ -175,13 +179,20 @@ function setupIncomingMessageListener(): void {
         waMessageId: safeWaMessageId,
       } as any);
 
-      logger.info({ userId, phoneNumber, contactId: contact.id }, 'Saved incoming message to database');
+      logger.info({ userId, phoneNumber: sanitizedPhone, contactId: contact.id }, 'Saved incoming message to database');
     } catch (error) {
       logger.error({ error, event }, 'Failed to save incoming WhatsApp message');
     }
   });
 
   logger.info('WhatsApp incoming message listener initialized');
+}
+
+
+function sanitizePhone(from: string): string {
+  const base = from.split('@')[0];
+  const digits = base.replace(/\D/g, '');
+  return digits.slice(-20);
 }
 
 function normalizeMessageType(rawType?: string, hasMedia?: boolean): MessageType {

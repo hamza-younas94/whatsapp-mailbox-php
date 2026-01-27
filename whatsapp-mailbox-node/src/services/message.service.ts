@@ -77,6 +77,12 @@ export class MessageService implements IMessageService {
         }
       };
 
+      const sanitizePhone = (raw: string): string => {
+        const base = raw.split('@')[0];
+        const digits = base.replace(/\D/g, '');
+        return digits.slice(-20);
+      };
+
       // Validate userId is present
       if (!userId) {
         throw new ValidationError('User ID is required - authentication failed');
@@ -94,7 +100,11 @@ export class MessageService implements IMessageService {
       // Resolve contactId (create if phoneNumber provided)
       let contactId = input.contactId;
       if (!contactId && input.phoneNumber) {
-        const contact = await this.contactRepository.findOrCreate(userId, input.phoneNumber, { name: input.phoneNumber });
+        const sanitizedPhone = sanitizePhone(input.phoneNumber);
+        if (!sanitizedPhone) {
+          throw new ValidationError('Phone number is invalid after sanitization');
+        }
+        const contact = await this.contactRepository.findOrCreate(userId, sanitizedPhone, { name: sanitizedPhone });
         contactId = contact.id;
       }
 
@@ -145,8 +155,11 @@ export class MessageService implements IMessageService {
         }
 
         // Format phone number
-        const phoneNumber = input.phoneNumber || '';
-        const formattedNumber = phoneNumber.replace(/[^0-9]/g, ''); // Remove non-digits
+        const sanitizedPhone = sanitizePhone(input.phoneNumber || '');
+        if (!sanitizedPhone) {
+          throw new ValidationError('Phone number is invalid after sanitization');
+        }
+        const formattedNumber = sanitizedPhone;
         const chatId = `${formattedNumber}@c.us`;
 
         logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
