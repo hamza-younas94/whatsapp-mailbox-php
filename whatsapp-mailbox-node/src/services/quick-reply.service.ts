@@ -26,6 +26,11 @@ export class QuickReplyService implements IQuickReplyService {
 
   async createQuickReply(userId: string, input: CreateQuickReplyInput): Promise<QuickReply> {
     try {
+      // Validate required fields
+      if (!input.title || !input.content) {
+        throw new ValidationError('Title and content are required');
+      }
+
       // Validate shortcut uniqueness if provided
       if (input.shortcut) {
         const existing = await this.repository.findByShortcut(userId, input.shortcut);
@@ -36,8 +41,11 @@ export class QuickReplyService implements IQuickReplyService {
 
       const quickReply = await this.repository.create({
         userId,
-        ...input,
-      });
+        title: input.title,
+        content: input.content,
+        category: input.category || null,
+        shortcut: input.shortcut || null,
+      } as any);
 
       logger.info({ id: quickReply.id }, 'Quick reply created');
       return quickReply;
