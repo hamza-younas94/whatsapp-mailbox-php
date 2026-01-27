@@ -20,6 +20,7 @@ export interface WhatsAppWebSession {
 
 export class WhatsAppWebService extends EventEmitter {
   private sessions: Map<string, WhatsAppWebSession> = new Map();
+  private initializingSessions: Set<string> = new Set(); // Track sessions being initialized
   private sessionDir: string;
 
   constructor() {
@@ -39,15 +40,34 @@ export class WhatsAppWebService extends EventEmitter {
    * Initialize a new WhatsApp Web session for a user
    */
   async initializeSession(userId: string, sessionId: string): Promise<WhatsAppWebSession> {
+    // Check if session is already being initialized (prevent concurrent calls)
+    if (this.initializingSessions.has(sessionId)) {
+      logger.warn({ userId, sessionId }, 'Session initialization already in progress, waiting for existing initialization');
+      // Wait a bit and check if session was created
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const existing = this.sessions.get(sessionId);
+      if (existing && existing.status !== 'DISCONNECTED') {
+        return existing;
+      }
+      // If still not ready, throw error to prevent infinite loops
+      throw new Error('Session initialization already in progress');
+    }
+
     // Check if session already exists
     if (this.sessions.has(sessionId)) {
       const existing = this.sessions.get(sessionId)!;
+      // Return existing session if it's not disconnected
+      // This prevents multiple simultaneous initializations
       if (existing.status !== 'DISCONNECTED') {
+        logger.info({ userId, sessionId, status: existing.status }, 'Session already exists, returning existing session');
         return existing;
       }
-      // Clean up old session
+      // Clean up old disconnected session
       await this.destroySession(sessionId);
     }
+
+    // Mark session as being initialized
+    this.initializingSessions.add(sessionId);
 
     // Create new client with persistent session
     const client = new Client({
@@ -100,6 +120,8 @@ export class WhatsAppWebService extends EventEmitter {
     } catch (error) {
       logger.error({ userId, sessionId, error }, 'Failed to initialize WhatsApp Web client');
       session.status = 'DISCONNECTED';
+      // Remove from initializing set on error
+      this.initializingSessions.delete(sessionId);
       throw error;
     }
 
@@ -124,6 +146,8 @@ export class WhatsAppWebService extends EventEmitter {
         const qrDataUrl = await qrcode.toDataURL(qr);
         session.qrCode = qrDataUrl;
         session.status = 'QR_READY';
+        // Remove from initializing set - initialization is complete (waiting for QR scan)
+        this.initializingSessions.delete(id);
 
         this.emit('qr', { sessionId: id, qrCode: qrDataUrl });
         logger.info({ sessionId: id }, 'QR code generated');
@@ -143,6 +167,8 @@ export class WhatsAppWebService extends EventEmitter {
     // Ready event
     client.on('ready', async () => {
       session.status = 'READY';
+      // Remove from initializing set - initialization is complete
+      this.initializingSessions.delete(id);
       
       // Get phone number
       const info = client.info;
@@ -191,6 +217,8 @@ export class WhatsAppWebService extends EventEmitter {
     // Disconnected event
     client.on('disconnected', (reason) => {
       session.status = 'DISCONNECTED';
+      // Remove from initializing set
+      this.initializingSessions.delete(id);
       this.emit('disconnected', { sessionId: id, reason });
       logger.warn({ sessionId: id, reason }, 'WhatsApp Web disconnected');
     });
@@ -198,6 +226,8 @@ export class WhatsAppWebService extends EventEmitter {
     // Auth failure event
     client.on('auth_failure', (error) => {
       session.status = 'DISCONNECTED';
+      // Remove from initializing set
+      this.initializingSessions.delete(id);
       this.emit('auth_failure', { sessionId: id, error });
       logger.error({ sessionId: id, error }, 'WhatsApp Web authentication failed');
     });
