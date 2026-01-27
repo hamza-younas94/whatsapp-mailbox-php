@@ -34,10 +34,30 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   const loadConversations = async () => {
     try {
       setLoading(true);
-      const data = await contactAPI.searchContacts(search || undefined, 100, 0);
-      setConversations(data.data || []);
+      const response = await contactAPI.searchContacts(search || undefined, 100, 0);
+      
+      // Handle both direct array and paginated response
+      const contacts = Array.isArray(response) ? response : (response?.data || []);
+      
+      // Transform contacts into conversation format
+      const transformedConversations: Conversation[] = contacts
+        .filter((contact: any) => contact && contact.id) // Filter out null/undefined
+        .map((contact: any) => ({
+          id: contact.id || `contact-${contact.phoneNumber}`,
+          contact: {
+            id: contact.id,
+            phoneNumber: contact.phoneNumber || '',
+            name: contact.name,
+          },
+          unreadCount: contact._count?.messages || 0,
+          lastMessage: undefined, // Will be populated if available
+          lastMessageAt: contact.lastMessageAt,
+        }));
+      
+      setConversations(transformedConversations);
     } catch (err) {
       console.error('Failed to load conversations:', err);
+      setConversations([]);
     } finally {
       setLoading(false);
     }
@@ -69,27 +89,29 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           <div className="empty-state">No conversations yet</div>
         )}
 
-        {conversations.map((conv) => (
-          <div
-            key={conv.id}
-            className={`conversation-item ${selectedContactId === conv.contact.id ? 'selected' : ''}`}
-            onClick={() => onSelectConversation(conv.contact.id, conv)}
-          >
-            <div className="conv-avatar">
-              {(conv.contact.name?.charAt(0) || conv.contact.phoneNumber.charAt(0)).toUpperCase()}
-            </div>
-
-            <div className="conv-content">
-              <div className="conv-header">
-                <span className="conv-name">{conv.contact.name || conv.contact.phoneNumber}</span>
-                {conv.unreadCount > 0 && (
-                  <span className="unread-badge">{conv.unreadCount}</span>
-                )}
+        {conversations
+          .filter((conv) => conv && conv.contact && conv.contact.id) // Additional safety check
+          .map((conv) => (
+            <div
+              key={conv.id}
+              className={`conversation-item ${selectedContactId === conv.contact?.id ? 'selected' : ''}`}
+              onClick={() => conv.contact?.id && onSelectConversation(conv.contact.id, conv)}
+            >
+              <div className="conv-avatar">
+                {((conv.contact?.name?.charAt(0) || conv.contact?.phoneNumber?.charAt(0)) || '?').toUpperCase()}
               </div>
-              <p className="conv-preview">{conv.lastMessage || 'No messages yet'}</p>
+
+              <div className="conv-content">
+                <div className="conv-header">
+                  <span className="conv-name">{conv.contact?.name || conv.contact?.phoneNumber || 'Unknown'}</span>
+                  {conv.unreadCount > 0 && (
+                    <span className="unread-badge">{conv.unreadCount}</span>
+                  )}
+                </div>
+                <p className="conv-preview">{conv.lastMessage || 'No messages yet'}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
     </div>
   );
