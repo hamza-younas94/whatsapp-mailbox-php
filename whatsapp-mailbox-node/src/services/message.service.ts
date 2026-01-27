@@ -78,8 +78,19 @@ export class MessageService implements IMessageService {
       };
 
       const sanitizePhone = (raw: string): string => {
+        if (!raw) return '';
+        // Remove @domain if present (WhatsApp format)
         const base = raw.split('@')[0];
+        // Remove all non-digit characters
         const digits = base.replace(/\D/g, '');
+        
+        // If number starts with 0, remove it (local format like 03462115115)
+        // WhatsApp expects international format without leading 0
+        if (digits.startsWith('0') && digits.length > 1) {
+          return digits.substring(1);
+        }
+        
+        // Return last 20 digits (max phone number length)
         return digits.slice(-20);
       };
 
@@ -116,6 +127,9 @@ export class MessageService implements IMessageService {
       const conversation = await this.conversationRepository.findOrCreate(userId, contactId);
 
       // Create message in database (PENDING status)
+      // Truncate mediaUrl if too long (max 1000 chars to match database column)
+      const mediaUrl = input.mediaUrl ? (input.mediaUrl.length > 1000 ? input.mediaUrl.substring(0, 1000) : input.mediaUrl) : null;
+      
       const message = await this.messageRepository.create({
         user: { connect: { id: userId } },
         contact: { connect: { id: contactId } },
@@ -124,7 +138,7 @@ export class MessageService implements IMessageService {
         messageType: (input.messageType || MessageType.TEXT) as any,
         direction: MessageDirection.OUTGOING as any,
         status: MessageStatus.PENDING as any,
-        mediaUrl: input.mediaUrl,
+        mediaUrl: mediaUrl,
         mediaType: input.mediaType?.toString(),
       } as Prisma.MessageCreateInput);
 
