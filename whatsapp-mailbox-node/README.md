@@ -201,6 +201,84 @@ npm run db:deploy
 npx prisma migrate reset
 ```
 
+## 🎨 Frontend: React + Vite SPA
+
+The application includes a modern, responsive React frontend built with Vite, providing a WhatsApp-like interface for managing conversations and messages.
+
+### Features
+- **Real-time messaging** with socket.io integration
+- **Media support** for images, videos, audio, and documents
+- **Responsive design**: 2-column desktop layout, mobile stacking
+- **Message status tracking** with visual indicators
+- **Contact search** and conversation management
+- **QR code authentication** for WhatsApp Web sessions
+- **Auto-scrolling** and message history pagination
+
+### Getting Started
+
+```bash
+# Install frontend dependencies
+cd frontend
+npm install
+
+# Development server (with hot reload)
+npm run dev
+# Access at http://localhost:5173
+# API proxied to http://localhost:3000
+
+# Production build
+npm run build
+# Outputs to ../public/ (served by Express)
+```
+
+### Architecture
+
+```
+frontend/
+├── src/
+│   ├── api/              # API client & queries
+│   │   ├── client.ts     # Axios with auth
+│   │   ├── queries.ts    # Message & contact APIs
+│   │   └── socket.ts     # Real-time subscriptions
+│   ├── components/       # React components
+│   │   ├── App.tsx       # Root & layout
+│   │   ├── SessionStatus # Connection state
+│   │   ├── ConversationList  # Contact list
+│   │   ├── ChatPane      # Message display
+│   │   ├── MessageBubble # Individual messages
+│   │   └── MessageComposer   # Input area
+│   └── styles/           # Global & component CSS
+├── index.html            # HTML template
+├── vite.config.ts        # Vite configuration
+└── tsconfig.json         # TypeScript config
+```
+
+### Key Technologies
+- **React 18**: Modern component-based UI
+- **Vite**: Fast bundler & dev server
+- **TypeScript**: Type-safe development
+- **Axios**: HTTP client with Bearer token auth
+- **Socket.io Client**: Real-time WebSocket communication
+- **CSS Variables**: WhatsApp green theme
+
+### API Integration
+
+Frontend connects to backend via REST + WebSockets:
+
+**REST Endpoints:**
+- `GET /api/v1/messages` - List conversations
+- `GET /api/v1/messages/contact/:id` - Get messages for contact
+- `POST /api/v1/messages/send` - Send message
+- `GET /api/v1/contacts` - Search contacts
+
+**WebSocket Events:**
+- `message:received` - New incoming message
+- `message:sent` - Message sent confirmation
+- `message:status` - Status updates
+- `session:status` - Connection state
+
+📖 **[Frontend Documentation →](./frontend/README.md)**
+
 ## 📝 Development Workflow
 
 ```bash
