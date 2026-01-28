@@ -28,6 +28,16 @@ export class QuickReplyController {
     });
   });
 
+  getById = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const quickReply = await this.service.getQuickReplyById(id);
+
+    res.status(200).json({
+      success: true,
+      data: quickReply,
+    });
+  });
+
   search = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { q } = req.query;

@@ -38,6 +38,7 @@ router.use(authenticate);
 router.post('/', validateRequest(createQuickReplySchema), controller.create);
 router.get('/', controller.list);
 router.get('/search', validateRequest(searchSchema), controller.search);
+router.get('/:id', controller.getById);
 router.put('/:id', controller.update);
 router.delete('/:id', controller.delete);
 

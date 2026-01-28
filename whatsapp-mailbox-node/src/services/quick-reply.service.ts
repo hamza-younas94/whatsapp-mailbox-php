@@ -16,6 +16,7 @@ export interface CreateQuickReplyInput {
 export interface IQuickReplyService {
   createQuickReply(userId: string, input: CreateQuickReplyInput): Promise<QuickReply>;
   getQuickReplies(userId: string): Promise<QuickReply[]>;
+  getQuickReplyById(id: string): Promise<QuickReply>;
   searchQuickReplies(userId: string, query: string): Promise<QuickReply[]>;
   updateQuickReply(id: string, data: Partial<QuickReply>): Promise<QuickReply>;
   deleteQuickReply(id: string): Promise<void>;
@@ -57,6 +58,14 @@ export class QuickReplyService implements IQuickReplyService {
 
   async getQuickReplies(userId: string): Promise<QuickReply[]> {
     return this.repository.findByUserId(userId);
+  }
+
+  async getQuickReplyById(id: string): Promise<QuickReply> {
+    const quickReply = await this.repository.findById(id);
+    if (!quickReply) {
+      throw new NotFoundError('Quick reply');
+    }
+    return quickReply;
   }
 
   async searchQuickReplies(userId: string, query: string): Promise<QuickReply[]> {
