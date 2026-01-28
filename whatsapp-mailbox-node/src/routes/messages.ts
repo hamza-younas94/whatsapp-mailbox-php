@@ -29,7 +29,7 @@ export function createMessageRoutes(): Router {
     contactId: z.string().min(1).optional(), // CUID format, not UUID
     phoneNumber: z.string().min(10).max(20).optional(), // More flexible: accept any phone format, normalize in service
     content: z.string().max(4096).optional(),
-    mediaUrl: z.string().url().optional(),
+    mediaUrl: z.string().min(1).optional(), // Accept relative paths like /uploads/media/file.jpg
   }).refine((data) => data.contactId || data.phoneNumber, {
     message: 'Either contactId or phoneNumber is required',
   }).refine((data) => data.content || data.mediaUrl, {

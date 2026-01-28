@@ -104,7 +104,15 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoad
           
           if (response.ok) {
             const result = await response.json();
-            await onSend(content.trim(), result.data.url, mediaFile.type);
+            // Convert relative path to full URL
+            const mediaUrl = result.data.url.startsWith('http') 
+              ? result.data.url 
+              : `${window.location.origin}${result.data.url}`;
+            await onSend(content.trim(), mediaUrl, mediaFile.type);
+          } else {
+            const errorData = await response.json();
+            console.error('Upload failed:', errorData);
+            alert(`Failed to upload ${mediaFile.file.name}: ${errorData.error || 'Unknown error'}`);
           }
         }
       } else {
