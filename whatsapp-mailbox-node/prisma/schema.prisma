@@ -324,17 +324,21 @@ enum CampaignStatus {
 // ============================================
 
 model QuickReply {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String
-  content   String   @db.LongText
-  category  String?
-  shortcut  String?  @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  content         String   @db.LongText
+  category        String?
+  shortcut        String?  @unique
+  isActive        Boolean  @default(true)
+  usageCount      Int      @default(0)
+  usageTodayCount Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([userId])
+  @@index([isActive])
   @@fulltext([title, content])
 }
 
