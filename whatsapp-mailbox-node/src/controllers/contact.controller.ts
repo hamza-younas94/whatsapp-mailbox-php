@@ -74,7 +74,7 @@ export class ContactController {
           ? parseInt(offset)
           : 0;
 
-    const filters: ContactFilters = {
+    const filters: any = {
       query: search as string,
       tags: tags
         ? Array.isArray(tags)
@@ -82,8 +82,8 @@ export class ContactController {
           : [tags as string]
         : undefined,
       isBlocked: isBlocked === 'true',
-      engagement: engagement as any,
-      contactType: contactType as any,
+      ...(engagement && { engagement: engagement as any }),
+      ...(contactType && { contactType: contactType as any }),
       sortBy: sortBy as any,
       sortOrder: sortOrder as any,
       limit: typeof limit === 'string' ? parseInt(limit) : 20,

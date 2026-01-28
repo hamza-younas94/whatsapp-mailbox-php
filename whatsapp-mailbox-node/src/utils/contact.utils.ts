@@ -12,7 +12,7 @@ export function extractContactName(
   contactObj: any,
   phoneNumber: string
 ): { name: string; pushName?: string; businessName?: string } {
-  let name = phoneNumber; // Default fallback
+  let name: string = phoneNumber; // Default fallback
   let pushName: string | undefined;
   let businessName: string | undefined;
 
@@ -26,7 +26,7 @@ export function extractContactName(
     pushName = contactObj.pushname.trim();
     // Prefer pushname over generic name if no saved name
     if (!contactObj?.name || !contactObj.name.trim()) {
-      name = pushName;
+      name = (pushName || phoneNumber) as string;
     }
   }
 

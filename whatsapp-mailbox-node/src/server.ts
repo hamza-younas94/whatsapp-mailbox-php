@@ -210,17 +210,17 @@ function setupIncomingMessageListener(): void {
       // Update contact with latest info if we have new data
       if (
         (contactName && contactName !== contact.name) ||
-        (contactPushName && contactPushName !== contact.pushName) ||
-        (profilePhotoUrl && profilePhotoUrl !== contact.profilePhotoUrl)
+        (contactPushName && (contactPushName !== (contact as any).pushName)) ||
+        (profilePhotoUrl && profilePhotoUrl !== (contact as any).profilePhotoUrl)
       ) {
         await contactRepo.update(contact.id, {
           name: contactName || contact.name,
-          pushName: contactPushName || contact.pushName,
-          profilePhotoUrl: profilePhotoUrl || contact.profilePhotoUrl,
-          isBusiness: isBusiness !== undefined ? isBusiness : contact.isBusiness,
+          pushName: contactPushName || (contact as any).pushName,
+          profilePhotoUrl: profilePhotoUrl || (contact as any).profilePhotoUrl,
+          isBusiness: isBusiness !== undefined ? isBusiness : (contact as any).isBusiness,
           lastMessageAt: new Date(timestamp * 1000),
           lastActiveAt: new Date(timestamp * 1000),
-        });
+        } as any);
       }
 
       // Get or create conversation

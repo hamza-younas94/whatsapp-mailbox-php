@@ -59,7 +59,7 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
     const searchTerm = filters.search || filters.query;
 
     // Build where clause with all filter conditions
-    const where: Prisma.ContactWhereInput = {
+    const where: any = {
       userId,
       isBlocked: filters.isBlocked ?? false,
       ...(searchTerm && {
@@ -86,7 +86,7 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
     // Determine sort order
     const sortBy = filters.sortBy || 'lastMessageAt';
     const sortOrder = filters.sortOrder || 'desc';
-    const orderBy: Prisma.ContactOrderByWithRelationInput = {};
+    const orderBy: any = {};
     orderBy[sortBy] = sortOrder;
 
     const [contacts, total] = await Promise.all([
@@ -111,7 +111,7 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
         },
         orderBy: sortBy === 'lastMessageAt' 
           ? [{ lastMessageAt: sortOrder as any }, { createdAt: 'desc' }]
-          : [orderBy as any, { createdAt: 'desc' }],
+          : [orderBy, { createdAt: 'desc' }],
       }),
       this.prisma.contact.count({ where }),
     ]);
