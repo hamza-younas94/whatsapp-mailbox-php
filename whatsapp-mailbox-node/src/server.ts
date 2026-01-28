@@ -206,6 +206,7 @@ function setupIncomingMessageListener(): void {
         businessName: contactBusinessName,
         profilePhotoUrl,
         isBusiness: isBusiness || false,
+        chatId: from, // Store full WhatsApp ID (e.g., 123@c.us or 456@newsletter)
         lastMessageAt: new Date(timestamp * 1000),
         lastActiveAt: new Date(timestamp * 1000),
       });

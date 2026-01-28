@@ -168,33 +168,36 @@ export class MessageService implements IMessageService {
           throw new ValidationError(`WhatsApp client is ${state}. Please reconnect.`);
         }
 
-        // Get phone number - either from input or from contact
+        // Get phone number and chatId - either from input or from contact
         let phoneNumberToUse = input.phoneNumber;
+        let chatIdToUse: string | null = null;
+        
         if (!phoneNumberToUse && contactId) {
           const contact = await this.contactRepository.findById(contactId);
           if (!contact) {
             throw new ValidationError('Contact not found');
           }
           phoneNumberToUse = contact.phoneNumber;
+          chatIdToUse = contact.chatId || null; // Use stored chatId if available
         }
 
         if (!phoneNumberToUse) {
           throw new ValidationError('Phone number is required to send message');
         }
 
-        // Format phone number
+        // Use stored chatId if available (handles @c.us, @newsletter, @g.us, etc.)
+        // Otherwise fall back to phoneNumber@c.us for regular contacts
         const sanitizedPhone = sanitizePhone(phoneNumberToUse);
         if (!sanitizedPhone) {
           throw new ValidationError('Phone number is invalid after sanitization');
         }
-        const formattedNumber = sanitizedPhone;
-        const chatId = `${formattedNumber}@c.us`;
+        const chatId = chatIdToUse || `${sanitizedPhone}@c.us`;
 
         logger.info({ chatId, content: input.content.substring(0, 50) }, 'Sending WhatsApp message');
 
         // Verify number is registered and get numberId
         const numberId = await withTimeout(
-          activeSession.client.getNumberId(formattedNumber),
+          activeSession.client.getNumberId(sanitizedPhone),
           30000,
           'WhatsApp getNumberId timed out',
         );

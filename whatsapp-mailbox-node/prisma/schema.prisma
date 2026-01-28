@@ -63,6 +63,7 @@ model Contact {
   userId                String
   user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   phoneNumber           String       @db.VarChar(20)
+  chatId                String?      @db.VarChar(50) // Full WhatsApp ID: phone@c.us or channel@newsletter
   name                  String?
   pushName              String?      // Contact's WhatsApp display name
   businessName          String?      // For business accounts
