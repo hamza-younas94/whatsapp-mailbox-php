@@ -53,13 +53,41 @@ export class ContactController {
   });
 
   searchContacts = asyncHandler(async (req: Request, res: Response) => {
-    const { search, tags, isBlocked, limit = 20, offset = 0 } = req.query;
+    const {
+      search,
+      tags,
+      engagement,
+      contactType,
+      isBlocked,
+      sortBy = 'lastMessageAt',
+      sortOrder = 'desc',
+      limit = 20,
+      offset = 0,
+      page = 1,
+    } = req.query;
     const userId = requireUserId(req);
+
+    const actualOffset =
+      page && typeof page === 'string'
+        ? (parseInt(page) - 1) * (typeof limit === 'string' ? parseInt(limit) : 20)
+        : typeof offset === 'string'
+          ? parseInt(offset)
+          : 0;
 
     const filters: ContactFilters = {
       query: search as string,
-      tags: tags ? (Array.isArray(tags) ? tags as string[] : [tags as string]) : undefined,
+      tags: tags
+        ? Array.isArray(tags)
+          ? (tags as string[])
+          : [tags as string]
+        : undefined,
       isBlocked: isBlocked === 'true',
+      engagement: engagement as any,
+      contactType: contactType as any,
+      sortBy: sortBy as any,
+      sortOrder: sortOrder as any,
+      limit: typeof limit === 'string' ? parseInt(limit) : 20,
+      offset: actualOffset,
     };
 
     const result = await this.contactService.searchContacts(userId, filters);

@@ -9,6 +9,10 @@ interface ContactFilters {
   search?: string;
   tags?: string[];
   isBlocked?: boolean;
+  engagement?: 'high' | 'medium' | 'low' | 'inactive';
+  contactType?: 'individual' | 'business' | 'group' | 'broadcast';
+  sortBy?: 'name' | 'lastMessageAt' | 'engagementScore' | 'messageCount';
+  sortOrder?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
 }
@@ -54,28 +58,44 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
 
     const searchTerm = filters.search || filters.query;
 
+    // Build where clause with all filter conditions
     const where: Prisma.ContactWhereInput = {
       userId,
       isBlocked: filters.isBlocked ?? false,
       ...(searchTerm && {
         OR: [
           { name: { contains: searchTerm } },
+          { pushName: { contains: searchTerm } },
+          { businessName: { contains: searchTerm } },
           { phoneNumber: { contains: searchTerm } },
           { email: { contains: searchTerm } },
+          { company: { contains: searchTerm } },
         ],
       }),
       ...(filters.tags?.length && {
         tags: { some: { tag: { name: { in: filters.tags } } } },
       }),
+      ...(filters.engagement && {
+        engagementLevel: filters.engagement,
+      }),
+      ...(filters.contactType && {
+        contactType: filters.contactType,
+      }),
     };
+
+    // Determine sort order
+    const sortBy = filters.sortBy || 'lastMessageAt';
+    const sortOrder = filters.sortOrder || 'desc';
+    const orderBy: Prisma.ContactOrderByWithRelationInput = {};
+    orderBy[sortBy] = sortOrder;
 
     const [contacts, total] = await Promise.all([
       this.prisma.contact.findMany({
         where,
         skip: offset,
         take: limit,
-        include: { 
-          tags: { include: { tag: true } }, 
+        include: {
+          tags: { include: { tag: true } },
           _count: { select: { messages: true } },
           messages: {
             take: 1,
@@ -89,10 +109,9 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
             },
           },
         },
-        orderBy: [
-          { lastMessageAt: 'desc' },
-          { createdAt: 'desc' }, // Fallback if lastMessageAt is null
-        ],
+        orderBy: sortBy === 'lastMessageAt' 
+          ? [{ lastMessageAt: sortOrder as any }, { createdAt: 'desc' }]
+          : [orderBy as any, { createdAt: 'desc' }],
       }),
       this.prisma.contact.count({ where }),
     ]);
@@ -117,14 +136,31 @@ export class ContactRepository extends BaseRepository<Contact> implements IConta
     const updateData: Record<string, any> = {};
     const createData: Record<string, any> = { userId, phoneNumber };
 
+    // Map of data fields that should be persisted
+    const persistedFields = [
+      'name',
+      'pushName',
+      'businessName',
+      'email',
+      'profilePhotoUrl',
+      'company',
+      'department',
+      'timezone',
+      'isBusiness',
+      'isVerified',
+      'contactType',
+      'lastMessageAt',
+      'lastActiveAt',
+      'customFields',
+    ];
+
     // Only include non-undefined fields
-    if (data?.name) {
-      updateData.name = data.name;
-      createData.name = data.name;
-    }
-    if (data?.email) {
-      updateData.email = data.email;
-      createData.email = data.email;
+    for (const field of persistedFields) {
+      const value = data?.[field as keyof Contact];
+      if (value !== undefined && value !== null) {
+        updateData[field] = value;
+        createData[field] = value;
+      }
     }
 
     return this.prisma.contact.upsert({

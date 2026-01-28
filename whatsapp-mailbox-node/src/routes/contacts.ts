@@ -36,9 +36,14 @@ export function createContactRoutes(): Router {
   const searchContactsSchema = z.object({
     search: z.string().optional(),
     tags: z.union([z.string(), z.array(z.string())]).optional(),
+    engagement: z.enum(['high', 'medium', 'low', 'inactive']).optional(),
+    contactType: z.enum(['individual', 'business', 'group', 'broadcast']).optional(),
     isBlocked: z.enum(['true', 'false']).optional(),
+    sortBy: z.enum(['name', 'lastMessageAt', 'engagementScore', 'messageCount']).optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
     limit: z.coerce.number().min(1).max(100).optional(),
     offset: z.coerce.number().min(0).optional(),
+    page: z.coerce.number().min(1).optional(),
   });
 
   // Routes

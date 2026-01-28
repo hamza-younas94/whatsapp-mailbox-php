@@ -17,6 +17,12 @@ interface ContactFilters {
   query?: string;
   tags?: string[];
   isBlocked?: boolean;
+  engagement?: 'high' | 'medium' | 'low' | 'inactive';
+  contactType?: 'individual' | 'business' | 'group' | 'broadcast';
+  sortBy?: 'name' | 'lastMessageAt' | 'engagementScore' | 'messageCount';
+  sortOrder?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
 }
 
 interface PaginatedResult<T> {

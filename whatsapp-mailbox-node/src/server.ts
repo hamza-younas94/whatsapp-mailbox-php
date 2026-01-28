@@ -127,10 +127,34 @@ export function createApp(): Express {
 function setupIncomingMessageListener(): void {
   whatsappWebService.on('message', async (event: any) => {
     try {
-      const { sessionId, from, body, hasMedia, timestamp, waMessageId, messageType } = event;
-      
-      logger.info({ sessionId, from, body: body?.substring(0, 50), hasMedia, timestamp, messageType }, 'RAW incoming message event');
-      
+      const {
+        sessionId,
+        from,
+        body,
+        hasMedia,
+        timestamp,
+        waMessageId,
+        messageType,
+        contactName,
+        contactPushName,
+        contactBusinessName,
+        profilePhotoUrl,
+        isBusiness,
+      } = event;
+
+      logger.info(
+        {
+          sessionId,
+          from,
+          body: body?.substring(0, 50),
+          hasMedia,
+          timestamp,
+          messageType,
+          contactName,
+        },
+        'RAW incoming message event'
+      );
+
       // Skip messages with no content and no media (read receipts, delivery confirmations, etc.)
       if (!body && !hasMedia) {
         logger.debug({ sessionId, from, messageType }, 'Skipping empty message with no media');
@@ -151,7 +175,16 @@ function setupIncomingMessageListener(): void {
         return;
       }
 
-      logger.info({ userId, phoneNumber: sanitizedPhone, body: body?.substring(0, 50), messageType }, 'Processing incoming WhatsApp message');
+      logger.info(
+        {
+          userId,
+          phoneNumber: sanitizedPhone,
+          body: body?.substring(0, 50),
+          messageType,
+          contactName,
+        },
+        'Processing incoming WhatsApp message'
+      );
 
       // Create repositories with prisma client
       const db = getPrismaClient();
@@ -159,8 +192,36 @@ function setupIncomingMessageListener(): void {
       const conversationRepo = new ConversationRepository(db);
       const messageRepo = new MessageRepository(db);
 
-      // Get or create contact
-      const contact = await contactRepo.findOrCreate(userId, sanitizedPhone, { name: sanitizedPhone });
+      // Prepare contact data with proper name resolution
+      const contactDisplayName =
+        contactBusinessName || contactName || contactPushName || sanitizedPhone;
+
+      // Get or create contact with enriched data
+      const contact = await contactRepo.findOrCreate(userId, sanitizedPhone, {
+        name: contactDisplayName,
+        pushName: contactPushName,
+        businessName: contactBusinessName,
+        profilePhotoUrl,
+        isBusiness: isBusiness || false,
+        lastMessageAt: new Date(timestamp * 1000),
+        lastActiveAt: new Date(timestamp * 1000),
+      });
+
+      // Update contact with latest info if we have new data
+      if (
+        (contactName && contactName !== contact.name) ||
+        (contactPushName && contactPushName !== contact.pushName) ||
+        (profilePhotoUrl && profilePhotoUrl !== contact.profilePhotoUrl)
+      ) {
+        await contactRepo.update(contact.id, {
+          name: contactName || contact.name,
+          pushName: contactPushName || contact.pushName,
+          profilePhotoUrl: profilePhotoUrl || contact.profilePhotoUrl,
+          isBusiness: isBusiness !== undefined ? isBusiness : contact.isBusiness,
+          lastMessageAt: new Date(timestamp * 1000),
+          lastActiveAt: new Date(timestamp * 1000),
+        });
+      }
 
       // Get or create conversation
       const conversation = await conversationRepo.findOrCreate(userId, contact.id);

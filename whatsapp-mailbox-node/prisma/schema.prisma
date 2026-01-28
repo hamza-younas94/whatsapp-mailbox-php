@@ -59,19 +59,33 @@ enum UserRole {
 // ============================================
 
 model Contact {
-  id            String       @id @default(cuid())
-  userId        String
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  phoneNumber   String       @db.VarChar(20)
-  name          String?
-  email         String?
-  avatarUrl     String?
-  timezone      String?
-  lastMessageAt DateTime?
-  isBlocked     Boolean      @default(false)
-  metadata      Json?        @default("{}")
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id                    String       @id @default(cuid())
+  userId                String
+  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phoneNumber           String       @db.VarChar(20)
+  name                  String?
+  pushName              String?      // Contact's WhatsApp display name
+  businessName          String?      // For business accounts
+  email                 String?
+  avatarUrl             String?
+  profilePhotoUrl       String?      // WhatsApp profile picture
+  company               String?
+  department            String?
+  contactType           String       @default("individual") // individual, business, group, broadcast
+  timezone              String?
+  lastMessageAt         DateTime?
+  lastActiveAt          DateTime?
+  engagementScore       Float        @default(0) // 0-100 score
+  engagementLevel       String       @default("inactive") // high, medium, low, inactive
+  messageCount          Int          @default(0)
+  totalInteractions     Int          @default(0)
+  isBlocked             Boolean      @default(false)
+  isBusiness            Boolean      @default(false)
+  isVerified            Boolean      @default(false)
+  customFields          Json?        @default("{}") // Flexible custom attributes
+  metadata              Json?        @default("{}")
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
 
   // Relations
   conversations Conversation[]
@@ -84,7 +98,9 @@ model Contact {
   @@unique([userId, phoneNumber])
   @@index([userId])
   @@index([phoneNumber])
-  @@fulltext([phoneNumber, name])
+  @@index([engagementLevel])
+  @@index([engagementScore])
+  @@fulltext([phoneNumber, name, pushName, businessName])
 }
 
 model Conversation {

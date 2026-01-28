@@ -201,6 +201,39 @@ export class WhatsAppWebService extends EventEmitter {
         }
       }
 
+      // Try to get contact details from the message object
+      let contactName: string | undefined;
+      let contactPushName: string | undefined;
+      let contactBusinessName: string | undefined;
+      let profilePhotoUrl: string | undefined;
+      let isBusiness = false;
+
+      try {
+        // Access contact information from the message
+        if (message.getContact && typeof message.getContact === 'function') {
+          const contact = await message.getContact();
+          if (contact) {
+            contactName = contact.name || contact.pushname;
+            contactPushName = contact.pushname;
+            // For business accounts, try to get formatted name
+            if (contact.isBusiness) {
+              isBusiness = true;
+              contactBusinessName = (contact as any).formattedName || contactName;
+            }
+            // Try to get profile photo
+            if (contact.getProfilePicUrl && typeof contact.getProfilePicUrl === 'function') {
+              try {
+                profilePhotoUrl = await contact.getProfilePicUrl();
+              } catch (photoError) {
+                logger.debug({ from: message.from }, 'Failed to fetch profile photo');
+              }
+            }
+          }
+        }
+      } catch (contactError) {
+        logger.debug({ from: message.from, error: contactError }, 'Failed to extract contact details');
+      }
+
       this.emit('message', {
         sessionId: id,
         from: message.from,
@@ -209,9 +242,15 @@ export class WhatsAppWebService extends EventEmitter {
         timestamp: message.timestamp,
         waMessageId: message.id?._serialized,
         messageType: message.type,
+        // Add contact information
+        contactName: contactName || contactPushName,
+        contactPushName,
+        contactBusinessName,
+        profilePhotoUrl,
+        isBusiness,
       });
 
-      logger.debug({ sessionId: id, from: message.from }, 'Message received');
+      logger.debug({ sessionId: id, from: message.from, contactName }, 'Message received with contact info');
     });
 
     // Disconnected event
