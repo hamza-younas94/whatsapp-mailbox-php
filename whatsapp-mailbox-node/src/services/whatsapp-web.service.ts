@@ -242,6 +242,7 @@ export class WhatsAppWebService extends EventEmitter {
         timestamp: message.timestamp,
         waMessageId: message.id?._serialized,
         messageType: message.type,
+        message: message, // Pass full message object for media download
         // Add contact information
         contactName: contactName || contactPushName,
         contactPushName,
@@ -250,7 +251,7 @@ export class WhatsAppWebService extends EventEmitter {
         isBusiness,
       });
 
-      logger.debug({ sessionId: id, from: message.from, contactName }, 'Message received with contact info');
+      logger.debug({ sessionId: id, from: message.from, contactName, hasMedia: message.hasMedia }, 'Message received with contact info');
     });
 
     // Disconnected event
@@ -403,6 +404,51 @@ export class WhatsAppWebService extends EventEmitter {
   getQRCode(sessionId: string): string | undefined {
     const session = this.sessions.get(sessionId);
     return session?.qrCode;
+  }
+
+  /**
+   * Download media from a message
+   */
+  async downloadMedia(message: WAMessage): Promise<string | undefined> {
+    try {
+      if (!message.hasMedia) {
+        return undefined;
+      }
+
+      logger.info({ messageId: message.id._serialized }, 'Downloading media from message');
+      
+      const media = await message.downloadMedia();
+      if (!media) {
+        logger.warn({ messageId: message.id._serialized }, 'Media download returned null');
+        return undefined;
+      }
+
+      // Generate filename based on message type and timestamp
+      const timestamp = Date.now();
+      const ext = media.mimetype?.split('/')[1] || 'bin';
+      const filename = `${timestamp}-${Math.random().toString(36).substr(2, 9)}.${ext}`;
+      
+      // Save to uploads/media directory
+      const mediaPath = path.join(process.cwd(), 'uploads', 'media', filename);
+      const mediaDir = path.dirname(mediaPath);
+      
+      // Ensure directory exists
+      if (!fs.existsSync(mediaDir)) {
+        fs.mkdirSync(mediaDir, { recursive: true });
+      }
+
+      // Write media file
+      const buffer = Buffer.from(media.data, 'base64');
+      fs.writeFileSync(mediaPath, buffer);
+      
+      const mediaUrl = `/uploads/media/${filename}`;
+      logger.info({ mediaUrl, mimetype: media.mimetype, size: buffer.length }, 'Media saved successfully');
+      
+      return mediaUrl;
+    } catch (error) {
+      logger.error({ error, messageId: message.id?._serialized }, 'Failed to download media');
+      return undefined;
+    }
   }
 
   /**

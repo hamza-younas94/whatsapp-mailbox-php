@@ -137,6 +137,7 @@ function setupIncomingMessageListener(): void {
         timestamp,
         waMessageId,
         messageType,
+        message, // Full WhatsApp message object
         contactName,
         contactPushName,
         contactBusinessName,
@@ -234,19 +235,33 @@ function setupIncomingMessageListener(): void {
       // Ensure we never violate the unique constraint on waMessageId
       const safeWaMessageId = waMessageId || `${from}-${timestamp}-${Date.now()}`;
 
+      // Handle media download if message has media
+      let mediaUrl: string | undefined;
+      if (hasMedia && message) {
+        try {
+          logger.info({ sessionId, from, messageType }, 'Message has media, attempting download');
+          mediaUrl = await whatsappWebService.downloadMedia(message);
+          logger.info({ sessionId, from, mediaUrl }, 'Media downloaded successfully');
+        } catch (mediaError) {
+          logger.error({ error: mediaError, sessionId, from }, 'Failed to download media');
+          // Continue without media URL
+        }
+      }
+
       // Save message to database
       await messageRepo.create({
         user: { connect: { id: userId } },
         contact: { connect: { id: contact.id } },
         conversation: { connect: { id: conversation.id } },
-        content: body,
+        content: body || (hasMedia ? `[${normalizedType}]` : ''),
         messageType: normalizedType as any,
         direction: 'INCOMING',
         status: 'RECEIVED',
         waMessageId: safeWaMessageId,
+        mediaUrl: mediaUrl,
       } as any);
 
-      logger.info({ userId, phoneNumber: sanitizedPhone, contactId: contact.id }, 'Saved incoming message to database');
+      logger.info({ userId, phoneNumber: sanitizedPhone, contactId: contact.id, hasMedia, mediaUrl }, 'Saved incoming message to database');
     } catch (error) {
       logger.error({ error, event }, 'Failed to save incoming WhatsApp message');
     }
