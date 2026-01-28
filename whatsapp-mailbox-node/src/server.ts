@@ -24,6 +24,7 @@ import analyticsRoutes from '@routes/analytics';
 import crmRoutes from '@routes/crm';
 import noteRoutes from '@routes/notes';
 import whatsappWebRoutes from '@routes/whatsapp-web';
+import mediaRoutes from '@routes/media';
 import { whatsappWebService } from '@services/whatsapp-web.service';
 import { MessageType } from '@prisma/client';
 import { MessageRepository } from '@repositories/message.repository';
@@ -93,6 +94,7 @@ export function createApp(): Express {
   app.use('/api/v1/messages', createMessageRoutes());
   app.use('/api/v1/contacts', createContactRoutes());
   app.use('/api/v1/quick-replies', quickReplyRoutes);
+  app.use('/api/v1/media', mediaRoutes);
   app.use('/api/v1/tags', tagRoutes);
   app.use('/api/v1/segments', segmentRoutes);
   app.use('/api/v1/broadcasts', broadcastRoutes);

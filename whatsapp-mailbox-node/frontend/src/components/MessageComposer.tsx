@@ -9,21 +9,34 @@ interface QuickReply {
   category: string | null;
 }
 
+interface MediaFile {
+  file: File;
+  preview: string;
+  type: 'image' | 'video' | 'audio' | 'document';
+}
+
 interface MessageComposerProps {
-  onSend: (content: string, mediaUrl?: string) => Promise<void>;
+  onSend: (content: string, mediaUrl?: string, mediaType?: string) => Promise<void>;
   isLoading?: boolean;
   disabled?: boolean;
 }
 
 export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoading = false, disabled = false }) => {
   const [content, setContent] = useState('');
-  const [mediaPreview, setMediaPreview] = useState<{ url: string; type: string } | null>(null);
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
   const [showQuickReplies, setShowQuickReplies] = useState(false);
   const [filteredQuickReplies, setFilteredQuickReplies] = useState<QuickReply[]>([]);
   const [selectedReplyIndex, setSelectedReplyIndex] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Load quick replies on mount
   useEffect(() => {
@@ -71,43 +84,141 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoad
   }, [content, quickReplies]);
 
   const handleSend = async () => {
-    if (!content.trim() && !mediaPreview) return;
+    if (!content.trim() && mediaFiles.length === 0) return;
 
     try {
-      await onSend(content.trim(), mediaPreview?.url);
+      // Handle media upload if present
+      if (mediaFiles.length > 0) {
+        for (const mediaFile of mediaFiles) {
+          const formData = new FormData();
+          formData.append('file', mediaFile.file);
+          
+          // Upload media to server
+          const response = await fetch(`${window.location.origin}/api/v1/media/upload`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: formData
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            await onSend(content.trim(), result.data.url, mediaFile.type);
+          }
+        }
+      } else {
+        await onSend(content.trim());
+      }
+      
       setContent('');
-      setMediaPreview(null);
+      setMediaFiles([]);
     } catch (err) {
       console.error('Failed to send message:', err);
+      alert('Failed to send message. Please try again.');
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      alert('File too large. Max 10MB.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const url = event.target?.result as string;
-      setMediaPreview({
-        url,
-        type: file.type,
-      });
-    };
-    reader.readAsDataURL(file);
+    const files = Array.from(e.target.files || []);
+    processFiles(files);
   };
 
-  const handleClearMedia = () => {
-    setMediaPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const processFiles = (files: File[]) => {
+    files.forEach(file => {
+      // Validate file size (max 50MB)
+      if (file.size > 50 * 1024 * 1024) {
+        alert(`File ${file.name} is too large. Max 50MB.`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const preview = event.target?.result as string;
+        let type: MediaFile['type'] = 'document';
+        
+        if (file.type.startsWith('image/')) type = 'image';
+        else if (file.type.startsWith('video/')) type = 'video';
+        else if (file.type.startsWith('audio/')) type = 'audio';
+
+        setMediaFiles(prev => [...prev, { file, preview, type }]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleClearMedia = (index: number) => {
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    processFiles(files);
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+        const preview = URL.createObjectURL(audioBlob);
+        
+        setMediaFiles(prev => [...prev, {
+          file: audioFile,
+          preview,
+          type: 'audio'
+        }]);
+        
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      alert('Could not access microphone. Please check permissions.');
     }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    }
+  };
+
+  const formatRecordingTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -153,7 +264,20 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoad
   };
 
   return (
-    <div className="message-composer">
+    <div 
+      className={`message-composer ${isDragging ? 'dragging' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragging && (
+        <div className="drag-overlay">
+          <div className="drag-message">
+            📎 Drop files here to send
+          </div>
+        </div>
+      )}
+
       {/* Quick Replies Dropdown */}
       {showQuickReplies && filteredQuickReplies.length > 0 && (
         <div className="quick-replies-dropdown">
@@ -179,21 +303,46 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoad
         </div>
       )}
 
-      {/* Media preview */}
-      {mediaPreview && (
-        <div className="media-preview">
-          {mediaPreview.type.startsWith('image/') && (
-            <img src={mediaPreview.url} alt="Preview" />
-          )}
-          {mediaPreview.type.startsWith('video/') && (
-            <video src={mediaPreview.url} controls />
-          )}
-          <button
-            className="clear-btn"
-            onClick={handleClearMedia}
-            title="Remove media"
-          >
-            ✕
+      {/* Media Previews */}
+      {mediaFiles.length > 0 && (
+        <div className="media-previews">
+          {mediaFiles.map((media, index) => (
+            <div key={index} className="media-preview-item">
+              {media.type === 'image' && (
+                <img src={media.preview} alt="Preview" className="media-preview-img" />
+              )}
+              {media.type === 'video' && (
+                <video src={media.preview} className="media-preview-video" />
+              )}
+              {media.type === 'audio' && (
+                <div className="media-preview-audio">
+                  🎵 Audio Recording
+                </div>
+              )}
+              {media.type === 'document' && (
+                <div className="media-preview-doc">
+                  📄 {media.file.name}
+                </div>
+              )}
+              <button
+                className="media-clear-btn"
+                onClick={() => handleClearMedia(index)}
+                title="Remove"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Recording indicator */}
+      {isRecording && (
+        <div className="recording-indicator">
+          <span className="recording-dot"></span>
+          <span className="recording-time">{formatRecordingTime(recordingTime)}</span>
+          <button onClick={stopRecording} className="stop-recording-btn">
+            Stop Recording
           </button>
         </div>
       )}
@@ -203,10 +352,19 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoad
         <button
           className="attach-btn"
           onClick={() => fileInputRef.current?.click()}
-          disabled={disabled || isLoading}
-          title="Attach media"
+          disabled={disabled || isLoading || isRecording}
+          title="Attach file"
         >
           📎
+        </button>
+
+        <button
+          className={`voice-btn ${isRecording ? 'recording' : ''}`}
+          onClick={isRecording ? stopRecording : startRecording}
+          disabled={disabled || isLoading}
+          title={isRecording ? "Stop recording" : "Record voice message"}
+        >
+          {isRecording ? '⏹' : '🎤'}
         </button>
 
         <textarea
@@ -215,7 +373,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoad
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a message... (Use / for quick replies)"
-          disabled={disabled || isLoading}
+          disabled={disabled || isLoading || isRecording}
           className="input-field"
           rows={1}
         />
@@ -223,7 +381,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoad
         <button
           className="send-btn"
           onClick={handleSend}
-          disabled={disabled || isLoading || (!content.trim() && !mediaPreview)}
+          disabled={disabled || isLoading || isRecording || (!content.trim() && mediaFiles.length === 0)}
           title="Send message"
         >
           {isLoading ? '⏳' : '➤'}
@@ -232,7 +390,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoad
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+          accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+          multiple
           onChange={handleFileSelect}
           style={{ display: 'none' }}
         />
