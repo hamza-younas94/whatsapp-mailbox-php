@@ -74,7 +74,7 @@ export class ContactController {
           ? parseInt(offset)
           : 0;
 
-    const filters: any = {
+    const filters = {
       query: search as string,
       tags: tags
         ? Array.isArray(tags)
@@ -82,13 +82,13 @@ export class ContactController {
           : [tags as string]
         : undefined,
       isBlocked: isBlocked === 'true',
-      ...(engagement && { engagement: engagement as any }),
-      ...(contactType && { contactType: contactType as any }),
-      sortBy: sortBy as any,
-      sortOrder: sortOrder as any,
+      ...(engagement && { engagement: engagement as 'high' | 'medium' | 'low' | 'inactive' }),
+      ...(contactType && { contactType: contactType as 'individual' | 'business' | 'group' | 'broadcast' }),
+      sortBy: (sortBy || 'name') as 'name' | 'lastMessageAt' | 'engagementScore' | 'messageCount',
+      sortOrder: (sortOrder || 'asc') as 'asc' | 'desc',
       limit: typeof limit === 'string' ? parseInt(limit) : 20,
       offset: actualOffset,
-    };
+    } as any;
 
     const result = await this.contactService.searchContacts(userId, filters);
 

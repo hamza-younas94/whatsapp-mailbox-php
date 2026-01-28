@@ -26,7 +26,7 @@ export function extractContactName(
     pushName = contactObj.pushname.trim();
     // Prefer pushname over generic name if no saved name
     if (!contactObj?.name || !contactObj.name.trim()) {
-      name = (pushName || phoneNumber) as string;
+      name = pushName;
     }
   }
 
