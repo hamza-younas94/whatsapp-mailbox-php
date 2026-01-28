@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { contactAPI } from '@/api/queries';
-import '@/styles/conversation-list.css';
+import '@/styles/conversation-list-enhanced.css';
 
 interface Conversation {
   id: string;
@@ -139,27 +139,55 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
         {conversations
           .filter((conv) => conv && conv.contact && conv.contact.id) // Additional safety check
-          .map((conv) => (
-            <div
-              key={conv.id}
-              className={`conversation-item ${selectedContactId === conv.contact?.id ? 'selected' : ''}`}
-              onClick={() => conv.contact?.id && onSelectConversation(conv.contact.id, conv)}
-            >
-              <div className="conv-avatar">
-                {((conv.contact?.name?.charAt(0) || conv.contact?.phoneNumber?.charAt(0)) || '?').toUpperCase()}
-              </div>
+          .map((conv) => {
+            const displayName = conv.contact?.name || conv.contact?.phoneNumber || 'Unknown';
+            const timeAgo = conv.lastMessageAt 
+              ? (() => {
+                  const now = new Date();
+                  const msgDate = new Date(conv.lastMessageAt);
+                  const diffMs = now.getTime() - msgDate.getTime();
+                  const diffMins = Math.floor(diffMs / 60000);
+                  const diffHours = Math.floor(diffMs / 3600000);
+                  const diffDays = Math.floor(diffMs / 86400000);
+                  
+                  if (diffMins < 1) return 'Just now';
+                  if (diffMins < 60) return `${diffMins}m ago`;
+                  if (diffHours < 24) return `${diffHours}h ago`;
+                  if (diffDays < 7) return `${diffDays}d ago`;
+                  return msgDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                })()
+              : '';
 
-              <div className="conv-content">
-                <div className="conv-header">
-                  <span className="conv-name">{conv.contact?.name || conv.contact?.phoneNumber || 'Unknown'}</span>
-                  {conv.unreadCount > 0 && (
-                    <span className="unread-badge">{conv.unreadCount}</span>
-                  )}
+            return (
+              <div
+                key={conv.id}
+                className={`conversation-item ${selectedContactId === conv.contact?.id ? 'selected' : ''} ${conv.unreadCount > 0 ? 'has-unread' : ''}`}
+                onClick={() => conv.contact?.id && onSelectConversation(conv.contact.id, conv)}
+              >
+                <div className="conv-avatar">
+                  <span className="avatar-text">
+                    {((conv.contact?.name?.charAt(0) || conv.contact?.phoneNumber?.charAt(0)) || '?').toUpperCase()}
+                  </span>
+                  {conv.unreadCount > 0 && <span className="online-indicator"></span>}
                 </div>
-                <p className="conv-preview">{conv.lastMessage || 'No messages yet'}</p>
+
+                <div className="conv-content">
+                  <div className="conv-header">
+                    <span className="conv-name" title={displayName}>{displayName}</span>
+                    {timeAgo && <span className="conv-time">{timeAgo}</span>}
+                  </div>
+                  <div className="conv-preview-row">
+                    <p className="conv-preview" title={conv.lastMessage}>
+                      {conv.lastMessage || 'No messages yet'}
+                    </p>
+                    {conv.unreadCount > 0 && (
+                      <span className="unread-badge">{conv.unreadCount > 99 ? '99+' : conv.unreadCount}</span>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
       </div>
     </div>
   );

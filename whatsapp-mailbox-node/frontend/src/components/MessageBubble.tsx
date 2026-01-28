@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MessageEvent } from '@/api/socket';
-import '@/styles/message-bubble.css';
+import '@/styles/message-bubble-enhanced.css';
 
 interface Message {
   id: string;
@@ -11,6 +11,7 @@ interface Message {
   mediaUrl?: string;
   mediaType?: string;
   createdAt: string;
+  reaction?: string;
 }
 
 interface MessageBubbleProps {
@@ -18,7 +19,12 @@ interface MessageBubbleProps {
   isOwn: boolean;
 }
 
+const REACTION_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🙏'];
+
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) => {
+  const [showReactions, setShowReactions] = useState(false);
+  const [selectedReaction, setSelectedReaction] = useState<string | undefined>(message.reaction);
+
   const time = new Date(message.createdAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
@@ -26,42 +32,87 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
 
   const hasMedia = message.messageType !== 'TEXT' && message.mediaUrl;
 
+  const handleReaction = (emoji: string) => {
+    setSelectedReaction(selectedReaction === emoji ? undefined : emoji);
+    setShowReactions(false);
+    // TODO: Send reaction to backend
+  };
+
   return (
-    <div className={`message-bubble ${isOwn ? 'own' : 'other'}`}>
-      {/* Media content */}
-      {hasMedia && (
-        <div className="message-media">
-          {message.messageType === 'IMAGE' && (
-            <img src={message.mediaUrl} alt="Message" style={{ maxWidth: '200px', borderRadius: '8px' }} />
-          )}
-          {message.messageType === 'VIDEO' && (
-            <video src={message.mediaUrl} controls style={{ maxWidth: '200px', borderRadius: '8px' }} />
-          )}
-          {message.messageType === 'AUDIO' && (
-            <audio src={message.mediaUrl} controls style={{ width: '200px' }} />
-          )}
-          {message.messageType === 'DOCUMENT' && (
-            <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="document-link">
-              📎 {message.mediaType || 'Document'}
-            </a>
+    <div className={`message-bubble-wrapper ${isOwn ? 'own' : 'other'}`}>
+      <div 
+        className={`message-bubble ${isOwn ? 'own' : 'other'}`}
+        onMouseEnter={() => setShowReactions(true)}
+        onMouseLeave={() => setShowReactions(false)}
+      >
+        {/* Media content */}
+        {hasMedia && (
+          <div className="message-media">
+            {message.messageType === 'IMAGE' && (
+              <img 
+                src={message.mediaUrl} 
+                alt="Message" 
+                className="media-image"
+                onClick={() => window.open(message.mediaUrl, '_blank')}
+              />
+            )}
+            {message.messageType === 'VIDEO' && (
+              <video src={message.mediaUrl} controls className="media-video" />
+            )}
+            {message.messageType === 'AUDIO' && (
+              <div className="media-audio-wrapper">
+                <div className="audio-icon">🎵</div>
+                <audio src={message.mediaUrl} controls className="media-audio" />
+              </div>
+            )}
+            {message.messageType === 'DOCUMENT' && (
+              <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="document-link">
+                <span className="doc-icon">📎</span>
+                <span className="doc-text">{message.mediaType || 'Document'}</span>
+                <span className="doc-download">↓</span>
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Text content */}
+        {message.content && <p className="message-text">{message.content}</p>}
+
+        {/* Message meta */}
+        <div className="message-meta">
+          <span className="time">{time}</span>
+          {isOwn && (
+            <span className={`status-icon status-${message.status.toLowerCase()}`}>
+              {message.status === 'PENDING' && <span className="status-pending">⏱</span>}
+              {message.status === 'SENT' && <span className="status-sent">✓</span>}
+              {message.status === 'DELIVERED' && <span className="status-delivered">✓✓</span>}
+              {message.status === 'READ' && <span className="status-read">✓✓</span>}
+              {message.status === 'FAILED' && <span className="status-failed">✗</span>}
+            </span>
           )}
         </div>
-      )}
 
-      {/* Text content */}
-      {message.content && <p className="message-text">{message.content}</p>}
+        {/* Selected Reaction */}
+        {selectedReaction && (
+          <div className="message-reaction">
+            {selectedReaction}
+          </div>
+        )}
 
-      {/* Message meta */}
-      <div className="message-meta">
-        <span className="time">{time}</span>
-        {isOwn && (
-          <span className={`status-icon status-${message.status.toLowerCase()}`}>
-            {message.status === 'PENDING' && '⏱'}
-            {message.status === 'SENT' && '✓'}
-            {message.status === 'DELIVERED' && '✓✓'}
-            {message.status === 'READ' && '✓✓'}
-            {message.status === 'FAILED' && '✗'}
-          </span>
+        {/* Reaction Picker */}
+        {showReactions && (
+          <div className={`reaction-picker ${isOwn ? 'own' : 'other'}`}>
+            {REACTION_EMOJIS.map(emoji => (
+              <button
+                key={emoji}
+                className={`reaction-btn ${selectedReaction === emoji ? 'selected' : ''}`}
+                onClick={() => handleReaction(emoji)}
+                title={`React with ${emoji}`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
         )}
       </div>
     </div>
