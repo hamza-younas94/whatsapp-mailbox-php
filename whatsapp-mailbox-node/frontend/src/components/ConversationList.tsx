@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { contactAPI } from '@/api/queries';
+import { getContactTypeFromId, getContactTypeInfo, getContactTypeBadgeClass } from '@/utils/contact-type';
 import '@/styles/conversation-list-enhanced.css';
+import '@/styles/contact-type-badge.css';
 
 interface Conversation {
   id: string;
   contact: {
     id: string;
     phoneNumber: string;
+    chatId?: string | null;
     name?: string;
   };
   unreadCount: number;
@@ -150,6 +153,10 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           .filter((conv) => conv && conv.contact && conv.contact.id) // Additional safety check
           .map((conv) => {
             const displayName = conv.contact?.name || conv.contact?.phoneNumber || 'Unknown';
+            const contactType = getContactTypeFromId(conv.contact?.chatId, conv.contact?.phoneNumber);
+            const typeInfo = getContactTypeInfo(contactType);
+            const badgeClass = getContactTypeBadgeClass(contactType);
+            
             const timeAgo = conv.lastMessageAt 
               ? (() => {
                   const now = new Date();
@@ -182,7 +189,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
                 <div className="conv-content">
                   <div className="conv-header">
-                    <span className="conv-name" title={displayName}>{displayName}</span>
+                    <div className="conv-name">
+                      <span title={displayName}>{displayName}</span>
+                      <span className={badgeClass} title={typeInfo.label}>
+                        {typeInfo.icon} {typeInfo.label}
+                      </span>
+                    </div>
                     {timeAgo && <span className="conv-time">{timeAgo}</span>}
                   </div>
                   <div className="conv-preview-row">

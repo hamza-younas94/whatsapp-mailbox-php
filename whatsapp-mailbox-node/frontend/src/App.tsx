@@ -136,6 +136,7 @@ const App: React.FC = () => {
             <ChatPane
               contactId={selectedContactId}
               contactName={selectedContact?.contactName}
+              chatId={selectedContact?.contact?.chatId}
             />
           </div>
         )}

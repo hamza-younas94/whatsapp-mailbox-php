@@ -27,6 +27,7 @@ import noteRoutes from '@routes/notes';
 import whatsappWebRoutes from '@routes/whatsapp-web';
 import mediaRoutes from '@routes/media';
 import { whatsappWebService } from '@services/whatsapp-web.service';
+import { getContactType } from '@utils/contact-type';
 import { MessageType } from '@prisma/client';
 import { MessageRepository } from '@repositories/message.repository';
 import { ContactRepository } from '@repositories/contact.repository';
@@ -265,6 +266,7 @@ function setupIncomingMessageListener(): void {
         contactBusinessName || contactName || contactPushName || sanitizedPhone;
 
       // Get or create contact with enriched data
+      const contactTypeEnum = getContactType(from, sanitizedPhone);
       const contact = await contactRepo.findOrCreate(userId, sanitizedPhone, {
         name: contactDisplayName,
         pushName: contactPushName,
@@ -272,6 +274,7 @@ function setupIncomingMessageListener(): void {
         profilePhotoUrl,
         isBusiness: isBusiness || false,
         chatId: from, // Store full WhatsApp ID (e.g., 123@c.us or 456@newsletter)
+        contactType: contactTypeEnum, // Set contact type based on chatId
         lastMessageAt: new Date(timestamp * 1000),
         lastActiveAt: new Date(timestamp * 1000),
       });

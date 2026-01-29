@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { messageAPI } from '@/api/queries';
 import { subscribeToMessage, subscribeToMessageStatus, subscribeToReactionUpdated, getSocket } from '@/api/socket';
+import { getContactTypeFromId, getContactTypeInfo, getContactTypeBadgeClass } from '@/utils/contact-type';
 import MessageBubble from '@/components/MessageBubble';
 import MessageComposer from '@/components/MessageComposer';
 import '@/styles/chat-pane.css';
+import '@/styles/contact-type-badge.css';
 
 interface Message {
   id: string;
@@ -22,10 +24,11 @@ interface Message {
 interface ChatPaneProps {
   contactId?: string;
   contactName?: string;
+  chatId?: string;
   onUnload?: () => void;
 }
 
-const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, onUnload }) => {
+const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, onUnload }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -34,6 +37,11 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, onUnload })
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageSubscriptionRef = useRef<(() => void) | null>(null);
   const statusSubscriptionRef = useRef<(() => void) | null>(null);
+
+  // Get contact type for display
+  const contactType = getContactTypeFromId(chatId);
+  const typeInfo = getContactTypeInfo(contactType);
+  const badgeClass = getContactTypeBadgeClass(contactType);
 
   // Load messages from API
   const loadMessages = useCallback(
@@ -223,7 +231,12 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, onUnload })
   return (
     <div className="chat-pane">
       <div className="chat-header">
-        <h2 className="contact-name">{contactName || 'Unknown Contact'}</h2>
+        <div className="chat-header-title">
+          <h2 className="contact-name">{contactName || 'Unknown Contact'}</h2>
+          <span className={badgeClass} title={typeInfo.label}>
+            {typeInfo.icon} {typeInfo.label}
+          </span>
+        </div>
         <div className="chat-header-actions">
           <button className="icon-button">📞</button>
           <button className="icon-button">ℹ️</button>
