@@ -108,6 +108,19 @@ export class MessageController {
     });
   });
 
+  sendReaction = asyncHandler(async (req: Request, res: Response) => {
+    const { messageId } = req.params;
+    const { emoji } = req.body;
+    const userId = requireUserId(req);
+
+    await this.messageService.sendReaction(userId, messageId, emoji);
+
+    res.status(200).json({
+      success: true,
+      message: 'Reaction sent',
+    });
+  });
+
   deleteMessage = asyncHandler(async (req: Request, res: Response) => {
     const { messageId } = req.params;
 

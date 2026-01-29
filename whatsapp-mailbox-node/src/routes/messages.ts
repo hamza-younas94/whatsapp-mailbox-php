@@ -84,6 +84,15 @@ export function createMessageRoutes(): Router {
     controller.markAsRead,
   );
 
+  router.post(
+    '/:messageId/reaction',
+    authMiddleware,
+    validate(z.object({
+      emoji: z.string().min(1).max(10),
+    })),
+    controller.sendReaction,
+  );
+
   router.delete(
     '/:messageId',
     authMiddleware,

@@ -59,7 +59,7 @@ git pull origin main
 
 ### Step 2: Run Database Migration
 ```bash
-mysql -u root -p whatsapp_mailbox < migrations/add_chat_id.sql
+mysql -h 127.0.0.1 -u root -p whatsapp_mailbox < migrations/add_chat_id.sql
 ```
 
 This will:

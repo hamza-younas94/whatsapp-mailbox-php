@@ -254,6 +254,22 @@ export class WhatsAppWebService extends EventEmitter {
       logger.debug({ sessionId: id, from: message.from, contactName, hasMedia: message.hasMedia }, 'Message received with contact info');
     });
 
+    // Message reaction event
+    client.on('message_reaction', async (reaction: any) => {
+      try {
+        this.emit('reaction', {
+          sessionId: id,
+          messageId: reaction.id._serialized,
+          reaction: reaction.reaction,
+          from: reaction.senderId || reaction.id.remote,
+          timestamp: reaction.timestamp || Date.now(),
+        });
+        logger.info({ sessionId: id, messageId: reaction.id._serialized, reaction: reaction.reaction }, 'Reaction received');
+      } catch (error) {
+        logger.error({ error, sessionId: id }, 'Failed to process reaction');
+      }
+    });
+
     // Disconnected event
     client.on('disconnected', (reason) => {
       session.status = 'DISCONNECTED';
@@ -271,6 +287,34 @@ export class WhatsAppWebService extends EventEmitter {
       this.emit('auth_failure', { sessionId: id, error });
       logger.error({ sessionId: id, error }, 'WhatsApp Web authentication failed');
     });
+  }
+
+  /**
+   * Send a reaction to a message
+   */
+  async sendReaction(
+    sessionId: string,
+    messageId: string,
+    emoji: string,
+  ): Promise<any> {
+    const session = this.sessions.get(sessionId);
+    if (!session || session.status !== 'READY') {
+      throw new Error('Session not ready');
+    }
+
+    try {
+      const message = await session.client.getMessageById(messageId);
+      if (!message) {
+        throw new Error('Message not found');
+      }
+
+      await message.react(emoji);
+      logger.info({ sessionId, messageId, emoji }, 'Reaction sent successfully');
+      return { success: true };
+    } catch (error) {
+      logger.error({ error, sessionId, messageId, emoji }, 'Failed to send reaction');
+      throw error;
+    }
   }
 
   /**

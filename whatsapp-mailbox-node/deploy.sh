@@ -87,16 +87,26 @@ cd "$PROJECT_DIR"
 
 # Step 4: Database Migration
 separator
-log_info "Step 4/9: Running database migrations..."
+log_info "Step 4/9: Running database migrations...
 if [ -f "safe_fix.sql" ]; then
     log_info "Applying safe_fix.sql..."
-    if mysql -u root whatsapp_mailbox < safe_fix.sql 2>&1 | grep -v "already exists"; then
+    if mysql -h 127.0.0.1 -u root whatsapp_mailbox < safe_fix.sql 2>&1 | grep -v "already exists"; then
         log_success "Database migration completed"
     else
         log_warning "SQL migration had warnings (columns may already exist)"
     fi
 else
     log_warning "safe_fix.sql not found, skipping SQL migration"
+fi
+
+# Apply chatId migration if exists
+if [ -f "migrations/add_chat_id.sql" ]; then
+    log_info "Applying add_chat_id.sql..."
+    if mysql -h 127.0.0.1 -u root whatsapp_mailbox < migrations/add_chat_id.sql 2>&1; then
+        log_success "chatId migration completed"
+    else
+        log_warning "chatId migration had warnings"
+    fi
 fi
 
 # Step 5: Prisma Generate

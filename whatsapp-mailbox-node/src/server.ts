@@ -120,7 +120,55 @@ export function createApp(): Express {
   // Setup WhatsApp message listener to capture incoming messages
   setupIncomingMessageListener();
 
+  // Setup WhatsApp reaction listener to capture reactions
+  setupReactionListener();
+
   return app;
+}
+
+/**
+ * Listen for incoming WhatsApp reactions
+ */
+function setupReactionListener(): void {
+  whatsappWebService.on('reaction', async (event: any) => {
+    try {
+      const { sessionId, messageId, reaction, from, timestamp } = event;
+
+      logger.info({ sessionId, messageId, reaction, from }, 'Reaction received');
+
+      // Get session to find userId
+      const session = whatsappWebService.getSession(sessionId);
+      if (!session) {
+        logger.warn({ sessionId }, 'Reaction received but no session found');
+        return;
+      }
+
+      const userId = session.userId;
+      const db = getPrismaClient();
+      const messageRepo = new MessageRepository(db);
+
+      // Find message by waMessageId
+      const message = await messageRepo.findByWaMessageId(messageId);
+      if (!message) {
+        logger.warn({ messageId }, 'Reaction received but message not found in database');
+        return;
+      }
+
+      // Update message with reaction
+      await messageRepo.update(message.id, {
+        metadata: {
+          ...(typeof message.metadata === 'object' ? message.metadata : {}),
+          reaction: reaction || null,
+        } as any,
+      });
+
+      logger.info({ messageId: message.id, reaction }, 'Reaction saved to database');
+    } catch (error) {
+      logger.error({ error, event }, 'Failed to save reaction');
+    }
+  });
+
+  logger.info('WhatsApp reaction listener initialized');
 }
 
 /**

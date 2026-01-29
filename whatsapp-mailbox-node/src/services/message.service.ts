@@ -334,6 +334,44 @@ export class MessageService implements IMessageService {
     }
   }
 
+  async sendReaction(userId: string, messageId: string, emoji: string): Promise<void> {
+    try {
+      const message = await this.messageRepository.findById(messageId);
+      if (!message) {
+        throw new NotFoundError('Message');
+      }
+
+      // Get user's active WhatsApp Web session
+      const { whatsappWebService } = await import('./whatsapp-web.service');
+      const sessions = whatsappWebService.getUserSessions(userId);
+      const activeSession = sessions.find((s) => s.status === 'READY');
+
+      if (!activeSession) {
+        throw new ValidationError('WhatsApp is not connected. Please scan the QR code.');
+      }
+
+      // Send reaction using waMessageId
+      if (!message.waMessageId) {
+        throw new ValidationError('Cannot react to message without WhatsApp ID');
+      }
+
+      await whatsappWebService.sendReaction(activeSession.id, message.waMessageId, emoji);
+
+      // Update message metadata with reaction
+      await this.messageRepository.update(messageId, {
+        metadata: {
+          ...(typeof message.metadata === 'object' ? message.metadata : {}),
+          reaction: emoji,
+        } as any,
+      });
+
+      logger.info({ messageId, emoji }, 'Reaction sent successfully');
+    } catch (error) {
+      logger.error({ messageId, emoji, error }, 'Failed to send reaction');
+      throw error;
+    }
+  }
+
   async deleteMessage(messageId: string): Promise<void> {
     try {
       const message = await this.messageRepository.findById(messageId);
