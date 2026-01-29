@@ -17,19 +17,19 @@ interface Conversation {
 interface ConversationListProps {
   onSelectConversation: (contactId: string, conversation: Conversation) => void;
   selectedContactId?: string;
+  searchQuery?: string;
+  onAutoRefreshChange?: (enabled: boolean) => void;
 }
 
 export const ConversationList: React.FC<ConversationListProps> = ({
   onSelectConversation,
   selectedContactId,
+  searchQuery = '',
+  onAutoRefreshChange,
 }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    loadConversations();
-  }, []);
+  const [search, setSearch] = useState(searchQuery);
 
   const loadConversations = async () => {
     try {
@@ -112,9 +112,18 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   };
 
   useEffect(() => {
-    const timeout = setTimeout(loadConversations, 300);
-    return () => clearTimeout(timeout);
+    loadConversations();
+
+    // Listen for refresh events from App component
+    const handleRefresh = () => {
+      loadConversations();
+    };
+
+    window.addEventListener('refreshConversations', handleRefresh);
+    return () => window.removeEventListener('refreshConversations', handleRefresh);
   }, [search]);
+
+  // Update search when prop changes
 
   return (
     <div className="conversation-list-container">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { contactAPI } from '@/api/queries';
+import Navbar from '@/components/Navbar';
 import SessionStatus from '@/components/SessionStatus';
 import ConversationList from '@/components/ConversationList';
 import ChatPane from '@/components/ChatPane';
@@ -20,6 +21,8 @@ const App: React.FC = () => {
   const [showList, setShowList] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
 
   // Check authentication on mount
   useEffect(() => {
@@ -46,6 +49,21 @@ const App: React.FC = () => {
     
     setIsCheckingAuth(false);
   }, []);
+
+  // Auto-sync conversations every 3 seconds when auto-refresh is enabled
+  useEffect(() => {
+    if (!autoRefreshEnabled || !isAuthenticated) {
+      return;
+    }
+
+    const syncInterval = setInterval(() => {
+      // Trigger refresh by updating search query to force ConversationList to reload
+      // This is done by dispatching a custom event that ConversationList listens to
+      window.dispatchEvent(new CustomEvent('refreshConversations'));
+    }, 3000); // Sync every 3 seconds
+
+    return () => clearInterval(syncInterval);
+  }, [autoRefreshEnabled, isAuthenticated]);
 
   // Check if mobile
   useEffect(() => {
@@ -75,8 +93,19 @@ const App: React.FC = () => {
     setShowList(true);
   };
 
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    setIsAuthenticated(false);
+  };
+
   return (
     <div className="app-container">
+      {isAuthenticated && <Navbar onLogout={handleLogout} onSearch={handleSearch} />}
+      
       <SessionStatus />
 
       <div className="mailbox-main">
@@ -86,6 +115,8 @@ const App: React.FC = () => {
             <ConversationList
               onSelectConversation={handleSelectConversation}
               selectedContactId={selectedContactId}
+              searchQuery={searchQuery}
+              onAutoRefreshChange={setAutoRefreshEnabled}
             />
           </div>
         )}
