@@ -87,7 +87,7 @@ cd "$PROJECT_DIR"
 
 # Step 4: Database Migration
 separator
-log_info "Step 4/9: Running database migrations...
+log_info "Step 4/9: Running database migrations..."
 if [ -f "safe_fix.sql" ]; then
     log_info "Applying safe_fix.sql..."
     if mysql -h 127.0.0.1 -u root whatsapp_mailbox < safe_fix.sql 2>&1 | grep -v "already exists"; then
