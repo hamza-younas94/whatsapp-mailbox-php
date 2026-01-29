@@ -71,8 +71,9 @@ export function createApp(): Express {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-  // Serve static files (QR test page)
+  // Serve static files (QR test page and uploaded media)
   app.use(express.static(path.join(__dirname, '../public')));
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Logging middleware
   app.use((req, _res, next) => {

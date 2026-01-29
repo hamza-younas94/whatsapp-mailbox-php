@@ -65,6 +65,12 @@ export const messageAPI = {
     const { data } = await api.put(`/messages/${messageId}/read`);
     return data.data;
   },
+
+  // Send reaction to message
+  async sendReaction(messageId: string, emoji: string) {
+    const { data } = await api.post(`/messages/${messageId}/reaction`, { emoji });
+    return data.data;
+  },
 };
 
 export const sessionAPI = {
