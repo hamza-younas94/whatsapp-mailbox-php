@@ -1,7 +1,6 @@
 // src/server.ts
 // Express application setup
 
-// Load environment variables first
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -9,6 +8,8 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 import { getEnv } from '@config/env';
 import { connectDatabase, disconnectDatabase } from '@config/database';
 import { setupErrorMiddleware } from '@middleware/error.middleware';
@@ -32,6 +33,9 @@ import { ContactRepository } from '@repositories/contact.repository';
 import { ConversationRepository } from '@repositories/conversation.repository';
 import { getPrismaClient } from '@config/database';
 import logger from '@utils/logger';
+
+// Global Socket.IO instance for broadcasting events
+export let io: SocketIOServer | null = null;
 
 export function createApp(): Express {
   const app = express();
@@ -134,8 +138,7 @@ function setupReactionListener(): void {
   whatsappWebService.on('reaction', async (event: any) => {
     try {
       const { sessionId, messageId, reaction, from, timestamp } = event;
-
-      logger.info({ sessionId, messageId, reaction, from }, 'Reaction received');
+  logger.info({ sessionId, messageId, reaction, from }, 'Reaction received from WhatsApp');
 
       // Get session to find userId
       const session = whatsappWebService.getSession(sessionId);
@@ -164,6 +167,19 @@ function setupReactionListener(): void {
       });
 
       logger.info({ messageId: message.id, reaction }, 'Reaction saved to database');
+      
+          // Broadcast reaction to all connected users in this conversation via Socket.IO
+          if (io) {
+            io.to(`user:${userId}`).emit('reaction:updated', {
+              messageId: message.id,
+              waMessageId: messageId,
+              reaction: reaction,
+              from,
+              timestamp,
+              conversationId: message.conversationId,
+            });
+            logger.info({ messageId: message.id, userId }, 'Reaction broadcasted via Socket.IO');
+          }
     } catch (error) {
       logger.error({ error, event }, 'Failed to save reaction');
     }
@@ -357,17 +373,45 @@ export async function startServer(): Promise<void> {
     // Connect database
     await connectDatabase();
 
+    // Create HTTP server for Socket.IO
+    const httpServer = createServer(app);
+    io = new SocketIOServer(httpServer, {
+      cors: {
+        origin: env.CORS_ORIGIN,
+        methods: ['GET', 'POST'],
+        credentials: true,
+      },
+    });
+
+    // Socket.IO connection handling
+    io.on('connection', (socket) => {
+      logger.info({ socketId: socket.id }, 'Socket.IO client connected');
+
+      // Join user's room for targeted broadcasts
+      socket.on('join-user', (userId: string) => {
+        socket.join(`user:${userId}`);
+        logger.info({ socketId: socket.id, userId }, 'User joined socket room');
+      });
+
+      socket.on('disconnect', () => {
+        logger.info({ socketId: socket.id }, 'Socket.IO client disconnected');
+      });
+    });
+
     // Start listening
-    const server = app.listen(env.PORT, '0.0.0.0', () => {
-      logger.info({ port: env.PORT, env: env.NODE_ENV }, 'Server started');
+    httpServer.listen(env.PORT, '0.0.0.0', () => {
+      logger.info({ port: env.PORT, env: env.NODE_ENV }, 'Server started with Socket.IO');
     });
 
     // Graceful shutdown
     const gracefulShutdown = async (signal: string) => {
       logger.info({ signal }, 'Received shutdown signal');
 
-      server.close(async () => {
+      httpServer.close(async () => {
         await disconnectDatabase();
+        if (io) {
+          io.close();
+        }
         logger.info('Server shut down gracefully');
         process.exit(0);
       });

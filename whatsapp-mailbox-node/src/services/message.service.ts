@@ -355,17 +355,18 @@ export class MessageService implements IMessageService {
         throw new ValidationError('Cannot react to message without WhatsApp ID');
       }
 
-      await whatsappWebService.sendReaction(activeSession.id, message.waMessageId, emoji);
+      const normalizedEmoji = typeof emoji === 'string' ? emoji : '';
+      await whatsappWebService.sendReaction(activeSession.id, message.waMessageId, normalizedEmoji);
 
       // Update message metadata with reaction
       await this.messageRepository.update(messageId, {
         metadata: {
           ...(typeof message.metadata === 'object' ? message.metadata : {}),
-          reaction: emoji,
+          reaction: normalizedEmoji ? normalizedEmoji : null,
         } as any,
       });
 
-      logger.info({ messageId, emoji }, 'Reaction sent successfully');
+      logger.info({ messageId, emoji: normalizedEmoji }, 'Reaction sent successfully');
     } catch (error) {
       logger.error({ messageId, emoji, error }, 'Failed to send reaction');
       throw error;

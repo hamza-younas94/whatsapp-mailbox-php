@@ -113,7 +113,8 @@ export class MessageController {
     const { emoji } = req.body;
     const userId = requireUserId(req);
 
-    await this.messageService.sendReaction(userId, messageId, emoji);
+    const safeEmoji = typeof emoji === 'string' ? emoji : '';
+    await this.messageService.sendReaction(userId, messageId, safeEmoji);
 
     res.status(200).json({
       success: true,

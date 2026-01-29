@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { messageAPI } from '@/api/queries';
-import { subscribeToMessage, subscribeToMessageStatus, getSocket } from '@/api/socket';
+import { subscribeToMessage, subscribeToMessageStatus, subscribeToReactionUpdated, getSocket } from '@/api/socket';
 import MessageBubble from '@/components/MessageBubble';
 import MessageComposer from '@/components/MessageComposer';
 import '@/styles/chat-pane.css';
@@ -8,12 +8,15 @@ import '@/styles/chat-pane.css';
 interface Message {
   id: string;
   contactId: string;
+  conversationId?: string;
   content?: string;
   direction: 'INCOMING' | 'OUTGOING';
   status: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED' | 'RECEIVED';
   createdAt: string;
   mediaUrl?: string;
   mediaType?: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
+  reaction?: string | null;
+  metadata?: any;
 }
 
 interface ChatPaneProps {
@@ -92,6 +95,24 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, onUnload })
         )
       );
     });
+
+    // Subscribe to reaction updates
+    const unsubscribeReactions = subscribeToReactionUpdated((event) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === event.messageId
+            ? {
+                ...msg,
+                reaction: event.reaction || null,
+                metadata: {
+                  ...(typeof msg.metadata === 'object' ? msg.metadata : {}),
+                  reaction: event.reaction || null,
+                },
+              }
+            : msg
+        )
+      );
+    });
     
     // Also subscribe to message:sent event for outgoing messages
     const socket = getSocket();
@@ -106,6 +127,7 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, onUnload })
     return () => {
       messageSubscriptionRef.current?.();
       statusSubscriptionRef.current?.();
+      unsubscribeReactions?.();
       socket.off('message:sent', handleMessageSent);
     };
 

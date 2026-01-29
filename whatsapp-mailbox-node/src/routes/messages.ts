@@ -88,7 +88,7 @@ export function createMessageRoutes(): Router {
     '/:messageId/reaction',
     authMiddleware,
     validate(z.object({
-      emoji: z.string().min(1).max(10),
+      emoji: z.union([z.string().max(10), z.null()]).optional().transform((val) => val ?? ''),
     })),
     controller.sendReaction,
   );
