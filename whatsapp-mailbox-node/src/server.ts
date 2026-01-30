@@ -273,7 +273,7 @@ function setupIncomingMessageListener(): void {
           const normalizedMessage = messageText.replace(/^\/+/, '');
           const messageWords = messageText
             .split(/\s+/)
-            .map((word) => word.replace(/^\/+/, ''));
+            .map((word: string) => word.replace(/^\/+/, ''));
           const allQuickReplies = await quickReplyRepo.findByUserId(userId);
           const matchedReply = allQuickReplies.find((qr: any) => {
             if (!qr.shortcut) return false;
