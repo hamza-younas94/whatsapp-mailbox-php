@@ -36,6 +36,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
   });
 
   const hasMedia = message.messageType !== 'TEXT' && message.mediaUrl;
+  const mediaSrc = message.mediaUrl
+    ? (message.mediaUrl.startsWith('http') ? message.mediaUrl : `${window.location.origin}${message.mediaUrl}`)
+    : undefined;
 
   const handleReaction = async (emoji: string) => {
     try {
@@ -71,10 +74,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
           <div className="message-media">
             {message.messageType === 'IMAGE' && (
               <img 
-                src={message.mediaUrl} 
+                src={mediaSrc} 
                 alt="Message" 
                 className="media-image"
-                onClick={() => window.open(message.mediaUrl, '_blank')}
                 onError={(e) => {
                   console.error('Image failed to load:', message.mediaUrl);
                   (e.target as HTMLImageElement).style.display = 'none';
@@ -83,7 +85,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
             )}
             {message.messageType === 'VIDEO' && (
               <video 
-                src={message.mediaUrl} 
+                src={mediaSrc} 
                 controls 
                 className="media-video"
                 onError={(e) => {
@@ -96,7 +98,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
               <div className="media-audio-wrapper">
                 <div className="audio-icon">🎵</div>
                 <audio 
-                  src={message.mediaUrl} 
+                  src={mediaSrc} 
                   controls 
                   className="media-audio"
                   onError={(e) => {
@@ -107,7 +109,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
               </div>
             )}
             {message.messageType === 'DOCUMENT' && (
-              <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="document-link">
+              <a href={mediaSrc} target="_blank" rel="noopener noreferrer" className="document-link">
                 <span className="doc-icon">📎</span>
                 <span className="doc-text">{message.mediaType || 'Document'}</span>
                 <span className="doc-download">↓</span>

@@ -11,6 +11,7 @@ interface Conversation {
     phoneNumber: string;
     chatId?: string | null;
     name?: string;
+    contactType?: string | null;
   };
   unreadCount: number;
   lastMessage?: string;
@@ -91,7 +92,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             contact: {
               id: contact.id,
               phoneNumber: contact.phoneNumber || '',
+              chatId: contact.chatId || null,
               name: contact.name,
+              contactType: contact.contactType || null,
             },
             unreadCount: contact._count?.messages || 0,
             lastMessage: lastMessagePreview,
@@ -153,7 +156,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           .filter((conv) => conv && conv.contact && conv.contact.id) // Additional safety check
           .map((conv) => {
             const displayName = conv.contact?.name || conv.contact?.phoneNumber || 'Unknown';
-            const contactType = getContactTypeFromId(conv.contact?.chatId, conv.contact?.phoneNumber);
+            const contactType = getContactTypeFromId(
+              conv.contact?.chatId,
+              conv.contact?.phoneNumber,
+              conv.contact?.contactType,
+            );
             const typeInfo = getContactTypeInfo(contactType);
             const badgeClass = getContactTypeBadgeClass(contactType);
             

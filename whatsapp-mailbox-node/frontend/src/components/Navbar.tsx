@@ -12,6 +12,16 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const navItems = [
+    { label: 'Messages', href: '/messages.html' },
+    { label: 'Contacts', href: '/contacts.html' },
+    { label: 'Quick Replies', href: '/quick-replies.html' },
+    { label: 'Broadcasts', href: '/broadcasts.html' },
+    { label: 'Automations', href: '/automation.html' },
+    { label: 'Tags', href: '/tags.html' },
+    { label: 'Analytics', href: '/analytics.html' },
+  ];
+
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -49,6 +59,15 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, onSearch }) => {
             </svg>
             <span className="logo-text">WhatsApp Mailbox</span>
           </div>
+        </div>
+
+        {/* Navigation Links */}
+        <div className="navbar-links">
+          {navItems.map((item) => (
+            <a key={item.href} href={item.href} className="navbar-link">
+              {item.label}
+            </a>
+          ))}
         </div>
 
         {/* Center - Search Bar */}

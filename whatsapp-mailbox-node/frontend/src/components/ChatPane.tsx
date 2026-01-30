@@ -25,10 +25,11 @@ interface ChatPaneProps {
   contactId?: string;
   contactName?: string;
   chatId?: string;
+  contactType?: string | null;
   onUnload?: () => void;
 }
 
-const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, onUnload }) => {
+const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, contactType, onUnload }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -39,9 +40,9 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, onU
   const statusSubscriptionRef = useRef<(() => void) | null>(null);
 
   // Get contact type for display
-  const contactType = getContactTypeFromId(chatId);
-  const typeInfo = getContactTypeInfo(contactType);
-  const badgeClass = getContactTypeBadgeClass(contactType);
+  const contactTypeResolved = getContactTypeFromId(chatId, undefined, contactType);
+  const typeInfo = getContactTypeInfo(contactTypeResolved);
+  const badgeClass = getContactTypeBadgeClass(contactTypeResolved);
 
   // Load messages from API
   const loadMessages = useCallback(

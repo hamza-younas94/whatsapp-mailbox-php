@@ -18,16 +18,28 @@ export interface ContactTypeInfo {
  * - chatId ending with @newsletter = channel
  * - chatId ending with @broadcast = broadcast list
  */
-export function getContactTypeFromId(chatId?: string | null, phoneNumber?: string): ContactTypeEnum {
+export function getContactTypeFromId(
+  chatId?: string | null,
+  phoneNumber?: string,
+  contactType?: string | null,
+): ContactTypeEnum {
+  if (contactType) {
+    const normalized = contactType.toLowerCase();
+    if (normalized === 'group') return 'group';
+    if (normalized === 'channel') return 'channel';
+    if (normalized === 'broadcast') return 'broadcast';
+    if (normalized === 'individual' || normalized === 'business' || normalized === 'contact') return 'contact';
+  }
+
   if (!chatId && !phoneNumber) return 'unknown';
 
   const id = chatId || phoneNumber || '';
-  
+
   if (id.endsWith('@g.us')) return 'group';
   if (id.endsWith('@newsletter')) return 'channel';
   if (id.endsWith('@broadcast')) return 'broadcast';
   if (id.endsWith('@c.us') || id.includes('@c.us')) return 'contact';
-  
+
   // Default to contact if no suffix found
   return 'contact';
 }

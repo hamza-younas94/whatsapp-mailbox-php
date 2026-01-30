@@ -21,6 +21,16 @@ interface MessageComposerProps {
   disabled?: boolean;
 }
 
+const normalizeShortcut = (value?: string | null) => {
+  if (!value) return '';
+  return value.trim().replace(/^\/+/, '').toLowerCase();
+};
+
+const formatShortcut = (value?: string | null) => {
+  const normalized = normalizeShortcut(value);
+  return normalized ? `/${normalized}` : '';
+};
+
 export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoading = false, disabled = false }) => {
   const [content, setContent] = useState('');
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
@@ -54,7 +64,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoad
       });
       if (response.ok) {
         const result = await response.json();
-        setQuickReplies(result.data || []);
+        const replies = Array.isArray(result.data) ? result.data : (result.data?.data || []);
+        setQuickReplies(replies);
       }
     } catch (error) {
       console.error('Failed to load quick replies:', error);
@@ -70,11 +81,12 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoad
 
     const lastWord = content.split(' ').pop() || '';
     if (lastWord.startsWith('/') && lastWord.length > 1) {
-      const searchTerm = lastWord.substring(1).toLowerCase();
-      const filtered = quickReplies.filter(qr => 
-        qr.shortcut?.toLowerCase().includes(searchTerm) ||
-        qr.title?.toLowerCase().includes(searchTerm)
-      );
+      const searchTerm = normalizeShortcut(lastWord.substring(1));
+      const filtered = quickReplies.filter((qr) => {
+        const shortcut = normalizeShortcut(qr.shortcut);
+        const title = (qr.title || '').toLowerCase();
+        return shortcut.includes(searchTerm) || title.includes(searchTerm);
+      });
       setFilteredQuickReplies(filtered);
       setShowQuickReplies(filtered.length > 0);
       setSelectedReplyIndex(0);
@@ -297,7 +309,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, isLoad
               onMouseEnter={() => setSelectedReplyIndex(index)}
             >
               <div className="qr-header">
-                {reply.shortcut && <span className="qr-shortcut">/{reply.shortcut}</span>}
+                {reply.shortcut && <span className="qr-shortcut">{formatShortcut(reply.shortcut)}</span>}
                 <span className="qr-title">{reply.title}</span>
               </div>
               <div className="qr-preview">{reply.content.substring(0, 60)}...</div>
