@@ -263,6 +263,37 @@ function setupIncomingMessageListener(): void {
       const contactRepo = new ContactRepository(db);
       const conversationRepo = new ConversationRepository(db);
       const messageRepo = new MessageRepository(db);
+      const QuickReplyRepository = require('@repositories/quick-reply.repository').QuickReplyRepository;
+      const quickReplyRepo = new QuickReplyRepository(db);
+
+      // Auto-reply with quick replies on incoming messages (only for incoming, not outgoing)
+      if (!isOutgoing && body && body.trim()) {
+        try {
+          const messageText = body.toLowerCase().trim();
+          const allQuickReplies = await quickReplyRepo.findByUserId(userId);
+          const matchedReply = allQuickReplies.find((qr: any) => {
+            if (!qr.shortcut) return false;
+            const shortcutNormalized = qr.shortcut.toLowerCase().replace(/^\/+/, '');
+            // Match if exact match or shortcut appears as word
+            return messageText === shortcutNormalized || 
+                   messageText.split(/\s+/).includes(shortcutNormalized);
+          });
+          
+          if (matchedReply) {
+            const session = whatsappWebService.getSession(sessionId);
+            if (session) {
+              await session.client.sendMessage(from, matchedReply.content);
+              logger.info({ 
+                from, 
+                shortcut: matchedReply.shortcut,
+                reply: matchedReply.content.substring(0, 50)
+              }, 'Auto-reply sent for keyword match');
+            }
+          }
+        } catch (autoReplyError) {
+          logger.debug({ error: autoReplyError }, 'Failed to process auto-reply, continuing with normal message handling');
+        }
+      }
 
       // Prepare contact data with proper name resolution
       const contactDisplayName =

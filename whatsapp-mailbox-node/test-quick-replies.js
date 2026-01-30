@@ -10,7 +10,7 @@
  */
 
 const API_BASE = process.env.API_URL || 'http://localhost:3000';
-const AUTH_TOKEN = process.env.AUTH_TOKEN || 'test-token';
+const AUTH_TOKEN = process.env.AUTH_TOKEN;
 
 // Color codes for terminal output
 const colors = {
@@ -89,6 +89,11 @@ async function makeRequest(endpoint, method = 'GET', body = null) {
 }
 
 async function testQuickReplies() {
+  if (!AUTH_TOKEN) {
+    log('\n✗ AUTH_TOKEN is required. Example:', 'red');
+    log('  AUTH_TOKEN=YOUR_JWT API_URL=http://localhost:3000 node test-quick-replies.js\n', 'yellow');
+    process.exit(1);
+  }
   log('\n========================================', 'cyan');
   log('  Quick Reply Functionality Test', 'cyan');
   log('========================================\n', 'cyan');
