@@ -407,6 +407,43 @@ export async function startServer(): Promise<void> {
     // Start listening
     httpServer.listen(env.PORT, '0.0.0.0', () => {
       logger.info({ port: env.PORT, env: env.NODE_ENV }, 'Server started with Socket.IO');
+      
+      // Auto-restore WhatsApp sessions after server starts
+      setTimeout(async () => {
+        try {
+          logger.info('Attempting to auto-restore WhatsApp sessions...');
+          
+          // Check for existing session files
+          const fs = await import('fs');
+          const sessionPath = whatsappWebService.getSessionDir();
+          
+          if (fs.existsSync(sessionPath)) {
+            const sessionDirs = fs.readdirSync(sessionPath);
+            logger.info({ count: sessionDirs.length }, 'Found session directories');
+            
+            // Try to restore each session
+            for (const dir of sessionDirs) {
+              if (dir.startsWith('session_')) {
+                const sessionId = dir;
+                logger.info({ sessionId }, 'Restoring session...');
+                
+                try {
+                  // Extract userId from sessionId (format: session_<userId>)
+                  const userId = sessionId.replace('session_', '');
+                  await whatsappWebService.initializeSession(userId, sessionId);
+                  logger.info({ sessionId }, 'Session restored successfully');
+                } catch (error) {
+                  logger.error({ sessionId, error }, 'Failed to restore session');
+                }
+              }
+            }
+          } else {
+            logger.info('No existing sessions found');
+          }
+        } catch (error) {
+          logger.error({ error }, 'Failed to auto-restore sessions');
+        }
+      }, 5000); // Wait 5 seconds after server starts
     });
 
     // Graceful shutdown

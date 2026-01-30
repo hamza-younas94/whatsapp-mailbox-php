@@ -64,12 +64,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
   };
 
   return (
-    <div className={`message-bubble-wrapper ${isOwn ? 'own' : 'other'}`}>
-      <div 
-        className={`message-bubble ${isOwn ? 'own' : 'other'}`}
-        onMouseEnter={() => setShowReactions(true)}
-        onMouseLeave={() => setShowReactions(false)}
-      >
+    <div 
+      className={`message-bubble-wrapper ${isOwn ? 'own' : 'other'}`}
+      onMouseEnter={() => setShowReactions(true)}
+      onMouseLeave={() => !isLoading && setShowReactions(false)}
+    >
+      <div className={`message-bubble ${isOwn ? 'own' : 'other'}`}>
         {/* Media content */}
         {hasMedia && (
           <div className="message-media">

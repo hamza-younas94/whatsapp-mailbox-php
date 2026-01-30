@@ -61,6 +61,16 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
         if (offset === 0) {
           // Initial load: replace messages
           setMessages(response.data.reverse()); // Reverse to show oldest first
+          
+          // Mark unread messages as read
+          const unreadMessages = response.data.filter(
+            (msg: any) => msg.direction === 'INCOMING' && msg.status !== 'READ'
+          );
+          unreadMessages.forEach((msg: any) => {
+            messageAPI.markAsRead(msg.id).catch((err) => 
+              console.error('Failed to mark message as read:', err)
+            );
+          });
         } else {
           // Pagination: prepend older messages
           setMessages((prev) => [...response.data.reverse(), ...prev]);
@@ -128,21 +138,10 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
       );
     });
     
-    // Also subscribe to message:sent event for outgoing messages
-    const socket = getSocket();
-    const handleMessageSent = (msg: any) => {
-      if (msg.contactId === contactId || msg.conversationId) {
-        // Reload messages to get the latest
-        setTimeout(() => loadMessages(50, 0), 300);
-      }
-    };
-    socket.on('message:sent', handleMessageSent);
-    
     return () => {
       messageSubscriptionRef.current?.();
       statusSubscriptionRef.current?.();
       unsubscribeReactions?.();
-      socket.off('message:sent', handleMessageSent);
     };
 
     // Cleanup is handled in the subscription setup above
@@ -368,7 +367,7 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
           </div>
           <div className="chat-header-text">
             <h3 className="contact-name">{contactName || 'Unknown'}</h3>
-            {phoneNumber && <p className="contact-phone">{phoneNumber}</p>}
+            {phoneNumber && !phoneNumber.includes('@g.us') && <p className="contact-phone">{phoneNumber}</p>}
           </div>
         </div>
         <div className="chat-header-actions">

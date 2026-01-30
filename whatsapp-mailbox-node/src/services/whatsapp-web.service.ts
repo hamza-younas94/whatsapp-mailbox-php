@@ -536,6 +536,13 @@ export class WhatsAppWebService extends EventEmitter {
     
     return this.initializeSession(userId, sessionId);
   }
+
+  /**
+   * Get the session directory path (for auto-restore on startup)
+   */
+  getSessionDir(): string {
+    return this.sessionDir;
+  }
 }
 
 // Singleton instance

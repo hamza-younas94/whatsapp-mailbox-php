@@ -159,7 +159,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         {conversations
           .filter((conv) => conv && conv.contact && conv.contact.id) // Additional safety check
           .map((conv) => {
-            const displayName = conv.contact?.name || conv.contact?.phoneNumber || 'Unknown';
+            // Use the stored contact name which includes group names
+            const displayName = conv.contact?.name || conv.contactName || conv.contact?.phoneNumber || 'Unknown';
             const profilePic = conv.contact?.profilePhotoUrl || conv.contact?.avatarUrl;
             const contactType = getContactTypeFromId(
               conv.contact?.chatId,
