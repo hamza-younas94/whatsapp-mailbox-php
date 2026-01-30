@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { MessageEvent } from '@/api/socket';
 import { messageAPI } from '@/api/queries';
 import '@/styles/message-bubble-enhanced.css';
@@ -30,6 +30,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
   );
   const [isLoading, setIsLoading] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
+  const hideTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const time = new Date(message.createdAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -63,11 +64,29 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
     }
   };
 
+  const handleMouseEnter = () => {
+    // Clear any pending hide timeout
+    if (hideTimeout.current) {
+      clearTimeout(hideTimeout.current);
+      hideTimeout.current = null;
+    }
+    setShowReactions(true);
+  };
+
+  const handleMouseLeave = () => {
+    // Add a delay before hiding to allow moving to reaction picker
+    if (!isLoading) {
+      hideTimeout.current = setTimeout(() => {
+        setShowReactions(false);
+      }, 200);
+    }
+  };
+
   return (
     <div 
       className={`message-bubble-wrapper ${isOwn ? 'own' : 'other'}`}
-      onMouseEnter={() => setShowReactions(true)}
-      onMouseLeave={() => !isLoading && setShowReactions(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className={`message-bubble ${isOwn ? 'own' : 'other'}`}>
         {/* Media content */}

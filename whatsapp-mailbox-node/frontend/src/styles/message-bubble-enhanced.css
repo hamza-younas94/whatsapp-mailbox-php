@@ -259,6 +259,18 @@
   pointer-events: all;
 }
 
+/* Add invisible bridge between message and reaction picker to prevent hover gap */
+.reaction-picker::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 16px;
+  background: transparent;
+  pointer-events: auto;
+}
+
 @keyframes reactionPickerSlide {
   from {
     opacity: 0;
