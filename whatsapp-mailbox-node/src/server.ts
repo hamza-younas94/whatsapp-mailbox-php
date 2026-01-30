@@ -270,13 +270,17 @@ function setupIncomingMessageListener(): void {
       if (!isOutgoing && body && body.trim()) {
         try {
           const messageText = body.toLowerCase().trim();
+          const normalizedMessage = messageText.replace(/^\/+/, '');
+          const messageWords = messageText
+            .split(/\s+/)
+            .map((word) => word.replace(/^\/+/, ''));
           const allQuickReplies = await quickReplyRepo.findByUserId(userId);
           const matchedReply = allQuickReplies.find((qr: any) => {
             if (!qr.shortcut) return false;
             const shortcutNormalized = qr.shortcut.toLowerCase().replace(/^\/+/, '');
-            // Match if exact match or shortcut appears as word
-            return messageText === shortcutNormalized || 
-                   messageText.split(/\s+/).includes(shortcutNormalized);
+            // Match if exact match or shortcut appears as word (with or without leading slash)
+            return normalizedMessage === shortcutNormalized || 
+                   messageWords.includes(shortcutNormalized);
           });
           
           if (matchedReply) {
