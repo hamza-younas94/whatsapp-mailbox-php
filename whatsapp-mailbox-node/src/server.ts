@@ -342,6 +342,15 @@ function setupIncomingMessageListener(): void {
       // Ensure we never violate the unique constraint on waMessageId
       const safeWaMessageId = waMessageId || `${from}-${timestamp}-${Date.now()}`;
 
+      // Deduplicate if this waMessageId already exists (prevents double saves)
+      if (waMessageId) {
+        const existing = await messageRepo.findByWaMessageId(waMessageId);
+        if (existing) {
+          logger.info({ waMessageId, existingId: existing.id }, 'Skipping duplicate message by waMessageId');
+          return;
+        }
+      }
+
       // Handle media download if message has media
       let mediaUrl: string | undefined;
       if (hasMedia && message) {
@@ -356,7 +365,7 @@ function setupIncomingMessageListener(): void {
       }
 
       // Save message to database
-      await messageRepo.create({
+      const savedMessage = await messageRepo.create({
         user: { connect: { id: userId } },
         contact: { connect: { id: contact.id } },
         conversation: { connect: { id: conversation.id } },
@@ -367,6 +376,22 @@ function setupIncomingMessageListener(): void {
         waMessageId: safeWaMessageId,
         mediaUrl: mediaUrl,
       } as any);
+
+      // Emit real-time update to client
+      if (io) {
+        io.to(`user:${userId}`).emit('message:received', {
+          id: savedMessage.id,
+          contactId: contact.id,
+          conversationId: conversation.id,
+          content: savedMessage.content || '',
+          createdAt: savedMessage.createdAt.toISOString(),
+          messageType: savedMessage.messageType,
+          direction: savedMessage.direction,
+          status: savedMessage.status,
+          mediaUrl: savedMessage.mediaUrl,
+          mediaType: savedMessage.mediaType,
+        });
+      }
 
   logger.info({ userId, phoneNumber: sanitizedPhone, contactId: contact.id, hasMedia, mediaUrl, isOutgoing }, isOutgoing ? 'Saved outgoing message to database' : 'Saved incoming message to database');
     } catch (error) {

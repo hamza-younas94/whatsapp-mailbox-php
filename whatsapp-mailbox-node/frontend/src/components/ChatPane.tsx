@@ -12,6 +12,7 @@ interface Message {
   contactId: string;
   conversationId?: string;
   content?: string;
+  messageType?: string;
   direction: 'INCOMING' | 'OUTGOING';
   status: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED' | 'RECEIVED';
   createdAt: string;
@@ -100,14 +101,21 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
     // Subscribe to new messages (incoming)
     messageSubscriptionRef.current = subscribeToMessage((msg) => {
       if (msg.contactId === contactId) {
-        setMessages((prev) => [...prev, {
-          id: msg.id,
-          contactId: msg.contactId,
-          content: msg.content,
-          direction: 'INCOMING',
-          status: 'RECEIVED',
-          createdAt: msg.createdAt,
-        }]);
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) return prev;
+          return [...prev, {
+            id: msg.id,
+            contactId: msg.contactId,
+            conversationId: msg.conversationId,
+            content: msg.content,
+            messageType: msg.messageType,
+            direction: msg.direction || 'INCOMING',
+            status: msg.status || 'RECEIVED',
+            createdAt: msg.createdAt,
+            mediaUrl: msg.mediaUrl || undefined,
+            mediaType: msg.mediaType as any,
+          }];
+        });
       }
     });
 

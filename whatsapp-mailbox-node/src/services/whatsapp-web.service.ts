@@ -209,34 +209,34 @@ export class WhatsAppWebService extends EventEmitter {
 
     // Disconnected event
     client.on('disconnected', (reason) => {
-        this.initializingSessions.delete(id);
+      this.initializingSessions.delete(id);
       session.status = 'DISCONNECTED';
       this.emit('disconnected', { sessionId: id, reason });
       logger.warn({ sessionId: id, reason }, 'WhatsApp Web disconnected');
+    });
 
-        // Message reaction event
-        client.on('message_reaction', async (reaction: any) => {
-          try {
-            this.emit('reaction', {
-              sessionId: id,
-              messageId: reaction.id._serialized,
-              reaction: reaction.reaction,
-              from: reaction.senderId || reaction.id.remote,
-              timestamp: reaction.timestamp || Date.now(),
-            });
-            logger.info({ sessionId: id, messageId: reaction.id._serialized, reaction: reaction.reaction }, 'Reaction received');
-          } catch (error) {
-            logger.error({ error, sessionId: id }, 'Failed to process reaction');
-          }
+    // Message reaction event
+    client.on('message_reaction', async (reaction: any) => {
+      try {
+        this.emit('reaction', {
+          sessionId: id,
+          messageId: reaction.id._serialized,
+          reaction: reaction.reaction,
+          from: reaction.senderId || reaction.id.remote,
+          timestamp: reaction.timestamp || Date.now(),
         });
+        logger.info({ sessionId: id, messageId: reaction.id._serialized, reaction: reaction.reaction }, 'Reaction received');
+      } catch (error) {
+        logger.error({ error, sessionId: id }, 'Failed to process reaction');
+      }
+    });
 
-        // Auth failure event
-        client.on('auth_failure', (error) => {
-          session.status = 'DISCONNECTED';
-          this.initializingSessions.delete(id);
-          this.emit('auth_failure', { sessionId: id, error });
-          logger.error({ sessionId: id, error }, 'WhatsApp Web authentication failed');
-        });
+    // Auth failure event
+    client.on('auth_failure', (error) => {
+      session.status = 'DISCONNECTED';
+      this.initializingSessions.delete(id);
+      this.emit('auth_failure', { sessionId: id, error });
+      logger.error({ sessionId: id, error }, 'WhatsApp Web authentication failed');
     });
   }
 

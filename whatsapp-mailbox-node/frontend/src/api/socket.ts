@@ -73,7 +73,11 @@ export interface IMessageReceivedEvent {
   conversationId: string;
   content: string;
   createdAt: string;
-  messageType: string;
+  messageType?: string;
+  direction?: 'INCOMING' | 'OUTGOING';
+  status?: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED' | 'RECEIVED';
+  mediaUrl?: string | null;
+  mediaType?: string | null;
 }
 
 export interface IMessageSentEvent {
