@@ -9,8 +9,8 @@
  * 3. Verifying autocomplete search
  */
 
-const API_BASE = process.env.API_URL || 'http://localhost:3001';
-const AUTH_TOKEN = process.env.AUTH_TOKEN || 'your-auth-token';
+const API_BASE = process.env.API_URL || 'http://localhost:3000';
+const AUTH_TOKEN = process.env.AUTH_TOKEN || 'test-token';
 
 // Color codes for terminal output
 const colors = {

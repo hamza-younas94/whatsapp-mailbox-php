@@ -135,7 +135,7 @@ const App: React.FC = () => {
             )}
             <ChatPane
               contactId={selectedContactId}
-              contactName={selectedContact?.contactName}
+              contactName={selectedContact?.contact?.name}
               chatId={selectedContact?.contact?.chatId}
               contactType={selectedContact?.contact?.contactType}
               profilePic={selectedContact?.contact?.profilePhotoUrl || selectedContact?.contact?.avatarUrl}
