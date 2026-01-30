@@ -138,6 +138,8 @@ const App: React.FC = () => {
               contactName={selectedContact?.contactName}
               chatId={selectedContact?.contact?.chatId}
               contactType={selectedContact?.contact?.contactType}
+              profilePic={selectedContact?.contact?.profilePhotoUrl || selectedContact?.contact?.avatarUrl}
+              phoneNumber={selectedContact?.contact?.phoneNumber}
             />
           </div>
         )}

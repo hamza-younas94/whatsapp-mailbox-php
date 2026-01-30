@@ -188,25 +188,86 @@ export class WhatsAppWebService extends EventEmitter {
         return;
       }
 
-      // Ping-pong test command (alternative to message.reply which may not work in all versions)
-      if (message.body.toLowerCase() === 'ping') {
-        try {
-          logger.info({ sessionId: id, from: message.from }, 'Ping received, replying with pong');
-          // Send pong without sendSeen option
-          await client.sendMessage(message.from, 'pong');
-          logger.info({ sessionId: id, from: message.from }, 'Pong sent successfully');
-        } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : String(error);
-          logger.error({ errorMsg, sessionId: id, from: message.from }, 'Failed to send pong reply');
-        }
+      // Process incoming message
+      await this.processMessage(id, message, false);
+    });
+
+    // Message create event - captures outgoing messages sent from mobile/desktop
+    client.on('message_create', async (message: WAMessage) => {
+      // Ignore WhatsApp status broadcast system messages
+      if (message.from === 'status@broadcast' || message.to === 'status@broadcast') {
+        logger.debug({ sessionId: id }, 'Ignoring status broadcast message');
+        return;
       }
 
-      // Try to get contact details from the message object
+      // Only process if message was sent by us (fromMe = true)
+      if (message.fromMe) {
+        logger.info({ sessionId: id, to: message.to }, 'Outgoing message from mobile/desktop detected');
+        await this.processMessage(id, message, true);
+      }
+    });
+
+    // Disconnected event
+    client.on('disconnected', (reason) => {
+        this.initializingSessions.delete(id);
+      session.status = 'DISCONNECTED';
+      this.emit('disconnected', { sessionId: id, reason });
+      logger.warn({ sessionId: id, reason }, 'WhatsApp Web disconnected');
+
+        // Message reaction event
+        client.on('message_reaction', async (reaction: any) => {
+          try {
+            this.emit('reaction', {
+              sessionId: id,
+              messageId: reaction.id._serialized,
+              reaction: reaction.reaction,
+              from: reaction.senderId || reaction.id.remote,
+              timestamp: reaction.timestamp || Date.now(),
+            });
+            logger.info({ sessionId: id, messageId: reaction.id._serialized, reaction: reaction.reaction }, 'Reaction received');
+          } catch (error) {
+            logger.error({ error, sessionId: id }, 'Failed to process reaction');
+          }
+        });
+
+        // Auth failure event
+        client.on('auth_failure', (error) => {
+          session.status = 'DISCONNECTED';
+          this.initializingSessions.delete(id);
+          this.emit('auth_failure', { sessionId: id, error });
+          logger.error({ sessionId: id, error }, 'WhatsApp Web authentication failed');
+        });
+    });
+  }
+
+  /**
+   * Process a message (incoming or outgoing)
+   */
+  private async processMessage(sessionId: string, message: WAMessage, isOutgoing: boolean): Promise<void> {
+    // Ping-pong test command (for incoming messages only)
+    if (!isOutgoing && message.body.toLowerCase() === 'ping') {
+      try {
+        logger.info({ sessionId, from: message.from }, 'Ping received, replying with pong');
+        const session = this.sessions.get(sessionId);
+        if (session) {
+          await session.client.sendMessage(message.from, 'pong');
+          logger.info({ sessionId, from: message.from }, 'Pong sent successfully');
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        logger.error({ errorMsg, sessionId, from: message.from }, 'Failed to send pong reply');
+      }
+    }
+
+    // Try to get contact details from the message object
       let contactName: string | undefined;
       let contactPushName: string | undefined;
       let contactBusinessName: string | undefined;
       let profilePhotoUrl: string | undefined;
       let isBusiness = false;
+
+      // For outgoing messages, use message.to instead of message.from
+      const chatId = isOutgoing ? message.to : message.from;
 
       try {
         // Access contact information from the message
@@ -225,24 +286,26 @@ export class WhatsAppWebService extends EventEmitter {
               try {
                 profilePhotoUrl = await contact.getProfilePicUrl();
               } catch (photoError) {
-                logger.debug({ from: message.from }, 'Failed to fetch profile photo');
+                logger.debug({ chatId }, 'Failed to fetch profile photo');
               }
             }
           }
         }
       } catch (contactError) {
-        logger.debug({ from: message.from, error: contactError }, 'Failed to extract contact details');
+        logger.debug({ chatId, error: contactError }, 'Failed to extract contact details');
       }
 
+      // Emit message event with direction indicator
       this.emit('message', {
-        sessionId: id,
-        from: message.from,
+        sessionId,
+        from: chatId,
         body: message.body,
         hasMedia: message.hasMedia,
         timestamp: message.timestamp,
         waMessageId: message.id?._serialized,
         messageType: message.type,
         message: message, // Pass full message object for media download
+        isOutgoing, // Indicate if this is an outgoing message
         // Add contact information
         contactName: contactName || contactPushName,
         contactPushName,
@@ -250,43 +313,6 @@ export class WhatsAppWebService extends EventEmitter {
         profilePhotoUrl,
         isBusiness,
       });
-
-      logger.debug({ sessionId: id, from: message.from, contactName, hasMedia: message.hasMedia }, 'Message received with contact info');
-    });
-
-    // Message reaction event
-    client.on('message_reaction', async (reaction: any) => {
-      try {
-        this.emit('reaction', {
-          sessionId: id,
-          messageId: reaction.id._serialized,
-          reaction: reaction.reaction,
-          from: reaction.senderId || reaction.id.remote,
-          timestamp: reaction.timestamp || Date.now(),
-        });
-        logger.info({ sessionId: id, messageId: reaction.id._serialized, reaction: reaction.reaction }, 'Reaction received');
-      } catch (error) {
-        logger.error({ error, sessionId: id }, 'Failed to process reaction');
-      }
-    });
-
-    // Disconnected event
-    client.on('disconnected', (reason) => {
-      session.status = 'DISCONNECTED';
-      // Remove from initializing set
-      this.initializingSessions.delete(id);
-      this.emit('disconnected', { sessionId: id, reason });
-      logger.warn({ sessionId: id, reason }, 'WhatsApp Web disconnected');
-    });
-
-    // Auth failure event
-    client.on('auth_failure', (error) => {
-      session.status = 'DISCONNECTED';
-      // Remove from initializing set
-      this.initializingSessions.delete(id);
-      this.emit('auth_failure', { sessionId: id, error });
-      logger.error({ sessionId: id, error }, 'WhatsApp Web authentication failed');
-    });
   }
 
   /**

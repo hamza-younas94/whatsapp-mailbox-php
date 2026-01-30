@@ -359,13 +359,14 @@
         async function editContact(id) {
             const response = await fetchWithAuth(`${API_BASE}/contacts/${id}`);
             if (response.ok) {
-                const contact = await response.json();
+                const result = await response.json();
+                const contact = result.data || result; // Handle both wrapped and unwrapped responses
                 document.getElementById('modalTitle').textContent = 'Edit Contact';
-                document.getElementById('contactId').value = contact.id;
-                document.getElementById('phoneNumber').value = contact.phoneNumber;
+                document.getElementById('contactId').value = contact.id || '';
+                document.getElementById('phoneNumber').value = contact.phoneNumber || '';
                 document.getElementById('name').value = contact.name || '';
                 document.getElementById('email').value = contact.email || '';
-                document.getElementById('tags').value = (contact.tags || []).map(t => t.name).join(', ');
+                document.getElementById('tags').value = (contact.tags || []).map(t => t.name || t).join(', ');
                 document.getElementById('contactModal').classList.remove('hidden');
             }
         }

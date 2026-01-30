@@ -29,6 +29,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
     message.reaction || message.metadata?.reaction
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [showImagePreview, setShowImagePreview] = useState(false);
 
   const time = new Date(message.createdAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -73,15 +74,35 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
         {hasMedia && (
           <div className="message-media">
             {message.messageType === 'IMAGE' && (
-              <img 
-                src={mediaSrc} 
-                alt="Message" 
-                className="media-image"
-                onError={(e) => {
-                  console.error('Image failed to load:', message.mediaUrl);
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
+              <>
+                <img 
+                  src={mediaSrc} 
+                  alt="Message" 
+                  className="media-image"
+                  onClick={() => setShowImagePreview(true)}
+                  style={{ cursor: 'pointer' }}
+                  onError={(e) => {
+                    console.error('Image failed to load:', message.mediaUrl);
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                {showImagePreview && (
+                  <div 
+                    className="image-preview-modal" 
+                    onClick={() => setShowImagePreview(false)}
+                  >
+                    <div className="image-preview-content">
+                      <button 
+                        className="image-preview-close"
+                        onClick={() => setShowImagePreview(false)}
+                      >
+                        ✕
+                      </button>
+                      <img src={mediaSrc} alt="Full size" className="image-preview-img" />
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             {message.messageType === 'VIDEO' && (
               <video 

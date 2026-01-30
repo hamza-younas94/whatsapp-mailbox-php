@@ -204,6 +204,7 @@ function setupIncomingMessageListener(): void {
         waMessageId,
         messageType,
         message, // Full WhatsApp message object
+          isOutgoing, // Whether this is an outgoing message
         contactName,
         contactPushName,
         contactBusinessName,
@@ -220,13 +221,14 @@ function setupIncomingMessageListener(): void {
           timestamp,
           messageType,
           contactName,
+          isOutgoing,
         },
-        'RAW incoming message event'
+        isOutgoing ? 'RAW outgoing message event (from mobile/desktop)' : 'RAW incoming message event'
       );
 
       // Skip messages with no content and no media (read receipts, delivery confirmations, etc.)
       if (!body && !hasMedia) {
-        logger.debug({ sessionId, from, messageType }, 'Skipping empty message with no media');
+        logger.debug({ sessionId, from, messageType, isOutgoing }, 'Skipping empty message with no media');
         return;
       }
 
@@ -248,11 +250,12 @@ function setupIncomingMessageListener(): void {
         {
           userId,
           phoneNumber: sanitizedPhone,
+                    isOutgoing,
           body: body?.substring(0, 50),
           messageType,
           contactName,
         },
-        'Processing incoming WhatsApp message'
+        isOutgoing ? 'Processing outgoing WhatsApp message' : 'Processing incoming WhatsApp message'
       );
 
       // Create repositories with prisma client
@@ -279,7 +282,7 @@ function setupIncomingMessageListener(): void {
         lastActiveAt: new Date(timestamp * 1000),
       });
 
-      // Update contact with latest info if we have new data
+  // Update contact with latest info if we have new data
       if (
         (contactName && contactName !== contact.name) ||
         (contactPushName && (contactPushName !== (contact as any).pushName)) ||
@@ -324,19 +327,19 @@ function setupIncomingMessageListener(): void {
         conversation: { connect: { id: conversation.id } },
         content: body || (hasMedia ? `[${normalizedType}]` : ''),
         messageType: normalizedType as any,
-        direction: 'INCOMING',
-        status: 'RECEIVED',
+        direction: isOutgoing ? 'OUTGOING' : 'INCOMING',
+        status: isOutgoing ? 'SENT' : 'RECEIVED',
         waMessageId: safeWaMessageId,
         mediaUrl: mediaUrl,
       } as any);
 
-      logger.info({ userId, phoneNumber: sanitizedPhone, contactId: contact.id, hasMedia, mediaUrl }, 'Saved incoming message to database');
+  logger.info({ userId, phoneNumber: sanitizedPhone, contactId: contact.id, hasMedia, mediaUrl, isOutgoing }, isOutgoing ? 'Saved outgoing message to database' : 'Saved incoming message to database');
     } catch (error) {
-      logger.error({ error, event }, 'Failed to save incoming WhatsApp message');
+      logger.error({ error, event }, 'Failed to save WhatsApp message');
     }
   });
 
-  logger.info('WhatsApp incoming message listener initialized');
+  logger.info('WhatsApp message listener initialized (incoming and outgoing)');
 }
 
 

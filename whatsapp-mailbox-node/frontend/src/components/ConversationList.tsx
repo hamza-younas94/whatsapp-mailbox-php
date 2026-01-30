@@ -12,6 +12,8 @@ interface Conversation {
     chatId?: string | null;
     name?: string;
     contactType?: string | null;
+    avatarUrl?: string | null;
+    profilePhotoUrl?: string | null;
   };
   unreadCount: number;
   lastMessage?: string;
@@ -95,6 +97,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               chatId: contact.chatId || null,
               name: contact.name,
               contactType: contact.contactType || null,
+              avatarUrl: contact.avatarUrl || null,
+              profilePhotoUrl: contact.profilePhotoUrl || null,
             },
             unreadCount: contact._count?.messages || 0,
             lastMessage: lastMessagePreview,
@@ -154,7 +158,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
         {conversations
           .filter((conv) => conv && conv.contact && conv.contact.id) // Additional safety check
-          .map((conv) => {
+          .map((coprofilePic = conv.contact?.profilePhotoUrl || conv.contact?.avatarUrl;
+            const nv) => {
             const displayName = conv.contact?.name || conv.contact?.phoneNumber || 'Unknown';
             const contactType = getContactTypeFromId(
               conv.contact?.chatId,
@@ -187,7 +192,22 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 className={`conversation-item ${selectedContactId === conv.contact?.id ? 'selected' : ''} ${conv.unreadCount > 0 ? 'has-unread' : ''}`}
                 onClick={() => conv.contact?.id && onSelectConversation(conv.contact.id, conv)}
               >
-                <div className="conv-avatar">
+                <d{profilePic ? (
+                    <img 
+                      src={profilePic} 
+                      alt={displayName} 
+                      className="avatar-image"
+                      onError={(e) => {
+                        // Fallback to text avatar on image load error
+                        e.currentTarget.style.display = 'none';
+                        const textAvatar = e.currentTarget.nextElementSibling;
+                        if (textAvatar) {
+                          (textAvatar as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <span className="avatar-text" style={{ display: profilePic ? 'none' : 'flex' }}
                   <span className="avatar-text">
                     {((conv.contact?.name?.charAt(0) || conv.contact?.phoneNumber?.charAt(0)) || '?').toUpperCase()}
                   </span>
