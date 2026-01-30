@@ -266,39 +266,6 @@ function setupIncomingMessageListener(): void {
       const QuickReplyRepository = require('@repositories/quick-reply.repository').QuickReplyRepository;
       const quickReplyRepo = new QuickReplyRepository(db);
 
-      // Auto-reply with quick replies on incoming messages (only for incoming, not outgoing)
-      if (!isOutgoing && body && body.trim()) {
-        try {
-          const messageText = body.toLowerCase().trim();
-          const normalizedMessage = messageText.replace(/^\/+/, '');
-          const messageWords = messageText
-            .split(/\s+/)
-            .map((word: string) => word.replace(/^\/+/, ''));
-          const allQuickReplies = await quickReplyRepo.findByUserId(userId);
-          const matchedReply = allQuickReplies.find((qr: any) => {
-            if (!qr.shortcut) return false;
-            const shortcutNormalized = qr.shortcut.toLowerCase().replace(/^\/+/, '');
-            // Match if exact match or shortcut appears as word (with or without leading slash)
-            return normalizedMessage === shortcutNormalized || 
-                   messageWords.includes(shortcutNormalized);
-          });
-          
-          if (matchedReply) {
-            const session = whatsappWebService.getSession(sessionId);
-            if (session) {
-              await session.client.sendMessage(from, matchedReply.content);
-              logger.info({ 
-                from, 
-                shortcut: matchedReply.shortcut,
-                reply: matchedReply.content.substring(0, 50)
-              }, 'Auto-reply sent for keyword match');
-            }
-          }
-        } catch (autoReplyError) {
-          logger.debug({ error: autoReplyError }, 'Failed to process auto-reply, continuing with normal message handling');
-        }
-      }
-
       // Prepare contact data with proper name resolution
       const contactDisplayName =
         contactBusinessName || contactName || contactPushName || sanitizedPhone;
@@ -335,6 +302,80 @@ function setupIncomingMessageListener(): void {
 
       // Get or create conversation
       const conversation = await conversationRepo.findOrCreate(userId, contact.id);
+
+      // Auto-reply with quick replies on incoming messages (only for incoming, not outgoing)
+      if (!isOutgoing && body && body.trim()) {
+        try {
+          const messageText = body.toLowerCase().trim();
+          const normalizedMessage = messageText.replace(/^\/+/, '');
+          const messageWords = messageText
+            .split(/\s+/)
+            .map((word: string) => word.replace(/^\/+/, ''));
+          const allQuickReplies = await quickReplyRepo.findByUserId(userId);
+          const matchedReply = allQuickReplies.find((qr: any) => {
+            if (!qr.shortcut) return false;
+            const shortcutNormalized = qr.shortcut.toLowerCase().replace(/^\/+/, '');
+            // Match if exact match or shortcut appears as word (with or without leading slash)
+            return normalizedMessage === shortcutNormalized || 
+                   messageWords.includes(shortcutNormalized);
+          });
+          
+          if (matchedReply) {
+            const session = whatsappWebService.getSession(sessionId);
+            if (session) {
+              try {
+                // Send the auto-reply
+                const sentMsg = await session.client.sendMessage(from, matchedReply.content);
+                
+                // Save auto-reply to database history
+                const autoReplyWaId = sentMsg.id?.id || `auto-${from}-${Date.now()}`;
+                const savedAutoReply = await messageRepo.create({
+                  user: { connect: { id: userId } },
+                  contact: { connect: { id: contact.id } },
+                  conversation: { connect: { id: conversation.id } },
+                  content: matchedReply.content,
+                  messageType: 'TEXT' as any,
+                  direction: 'OUTGOING',
+                  status: 'SENT',
+                  waMessageId: autoReplyWaId,
+                } as any);
+                
+                // Emit auto-reply to client in real-time
+                if (io) {
+                  io.to(`user:${userId}`).emit('message:received', {
+                    id: savedAutoReply.id,
+                    contactId: contact.id,
+                    conversationId: conversation.id,
+                    content: savedAutoReply.content || '',
+                    createdAt: savedAutoReply.createdAt.toISOString(),
+                    messageType: savedAutoReply.messageType,
+                    direction: savedAutoReply.direction,
+                    status: savedAutoReply.status,
+                  });
+                }
+                
+                logger.info({ 
+                  from, 
+                  shortcut: matchedReply.shortcut,
+                  reply: matchedReply.content.substring(0, 50),
+                  savedId: savedAutoReply.id
+                }, 'Auto-reply sent and saved to history');
+              } catch (sendError: any) {
+                // Handle detached frame errors - try to reconnect
+                if (sendError.message?.includes('detached Frame')) {
+                  logger.warn({ sessionId, error: sendError.message }, 'Detached frame detected, will attempt reconnection');
+                  session.status = 'DISCONNECTED';
+                  // Session will be auto-reconnected by the next operation or user action
+                } else {
+                  throw sendError;
+                }
+              }
+            }
+          }
+        } catch (autoReplyError) {
+          logger.debug({ error: autoReplyError }, 'Failed to process auto-reply, continuing with normal message handling');
+        }
+      }
 
       // Derive a Prisma-safe message type from WhatsApp message metadata
       const normalizedType = normalizeMessageType(messageType, hasMedia);

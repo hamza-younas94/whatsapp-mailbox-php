@@ -217,12 +217,26 @@ export class MessageService implements IMessageService {
         const targetChatId = typeof numberId === 'object' ? numberId._serialized : numberId;
         
         // Send message (removed sendSeen: false option as it may not be supported)
-        const waMessage = await withTimeout(
-          activeSession.client.sendMessage(targetChatId as any, input.content),
-          30000,
-          'WhatsApp send timed out',
-        );
-        logger.info({ messageId: waMessage.id.id }, 'WhatsApp message sent successfully');
+        let waMessage;
+        try {
+          waMessage = await withTimeout(
+            activeSession.client.sendMessage(targetChatId as any, input.content),
+            30000,
+            'WhatsApp send timed out',
+          );
+          logger.info({ messageId: waMessage.id.id }, 'WhatsApp message sent successfully');
+        } catch (sendError: any) {
+          // Handle detached frame errors - mark session as disconnected
+          if (sendError.message?.includes('detached Frame')) {
+            logger.warn({ 
+              sessionId: activeSession.id, 
+              error: sendError.message 
+            }, 'Detached frame detected - session needs reconnection');
+            activeSession.status = 'DISCONNECTED';
+            throw new ExternalServiceError('WhatsApp Web', 'Session disconnected. Please scan QR code to reconnect.');
+          }
+          throw sendError;
+        }
 
         // Update message with WhatsApp message ID
         return await this.messageRepository.update(message.id, {
