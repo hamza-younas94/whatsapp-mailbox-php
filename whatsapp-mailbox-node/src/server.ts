@@ -392,6 +392,26 @@ function setupIncomingMessageListener(): void {
         }
       }
 
+      // Additional deduplication: check for recent messages with same content
+      // This prevents auto-replies from being saved twice (once manually, once via message_create event)
+      if (body && body.trim()) {
+        const recentDuplicate = await messageRepo.findRecentByContent(
+          userId,
+          contact.id,
+          body,
+          isOutgoing ? 'OUTGOING' : 'INCOMING',
+          3 // Check within last 3 seconds
+        );
+        if (recentDuplicate) {
+          logger.info({ 
+            messageId: recentDuplicate.id, 
+            content: body.substring(0, 50),
+            direction: isOutgoing ? 'OUTGOING' : 'INCOMING'
+          }, 'Skipping duplicate message by content (saved recently)');
+          return;
+        }
+      }
+
       // Handle media download if message has media
       let mediaUrl: string | undefined;
       if (hasMedia && message) {

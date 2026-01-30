@@ -38,6 +38,7 @@ export interface IMessageRepository {
   update(id: string, data: Prisma.MessageUpdateInput): Promise<Message>;
   delete(id: string): Promise<Message>;
   findByWaMessageId(waMessageId: string): Promise<Message | null>;
+  findRecentByContent(userId: string, contactId: string, content: string, direction: string, withinSeconds: number): Promise<Message | null>;
   updateStatus(id: string, status: string): Promise<Message>;
   getUnreadCount(conversationId: string): Promise<number>;
 }
@@ -119,6 +120,26 @@ export class MessageRepository extends BaseRepository<Message> implements IMessa
   async findByWaMessageId(waMessageId: string): Promise<Message | null> {
     return this.prisma.message.findUnique({
       where: { waMessageId },
+    });
+  }
+
+  async findRecentByContent(
+    userId: string,
+    contactId: string,
+    content: string,
+    direction: string,
+    withinSeconds: number = 3
+  ): Promise<Message | null> {
+    const cutoffTime = new Date(Date.now() - withinSeconds * 1000);
+    return this.prisma.message.findFirst({
+      where: {
+        userId,
+        contactId,
+        content,
+        direction: direction as any,
+        createdAt: { gte: cutoffTime },
+      },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
