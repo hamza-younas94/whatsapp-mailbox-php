@@ -358,11 +358,18 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
   return (
     <div className="chat-pane">
       <div className="chat-header">
-        <div className="chat-header-avatar">
-          {profilePic ? (
-            <img src={profilePic} alt={contactName || 'Contact'} className="header-avatar-img" />
-          ) : (
-          {phoneNumber && <p className="contact-phone">{phoneNumber}</p>}
+        <div className="chat-header-info">
+          <div className="chat-header-avatar">
+            {profilePic ? (
+              <img src={profilePic} alt={contactName || 'Contact'} className="header-avatar-img" />
+            ) : (
+              <div className="header-avatar-placeholder">{contactName?.[0] || '?'}</div>
+            )}
+          </div>
+          <div className="chat-header-text">
+            <h3 className="contact-name">{contactName || 'Unknown'}</h3>
+            {phoneNumber && <p className="contact-phone">{phoneNumber}</p>}
+          </div>
         </div>
         <div className="chat-header-actions">
           <button 
@@ -469,17 +476,7 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
             )}
           </div>
         </div>
-      )} className="chat-header-title">
-          <h2 className="contact-name">{contactName || 'Unknown Contact'}</h2>
-          <span className={badgeClass} title={typeInfo.label}>
-            {typeInfo.icon} {typeInfo.label}
-          </span>
-        </div>
-        <div className="chat-header-actions">
-          <button className="icon-button">📞</button>
-          <button className="icon-button">ℹ️</button>
-        </div>
-      </div>
+      )}
 
       <div className="messages-container" ref={scrollRef} onScroll={handleScroll}>
         {loading && <div className="loading-indicator">Loading messages...</div>}

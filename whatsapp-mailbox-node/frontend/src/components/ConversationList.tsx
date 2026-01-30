@@ -158,9 +158,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
         {conversations
           .filter((conv) => conv && conv.contact && conv.contact.id) // Additional safety check
-          .map((coprofilePic = conv.contact?.profilePhotoUrl || conv.contact?.avatarUrl;
-            const nv) => {
+          .map((conv) => {
             const displayName = conv.contact?.name || conv.contact?.phoneNumber || 'Unknown';
+            const profilePic = conv.contact?.profilePhotoUrl || conv.contact?.avatarUrl;
             const contactType = getContactTypeFromId(
               conv.contact?.chatId,
               conv.contact?.phoneNumber,
@@ -192,7 +192,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 className={`conversation-item ${selectedContactId === conv.contact?.id ? 'selected' : ''} ${conv.unreadCount > 0 ? 'has-unread' : ''}`}
                 onClick={() => conv.contact?.id && onSelectConversation(conv.contact.id, conv)}
               >
-                <d{profilePic ? (
+                <div className="conv-avatar">
+                  {profilePic ? (
                     <img 
                       src={profilePic} 
                       alt={displayName} 
@@ -207,8 +208,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                       }}
                     />
                   ) : null}
-                  <span className="avatar-text" style={{ display: profilePic ? 'none' : 'flex' }}
-                  <span className="avatar-text">
+                  <span className="avatar-text" style={{ display: profilePic ? 'none' : 'flex' }}>
                     {((conv.contact?.name?.charAt(0) || conv.contact?.phoneNumber?.charAt(0)) || '?').toUpperCase()}
                   </span>
                   {conv.unreadCount > 0 && <span className="online-indicator"></span>}
