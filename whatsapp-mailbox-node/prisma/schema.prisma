@@ -98,6 +98,7 @@ model Contact {
   tags            TagOnContact[]
   notes           Note[]
   dripEnrollments DripEnrollment[]
+  transactions    Transaction[]
   dripScheduled   DripScheduledMessage[]
 
   @@unique([userId, phoneNumber])
@@ -856,4 +857,34 @@ enum ImportStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+// ============================================
+// TRANSACTIONS / SALES
+// ============================================
+
+model Transaction {
+  id          String            @id @default(cuid())
+  userId      String
+  contactId   String
+  amount      Float
+  description String?           @db.Text
+  status      TransactionStatus @default(PENDING)
+  paidAt      DateTime?
+  metadata    Json?             @default("{}")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([contactId])
+  @@index([status])
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  REFUNDED
 }

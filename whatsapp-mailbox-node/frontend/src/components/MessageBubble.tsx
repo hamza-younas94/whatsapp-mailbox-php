@@ -73,12 +73,38 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
     setShowReactions(true);
   };
 
-  const handleMouseLeave = () => {
-    // Add a delay before hiding to allow moving to reaction picker
+  const handleMouseLeave = (e: React.MouseEvent) => {
+    // Check if mouse is moving to the reaction picker
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    const isMovingToReactionPicker = relatedTarget?.closest('.reaction-picker') || 
+                                      relatedTarget?.closest('.reaction-btn');
+    
+    if (isMovingToReactionPicker) {
+      return; // Don't hide if moving to reaction picker
+    }
+    
+    // Add a longer delay before hiding to allow moving to reaction picker
     if (!isLoading) {
       hideTimeout.current = setTimeout(() => {
         setShowReactions(false);
-      }, 200);
+      }, 500);
+    }
+  };
+
+  const handleReactionPickerMouseEnter = () => {
+    // Clear hide timeout when mouse enters reaction picker
+    if (hideTimeout.current) {
+      clearTimeout(hideTimeout.current);
+      hideTimeout.current = null;
+    }
+  };
+
+  const handleReactionPickerMouseLeave = () => {
+    // Hide after leaving reaction picker
+    if (!isLoading) {
+      hideTimeout.current = setTimeout(() => {
+        setShowReactions(false);
+      }, 300);
     }
   };
 
@@ -184,7 +210,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) 
 
         {/* Reaction Picker */}
         {showReactions && (
-          <div className={`reaction-picker ${isOwn ? 'own' : 'other'}`}>
+          <div 
+            className={`reaction-picker ${isOwn ? 'own' : 'other'}`}
+            onMouseEnter={handleReactionPickerMouseEnter}
+            onMouseLeave={handleReactionPickerMouseLeave}
+          >
             {REACTION_EMOJIS.map(emoji => (
               <button
                 key={emoji}

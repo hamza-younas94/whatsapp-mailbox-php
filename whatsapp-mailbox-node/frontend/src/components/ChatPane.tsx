@@ -40,6 +40,13 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [contactTags, setContactTags] = useState<Array<{ id: string; name: string }>>([]);
   const [newTag, setNewTag] = useState('');
+  const [notes, setNotes] = useState<Array<{ id: string; content: string; createdAt: string }>>([]);
+  const [newNote, setNewNote] = useState('');
+  const [transactions, setTransactions] = useState<Array<{ id: string; amount: number; description: string; status: string; createdAt: string }>>([]);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [newTransaction, setNewTransaction] = useState({ amount: '', description: '', status: 'pending' });
+  const [activeTab, setActiveTab] = useState<'info' | 'notes' | 'transactions' | 'automations'>('info');
+  const [automations, setAutomations] = useState<Array<{ id: string; name: string; isActive: boolean }>>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageSubscriptionRef = useRef<(() => void) | null>(null);
@@ -187,6 +194,9 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
   useEffect(() => {
     if (contactId && showContactInfo) {
       loadContactTags();
+      loadContactNotes();
+      loadContactTransactions();
+      loadContactAutomations();
     }
   }, [contactId, showContactInfo]);
 
@@ -286,6 +296,146 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
       }
     } catch (error) {
       console.error('Failed to remove tag:', error);
+    }
+  };
+
+  // Load contact notes
+  const loadContactNotes = async () => {
+    if (!contactId) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${window.location.origin}/api/v1/notes?contactId=${contactId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setNotes(result.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load notes:', error);
+    }
+  };
+
+  // Add note
+  const handleAddNote = async () => {
+    if (!newNote.trim() || !contactId) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${window.location.origin}/api/v1/notes`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ contactId, content: newNote })
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setNotes(prev => [result.data || result, ...prev]);
+        setNewNote('');
+      }
+    } catch (error) {
+      console.error('Failed to add note:', error);
+    }
+  };
+
+  // Delete note
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${window.location.origin}/api/v1/notes/${noteId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setNotes(prev => prev.filter(n => n.id !== noteId));
+      }
+    } catch (error) {
+      console.error('Failed to delete note:', error);
+    }
+  };
+
+  // Load transactions
+  const loadContactTransactions = async () => {
+    if (!contactId) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${window.location.origin}/api/v1/crm/transactions?contactId=${contactId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setTransactions(result.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load transactions:', error);
+    }
+  };
+
+  // Add transaction
+  const handleAddTransaction = async () => {
+    if (!newTransaction.amount || !contactId) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${window.location.origin}/api/v1/crm/transactions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contactId,
+          amount: parseFloat(newTransaction.amount),
+          description: newTransaction.description,
+          status: newTransaction.status
+        })
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setTransactions(prev => [result.data || result, ...prev]);
+        setNewTransaction({ amount: '', description: '', status: 'pending' });
+        setShowTransactionModal(false);
+      }
+    } catch (error) {
+      console.error('Failed to add transaction:', error);
+    }
+  };
+
+  // Load automations
+  const loadContactAutomations = async () => {
+    if (!contactId) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${window.location.origin}/api/v1/automations`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setAutomations(result.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load automations:', error);
+    }
+  };
+
+  // Enroll in automation
+  const handleEnrollInAutomation = async (automationId: string) => {
+    if (!contactId) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${window.location.origin}/api/v1/automations/${automationId}/enroll`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ contactId })
+      });
+      if (response.ok) {
+        alert('Contact enrolled in automation!');
+      }
+    } catch (error) {
+      console.error('Failed to enroll in automation:', error);
     }
   };
 
@@ -400,7 +550,7 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
       {showContactInfo && (
         <div className="contact-info-panel">
           <div className="contact-info-header">
-            <h3>Contact Information</h3>
+            <h3>Contact CRM</h3>
             <button 
               className="close-info-btn" 
               onClick={() => setShowContactInfo(false)}
@@ -408,79 +558,244 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
               ✕
             </button>
           </div>
-          <div className="contact-info-content">
-            {profilePic && (
-              <div className="info-avatar">
-                <img src={profilePic} alt={contactName || 'Contact'} />
-              </div>
+          
+          {/* Contact Summary */}
+          <div className="contact-summary">
+            {profilePic ? (
+              <img src={profilePic} alt={contactName || 'Contact'} className="summary-avatar" />
+            ) : (
+              <div className="summary-avatar-placeholder">{contactName?.[0] || '?'}</div>
             )}
-            <div className="info-item">
-              <label>Name:</label>
-              <span>{contactName || 'Unknown'}</span>
-            </div>
-            {phoneNumber && (
-              <div className="info-item">
-                <label>Phone:</label>
-                <span>{phoneNumber}</span>
-              </div>
-            )}
-            <div className="info-item">
-              <label>Type:</label>
+            <div className="summary-info">
+              <h4>{contactName || 'Unknown'}</h4>
+              {phoneNumber && <p>{phoneNumber}</p>}
               <span className={badgeClass}>
                 {typeInfo.icon} {typeInfo.label}
               </span>
             </div>
+          </div>
 
-            {/* Tags Section */}
-            <div className="info-item">
-              <label>Tags:</label>
-              <div className="tags-container">
-                {contactTags.map((tag) => (
-                  <span key={tag.id} className="tag-badge">
-                    {tag.name}
-                    <button 
-                      className="tag-remove-btn"
-                      onClick={() => handleRemoveTag(tag.id)}
-                    >
-                      ✕
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="tag-input-group">
-                <input 
-                  type="text"
-                  placeholder="Add tag..."
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                  className="tag-input"
-                />
-                <button onClick={handleAddTag} className="tag-add-btn">
-                  Add
-                </button>
-              </div>
-            </div>
+          {/* Tabs */}
+          <div className="crm-tabs">
+            <button 
+              className={`crm-tab ${activeTab === 'info' ? 'active' : ''}`}
+              onClick={() => setActiveTab('info')}
+            >
+              ℹ️ Info
+            </button>
+            <button 
+              className={`crm-tab ${activeTab === 'notes' ? 'active' : ''}`}
+              onClick={() => setActiveTab('notes')}
+            >
+              📝 Notes
+            </button>
+            <button 
+              className={`crm-tab ${activeTab === 'transactions' ? 'active' : ''}`}
+              onClick={() => setActiveTab('transactions')}
+            >
+              💰 Sales
+            </button>
+            <button 
+              className={`crm-tab ${activeTab === 'automations' ? 'active' : ''}`}
+              onClick={() => setActiveTab('automations')}
+            >
+              ⚡ Auto
+            </button>
+          </div>
 
-            {/* CRM Integration */}
-            <div className="info-actions">
-              <button onClick={handleOpenCRM} className="crm-btn">
-                📊 Open in CRM
-              </button>
-              <button 
-                onClick={() => window.open(`/automation.html?contact=${contactId}`, '_blank')}
-                className="automation-btn"
-              >
-                ⚡ Automations
-              </button>
-            </div>
+          <div className="crm-tab-content">
+            {/* Info Tab */}
+            {activeTab === 'info' && (
+              <div className="tab-info">
+                {/* Tags Section */}
+                <div className="info-section">
+                  <label>🏷️ Tags:</label>
+                  <div className="tags-container">
+                    {contactTags.map((tag) => (
+                      <span key={tag.id} className="tag-badge">
+                        {tag.name}
+                        <button 
+                          className="tag-remove-btn"
+                          onClick={() => handleRemoveTag(tag.id)}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="tag-input-group">
+                    <input 
+                      type="text"
+                      placeholder="Add tag..."
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
+                      className="tag-input"
+                    />
+                    <button onClick={handleAddTag} className="tag-add-btn">+</button>
+                  </div>
+                </div>
 
-            {chatId && (
-              <div className="info-item">
-                <label>Chat ID:</label>
-                <span className="text-sm">{chatId}</span>
+                {chatId && (
+                  <div className="info-section">
+                    <label>Chat ID:</label>
+                    <span className="text-sm text-muted">{chatId}</span>
+                  </div>
+                )}
               </div>
             )}
+
+            {/* Notes Tab */}
+            {activeTab === 'notes' && (
+              <div className="tab-notes">
+                <div className="note-input-group">
+                  <textarea
+                    placeholder="Add a note..."
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    className="note-input"
+                    rows={3}
+                  />
+                  <button onClick={handleAddNote} className="note-add-btn">
+                    Add Note
+                  </button>
+                </div>
+                <div className="notes-list">
+                  {notes.length === 0 ? (
+                    <p className="empty-text">No notes yet</p>
+                  ) : (
+                    notes.map((note) => (
+                      <div key={note.id} className="note-item">
+                        <p>{note.content}</p>
+                        <div className="note-meta">
+                          <span>{new Date(note.createdAt).toLocaleDateString()}</span>
+                          <button 
+                            className="note-delete-btn"
+                            onClick={() => handleDeleteNote(note.id)}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Transactions Tab */}
+            {activeTab === 'transactions' && (
+              <div className="tab-transactions">
+                <button 
+                  className="add-transaction-btn"
+                  onClick={() => setShowTransactionModal(true)}
+                >
+                  ➕ Add Transaction
+                </button>
+                <div className="transactions-list">
+                  {transactions.length === 0 ? (
+                    <p className="empty-text">No transactions yet</p>
+                  ) : (
+                    transactions.map((tx) => (
+                      <div key={tx.id} className="transaction-item">
+                        <div className="tx-amount">
+                          ${tx.amount.toFixed(2)}
+                        </div>
+                        <div className="tx-details">
+                          <p>{tx.description || 'No description'}</p>
+                          <span className={`tx-status ${tx.status}`}>{tx.status}</span>
+                        </div>
+                        <div className="tx-date">
+                          {new Date(tx.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Automations Tab */}
+            {activeTab === 'automations' && (
+              <div className="tab-automations">
+                <p className="section-title">Available Automations:</p>
+                <div className="automations-list">
+                  {automations.length === 0 ? (
+                    <p className="empty-text">No automations configured</p>
+                  ) : (
+                    automations.map((auto) => (
+                      <div key={auto.id} className="automation-item">
+                        <span className={`auto-status ${auto.isActive ? 'active' : ''}`}>
+                          {auto.isActive ? '🟢' : '⚪'}
+                        </span>
+                        <span className="auto-name">{auto.name}</span>
+                        <button 
+                          className="auto-enroll-btn"
+                          onClick={() => handleEnrollInAutomation(auto.id)}
+                        >
+                          Enroll
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="automation-links">
+                  <a href="/automation.html" target="_blank" className="link-btn">
+                    ⚙️ Manage Automations
+                  </a>
+                  <a href="/drip-campaigns.html" target="_blank" className="link-btn">
+                    💧 Drip Campaigns
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Transaction Modal */}
+      {showTransactionModal && (
+        <div className="modal-overlay" onClick={() => setShowTransactionModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Add Transaction</h3>
+            <div className="form-group">
+              <label>Amount ($)</label>
+              <input
+                type="number"
+                value={newTransaction.amount}
+                onChange={(e) => setNewTransaction(prev => ({ ...prev, amount: e.target.value }))}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="form-group">
+              <label>Description</label>
+              <input
+                type="text"
+                value={newTransaction.description}
+                onChange={(e) => setNewTransaction(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Product/Service description"
+              />
+            </div>
+            <div className="form-group">
+              <label>Status</label>
+              <select
+                value={newTransaction.status}
+                onChange={(e) => setNewTransaction(prev => ({ ...prev, status: e.target.value }))}
+              >
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="refunded">Refunded</option>
+              </select>
+            </div>
+            <div className="modal-actions">
+              <button onClick={() => setShowTransactionModal(false)} className="btn-cancel">
+                Cancel
+              </button>
+              <button onClick={handleAddTransaction} className="btn-save">
+                Save Transaction
+              </button>
+            </div>
           </div>
         </div>
       )}
