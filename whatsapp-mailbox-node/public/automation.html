@@ -387,14 +387,29 @@
             const delay = parseInt(document.getElementById('delay').value) || 0;
             const isActive = document.getElementById('isActive').checked;
 
-            const data = { name, trigger, action, delay, isActive, conditions: {}, actions: {} };
+            // Build message content
+            let messageContent = '';
+            if (action === 'send_message') {
+                messageContent = document.getElementById('message').value;
+            }
+
+            const data = { 
+                name, 
+                trigger, 
+                action, 
+                delay, 
+                isActive, 
+                conditions: {},
+                actions: {},
+                message: messageContent
+            };
 
             if (trigger === 'keyword') {
                 data.conditions.keyword = document.getElementById('keyword').value;
             }
 
             if (action === 'send_message') {
-                data.actions.message = document.getElementById('message').value;
+                data.actions.message = messageContent;
             } else if (action === 'add_tag') {
                 data.actions.tagId = document.getElementById('tagId').value;
             }
@@ -402,20 +417,32 @@
             const url = id ? `${API_BASE}/automation/${id}` : `${API_BASE}/automation`;
             const method = id ? 'PUT' : 'POST';
 
-            const response = await fetchWithAuth(url, {
-                method,
-                body: JSON.stringify(data)
-            });
+            try {
+                const response = await fetchWithAuth(url, {
+                    method,
+                    body: JSON.stringify(data)
+                });
 
-            if (response.ok) {
-                hideModal();
-                loadAutomations();
+                if (response.ok) {
+                    hideModal();
+                    loadAutomations();
+                    showNotification('Automation saved successfully!', 'success');
+                } else {
+                    const result = await response.json();
+                    const errorMsg = result.error?.message || result.message || 'Failed to save automation';
+                    showNotification('Error: ' + errorMsg, 'error');
+                }
+            } catch (error) {
+                console.error('Error saving automation:', error);
+                showNotification('An error occurred. Please try again.', 'error');
             }
         });
 
-        // Initial load
-        loadAutomations();
-        loadTags();
-    </script>
-</body>
-</html>
+        function showNotification(message, type = 'info') {
+            // Simple alert for now - could be enhanced with toast notifications
+            if (type === 'error') {
+                alert(message);
+            } else {
+                console.log(message);
+            }
+        }

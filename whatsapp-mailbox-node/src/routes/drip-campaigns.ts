@@ -3,19 +3,24 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { PrismaClient, DripTriggerType } from '@prisma/client';
-import { authMiddleware } from '@middleware/auth.middleware';
+import { authenticate } from '@middleware/auth.middleware';
 import logger from '@utils/logger';
 
 const router = Router();
 const prisma = new PrismaClient();
 
 // Apply auth middleware to all routes
-router.use(authMiddleware);
+router.use(authenticate);
+
+// Helper to get user ID from request
+function getUserId(req: Request): string | null {
+  return req.user?.id || req.user?.userId || null;
+}
 
 // Get all drip campaigns
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getUserId(req);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -50,7 +55,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 // Get single drip campaign
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getUserId(req);
     const { id } = req.params;
 
     if (!userId) {
@@ -86,7 +91,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // Create drip campaign
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || req.user?.userId || req.user?.id;
+    const userId = getUserId(req);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -136,7 +141,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // Update drip campaign
 router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || req.user?.userId || req.user?.id;
+    const userId = getUserId(req);
     const { id } = req.params;
 
     if (!userId) {
@@ -196,7 +201,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // Delete drip campaign
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getUserId(req);
     const { id } = req.params;
 
     if (!userId) {
@@ -224,7 +229,7 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
 // Pause campaign
 router.post('/:id/pause', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getUserId(req);
     const { id } = req.params;
 
     if (!userId) {
@@ -250,7 +255,7 @@ router.post('/:id/pause', async (req: Request, res: Response, next: NextFunction
 // Activate campaign
 router.post('/:id/activate', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getUserId(req);
     const { id } = req.params;
 
     if (!userId) {
@@ -276,7 +281,7 @@ router.post('/:id/activate', async (req: Request, res: Response, next: NextFunct
 // Get campaign enrollments
 router.get('/:id/enrollments', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getUserId(req);
     const { id } = req.params;
 
     if (!userId) {
@@ -316,7 +321,7 @@ router.get('/:id/enrollments', async (req: Request, res: Response, next: NextFun
 // Enroll contact in campaign
 router.post('/:id/enroll', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getUserId(req);
     const { id } = req.params;
     const { contactId } = req.body;
 

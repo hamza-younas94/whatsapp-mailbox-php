@@ -20,9 +20,15 @@ const service = new TagService(repository);
 const controller = new TagController(service);
 
 // Validation schemas
+// Accept both color names (blue, green, red, etc.) and hex codes
+const validColors = ['blue', 'green', 'red', 'yellow', 'purple', 'pink', 'orange', 'gray', 'cyan', 'indigo', 'teal'];
 const createTagSchema = z.object({
   name: z.string().min(1).max(50),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  color: z.string().refine(
+    (val) => validColors.includes(val) || /^#[0-9A-Fa-f]{6}$/.test(val),
+    { message: 'Color must be a valid color name or hex code' }
+  ).optional(),
+  description: z.string().max(255).optional(),
 });
 
 const addTagToContactSchema = z.object({
