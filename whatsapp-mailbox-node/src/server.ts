@@ -17,12 +17,9 @@ import { createMessageRoutes } from '@routes/messages';
 import { createContactRoutes } from '@routes/contacts';
 import authRoutes from '@routes/auth';
 import quickReplyRoutes from '@routes/quick-replies';
-// import quickReplyEnhancedRoutes from '@routes/quick-replies-enhanced'; // Temporarily disabled
 import tagRoutes from '@routes/tags';
 import segmentRoutes from '@routes/segments';
-// import segmentEnhancedRoutes from '@routes/segments-enhanced'; // Temporarily disabled
 import broadcastRoutes from '@routes/broadcasts';
-// import broadcastEnhancedRoutes from '@routes/broadcasts-enhanced'; // Temporarily disabled
 import automationRoutes from '@routes/automations';
 import analyticsRoutes from '@routes/analytics';
 import crmRoutes from '@routes/crm';
@@ -104,13 +101,10 @@ export function createApp(): Express {
   app.use('/api/v1/messages', createMessageRoutes());
   app.use('/api/v1/contacts', createContactRoutes());
   app.use('/api/v1/quick-replies', quickReplyRoutes);
-  // app.use('/api/v1/quick-replies-enhanced', quickReplyEnhancedRoutes); // Temporarily disabled
   app.use('/api/v1/media', mediaRoutes);
   app.use('/api/v1/tags', tagRoutes);
   app.use('/api/v1/segments', segmentRoutes);
-  // app.use('/api/v1/segments-enhanced', segmentEnhancedRoutes); // Temporarily disabled
   app.use('/api/v1/broadcasts', broadcastRoutes);
-  // app.use('/api/v1/broadcasts-enhanced', broadcastEnhancedRoutes); // Temporarily disabled
   app.use('/api/v1/automations', automationRoutes);
   app.use('/api/v1/automation', automationRoutes);
   app.use('/api/v1/analytics', analyticsRoutes);
