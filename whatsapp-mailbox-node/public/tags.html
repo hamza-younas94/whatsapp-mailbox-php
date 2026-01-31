@@ -12,26 +12,66 @@
     <script>
         if (!localStorage.getItem('authToken')) window.location.href = '/login.html';
     </script>
-
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-4">
-                    <a href="/" class="text-gray-600 hover:text-gray-800">
-                        <i class="fas fa-arrow-left"></i>
-                    </a>
-                    <h1 class="text-2xl font-bold text-gray-800">Tags</h1>
-                </div>
-                <button onclick="showCreateModal()" 
-                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
-                    <i class="fas fa-plus mr-2"></i>Create Tag
-                </button>
-            </div>
-        </div>
-    </nav>
+    <script src="/js/navbar.js"></script>
 
     <div class="max-w-7xl mx-auto px-4 py-6">
-        <div class="bg-white rounded-lg shadow">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">🏷️ Tags</h1>
+                <p class="text-gray-600 mt-1">Organize your contacts with custom tags</p>
+            </div>
+            <button onclick="showCreateModal()" 
+                class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all">
+                <i class="fas fa-plus mr-2"></i>Create Tag
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-3xl font-bold text-blue-600" id="totalTags">0</div>
+                        <div class="text-sm text-gray-500">Total Tags</div>
+                    </div>
+                    <div class="p-3 bg-blue-100 rounded-full">
+                        <i class="fas fa-tags text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-3xl font-bold text-green-600" id="taggedContacts">0</div>
+                        <div class="text-sm text-gray-500">Tagged Contacts</div>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-full">
+                        <i class="fas fa-user-tag text-green-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-purple-500">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-3xl font-bold text-purple-600" id="mostUsedTag">-</div>
+                        <div class="text-sm text-gray-500">Most Used Tag</div>
+                    </div>
+                    <div class="p-3 bg-purple-100 rounded-full">
+                        <i class="fas fa-star text-purple-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm">
+            <div class="p-4 border-b">
+                <div class="relative w-full md:w-64">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <input type="text" id="searchInput" placeholder="Search tags..." 
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
             <!-- Tags Grid -->
             <div id="tagsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-6">
                 <div class="col-span-full p-8 text-center text-gray-500">

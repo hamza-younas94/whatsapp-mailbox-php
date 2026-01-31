@@ -29,6 +29,7 @@ import crmRoutes from '@routes/crm';
 import noteRoutes from '@routes/notes';
 import whatsappWebRoutes from '@routes/whatsapp-web';
 import mediaRoutes from '@routes/media';
+import dripCampaignRoutes from '@routes/drip-campaigns';
 import { whatsappWebService } from '@services/whatsapp-web.service';
 import { getContactType } from '@utils/contact-type';
 import { MessageType } from '@prisma/client';
@@ -115,6 +116,7 @@ export function createApp(): Express {
   app.use('/api/v1/analytics', analyticsRoutes);
   app.use('/api/v1/crm', crmRoutes);
   app.use('/api/v1/notes', noteRoutes);
+  app.use('/api/v1/drip-campaigns', dripCampaignRoutes);
   app.use('/api/v1/whatsapp-web', whatsappWebRoutes);
 
   // Serve index.html for all non-API routes (SPA fallback)
