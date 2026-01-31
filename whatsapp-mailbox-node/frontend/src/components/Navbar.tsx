@@ -17,6 +17,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, onSearch }) => {
     { label: 'Contacts', href: '/contacts.html' },
     { label: 'Quick Replies', href: '/quick-replies.html' },
     { label: 'Broadcasts', href: '/broadcasts.html' },
+    { label: 'Segments', href: '/segments.html' },
     { label: 'Automations', href: '/automation.html' },
     { label: 'Tags', href: '/tags.html' },
     { label: 'Analytics', href: '/analytics.html' },
