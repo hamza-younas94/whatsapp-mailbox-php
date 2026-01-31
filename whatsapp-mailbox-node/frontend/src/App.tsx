@@ -6,17 +6,27 @@ import ConversationList from '@/components/ConversationList';
 import ChatPane from '@/components/ChatPane';
 import '@/styles/app-layout.css';
 
+interface ContactInfo {
+  id: string;
+  phoneNumber: string;
+  chatId?: string | null;
+  name?: string;
+  contactType?: string | null;
+  avatarUrl?: string | null;
+  profilePhotoUrl?: string | null;
+}
+
 interface Conversation {
-  contactId: string;
-  contactName: string;
-  lastMessage?: string;
+  id: string;
+  contact: ContactInfo;
   unreadCount: number;
-  avatar?: string;
+  lastMessage?: string;
+  lastMessageAt?: string;
 }
 
 const App: React.FC = () => {
   const [selectedContactId, setSelectedContactId] = useState<string | undefined>();
-  const [selectedContact, setSelectedContact] = useState<Conversation | undefined>();
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | undefined>();
   const [isMobile, setIsMobile] = useState(false);
   const [showList, setShowList] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -80,8 +90,9 @@ const App: React.FC = () => {
   }, [selectedContactId]);
 
   const handleSelectConversation = (contactId: string, conversation: Conversation) => {
+    // Store contact ID and the full conversation object with correct contact data
     setSelectedContactId(contactId);
-    setSelectedContact(conversation);
+    setSelectedConversation(conversation);
     
     // On mobile, hide list when chat is selected
     if (isMobile) {
@@ -124,7 +135,7 @@ const App: React.FC = () => {
         {/* Chat Pane - visible on desktop or when not showList on mobile */}
         {(!showList || !isMobile) && (
           <div className={`chat-panel ${showList && isMobile ? 'hidden' : ''}`}>
-            {selectedContactId && selectedContact && (
+            {selectedContactId && selectedConversation && (
               <div className="chat-header-mobile">
                 {isMobile && (
                   <button className="back-button" onClick={handleBackToList}>
@@ -134,12 +145,13 @@ const App: React.FC = () => {
               </div>
             )}
             <ChatPane
+              key={selectedContactId} // Force re-render when contact changes
               contactId={selectedContactId}
-              contactName={selectedContact?.contact?.name}
-              chatId={selectedContact?.contact?.chatId}
-              contactType={selectedContact?.contact?.contactType}
-              profilePic={selectedContact?.contact?.profilePhotoUrl || selectedContact?.contact?.avatarUrl}
-              phoneNumber={selectedContact?.contact?.phoneNumber}
+              contactName={selectedConversation?.contact?.name || selectedConversation?.contact?.phoneNumber}
+              chatId={selectedConversation?.contact?.chatId}
+              contactType={selectedConversation?.contact?.contactType}
+              profilePic={selectedConversation?.contact?.profilePhotoUrl || selectedConversation?.contact?.avatarUrl}
+              phoneNumber={selectedConversation?.contact?.phoneNumber}
             />
           </div>
         )}

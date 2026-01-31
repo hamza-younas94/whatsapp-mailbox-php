@@ -546,209 +546,226 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
         </div>
       </div>
 
-      {/* Contact Info Panel */}
+      {/* CRM Drawer/Modal */}
       {showContactInfo && (
-        <div className="contact-info-panel">
-          <div className="contact-info-header">
-            <h3>Contact CRM</h3>
-            <button 
-              className="close-info-btn" 
-              onClick={() => setShowContactInfo(false)}
-            >
-              ✕
-            </button>
-          </div>
-          
-          {/* Contact Summary */}
-          <div className="contact-summary">
-            {profilePic ? (
-              <img src={profilePic} alt={contactName || 'Contact'} className="summary-avatar" />
-            ) : (
-              <div className="summary-avatar-placeholder">{contactName?.[0] || '?'}</div>
-            )}
-            <div className="summary-info">
-              <h4>{contactName || 'Unknown'}</h4>
-              {phoneNumber && <p>{phoneNumber}</p>}
-              <span className={badgeClass}>
-                {typeInfo.icon} {typeInfo.label}
-              </span>
+        <div className="crm-drawer-overlay" onClick={() => setShowContactInfo(false)}>
+          <div className="crm-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-header">
+              <div className="drawer-header-content">
+                {profilePic ? (
+                  <img src={profilePic} alt={contactName || 'Contact'} className="drawer-avatar" />
+                ) : (
+                  <div className="drawer-avatar-placeholder">{contactName?.[0] || '?'}</div>
+                )}
+                <div className="drawer-title">
+                  <h3>{contactName || 'Unknown'}</h3>
+                  {phoneNumber && <p>{phoneNumber}</p>}
+                  <span className={`drawer-badge ${badgeClass}`}>
+                    {typeInfo.icon} {typeInfo.label}
+                  </span>
+                </div>
+              </div>
+              <button className="drawer-close" onClick={() => setShowContactInfo(false)}>
+                ✕
+              </button>
             </div>
-          </div>
 
-          {/* Tabs */}
-          <div className="crm-tabs">
-            <button 
-              className={`crm-tab ${activeTab === 'info' ? 'active' : ''}`}
-              onClick={() => setActiveTab('info')}
-            >
-              ℹ️ Info
-            </button>
-            <button 
-              className={`crm-tab ${activeTab === 'notes' ? 'active' : ''}`}
-              onClick={() => setActiveTab('notes')}
-            >
-              📝 Notes
-            </button>
-            <button 
-              className={`crm-tab ${activeTab === 'transactions' ? 'active' : ''}`}
-              onClick={() => setActiveTab('transactions')}
-            >
-              💰 Sales
-            </button>
-            <button 
-              className={`crm-tab ${activeTab === 'automations' ? 'active' : ''}`}
-              onClick={() => setActiveTab('automations')}
-            >
-              ⚡ Auto
-            </button>
-          </div>
+            {/* Navigation Tabs */}
+            <div className="drawer-tabs">
+              <button 
+                className={`drawer-tab ${activeTab === 'info' ? 'active' : ''}`}
+                onClick={() => setActiveTab('info')}
+              >
+                <span className="tab-icon">🏷️</span>
+                <span className="tab-label">Tags</span>
+              </button>
+              <button 
+                className={`drawer-tab ${activeTab === 'notes' ? 'active' : ''}`}
+                onClick={() => setActiveTab('notes')}
+              >
+                <span className="tab-icon">📝</span>
+                <span className="tab-label">Notes</span>
+              </button>
+              <button 
+                className={`drawer-tab ${activeTab === 'transactions' ? 'active' : ''}`}
+                onClick={() => setActiveTab('transactions')}
+              >
+                <span className="tab-icon">💰</span>
+                <span className="tab-label">Sales</span>
+              </button>
+              <button 
+                className={`drawer-tab ${activeTab === 'automations' ? 'active' : ''}`}
+                onClick={() => setActiveTab('automations')}
+              >
+                <span className="tab-icon">⚡</span>
+                <span className="tab-label">Auto</span>
+              </button>
+            </div>
 
-          <div className="crm-tab-content">
-            {/* Info Tab */}
-            {activeTab === 'info' && (
-              <div className="tab-info">
-                {/* Tags Section */}
-                <div className="info-section">
-                  <label>🏷️ Tags:</label>
-                  <div className="tags-container">
-                    {contactTags.map((tag) => (
-                      <span key={tag.id} className="tag-badge">
-                        {tag.name}
-                        <button 
-                          className="tag-remove-btn"
-                          onClick={() => handleRemoveTag(tag.id)}
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    ))}
+            <div className="drawer-content">
+              {/* Tags Tab */}
+              {activeTab === 'info' && (
+                <div className="drawer-section">
+                  <div className="section-header">
+                    <h4>Contact Tags</h4>
+                    <span className="badge-count">{contactTags.length}</span>
                   </div>
-                  <div className="tag-input-group">
+                  
+                  <div className="tags-grid">
+                    {contactTags.length === 0 ? (
+                      <p className="empty-hint">No tags added yet</p>
+                    ) : (
+                      contactTags.map((tag) => (
+                        <span key={tag.id} className="tag-chip">
+                          {tag.name}
+                          <button onClick={() => handleRemoveTag(tag.id)}>×</button>
+                        </span>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="add-input-group">
                     <input 
                       type="text"
-                      placeholder="Add tag..."
+                      placeholder="Add new tag..."
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                      className="tag-input"
                     />
-                    <button onClick={handleAddTag} className="tag-add-btn">+</button>
+                    <button onClick={handleAddTag} disabled={!newTag.trim()}>
+                      Add
+                    </button>
+                  </div>
+
+                  {chatId && (
+                    <div className="info-detail">
+                      <label>Chat ID</label>
+                      <code>{chatId}</code>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Notes Tab */}
+              {activeTab === 'notes' && (
+                <div className="drawer-section">
+                  <div className="section-header">
+                    <h4>Notes</h4>
+                    <span className="badge-count">{notes.length}</span>
+                  </div>
+
+                  <div className="add-note-form">
+                    <textarea
+                      placeholder="Write a note about this contact..."
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      rows={3}
+                    />
+                    <button onClick={handleAddNote} disabled={!newNote.trim()}>
+                      💾 Save Note
+                    </button>
+                  </div>
+
+                  <div className="notes-list-container">
+                    {notes.length === 0 ? (
+                      <div className="empty-state-small">
+                        <span>📝</span>
+                        <p>No notes yet</p>
+                      </div>
+                    ) : (
+                      notes.map((note) => (
+                        <div key={note.id} className="note-card">
+                          <p>{note.content}</p>
+                          <div className="note-footer">
+                            <span>{new Date(note.createdAt).toLocaleDateString()}</span>
+                            <button onClick={() => handleDeleteNote(note.id)}>🗑️</button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
+              )}
 
-                {chatId && (
-                  <div className="info-section">
-                    <label>Chat ID:</label>
-                    <span className="text-sm text-muted">{chatId}</span>
+              {/* Transactions Tab */}
+              {activeTab === 'transactions' && (
+                <div className="drawer-section">
+                  <div className="section-header">
+                    <h4>Sales & Transactions</h4>
+                    <button 
+                      className="btn-primary-small"
+                      onClick={() => setShowTransactionModal(true)}
+                    >
+                      + Add
+                    </button>
                   </div>
-                )}
-              </div>
-            )}
 
-            {/* Notes Tab */}
-            {activeTab === 'notes' && (
-              <div className="tab-notes">
-                <div className="note-input-group">
-                  <textarea
-                    placeholder="Add a note..."
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
-                    className="note-input"
-                    rows={3}
-                  />
-                  <button onClick={handleAddNote} className="note-add-btn">
-                    Add Note
-                  </button>
+                  <div className="transactions-list-container">
+                    {transactions.length === 0 ? (
+                      <div className="empty-state-small">
+                        <span>💰</span>
+                        <p>No transactions yet</p>
+                        <button onClick={() => setShowTransactionModal(true)}>Add First Transaction</button>
+                      </div>
+                    ) : (
+                      transactions.map((tx) => (
+                        <div key={tx.id} className="tx-card">
+                          <div className="tx-card-amount">${tx.amount.toFixed(2)}</div>
+                          <div className="tx-card-info">
+                            <span className="tx-desc">{tx.description || 'No description'}</span>
+                            <span className={`tx-badge tx-${tx.status}`}>{tx.status}</span>
+                          </div>
+                          <div className="tx-card-date">
+                            {new Date(tx.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-                <div className="notes-list">
-                  {notes.length === 0 ? (
-                    <p className="empty-text">No notes yet</p>
-                  ) : (
-                    notes.map((note) => (
-                      <div key={note.id} className="note-item">
-                        <p>{note.content}</p>
-                        <div className="note-meta">
-                          <span>{new Date(note.createdAt).toLocaleDateString()}</span>
+              )}
+
+              {/* Automations Tab */}
+              {activeTab === 'automations' && (
+                <div className="drawer-section">
+                  <div className="section-header">
+                    <h4>Automations</h4>
+                  </div>
+
+                  <div className="automations-list-container">
+                    {automations.length === 0 ? (
+                      <div className="empty-state-small">
+                        <span>⚡</span>
+                        <p>No automations available</p>
+                        <a href="/automation.html" target="_blank">Create Automation</a>
+                      </div>
+                    ) : (
+                      automations.map((auto) => (
+                        <div key={auto.id} className="automation-card">
+                          <div className={`auto-indicator ${auto.isActive ? 'active' : ''}`}></div>
+                          <span className="auto-card-name">{auto.name}</span>
                           <button 
-                            className="note-delete-btn"
-                            onClick={() => handleDeleteNote(note.id)}
+                            className="btn-enroll"
+                            onClick={() => handleEnrollInAutomation(auto.id)}
                           >
-                            🗑️
+                            Enroll
                           </button>
                         </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
+                      ))
+                    )}
+                  </div>
 
-            {/* Transactions Tab */}
-            {activeTab === 'transactions' && (
-              <div className="tab-transactions">
-                <button 
-                  className="add-transaction-btn"
-                  onClick={() => setShowTransactionModal(true)}
-                >
-                  ➕ Add Transaction
-                </button>
-                <div className="transactions-list">
-                  {transactions.length === 0 ? (
-                    <p className="empty-text">No transactions yet</p>
-                  ) : (
-                    transactions.map((tx) => (
-                      <div key={tx.id} className="transaction-item">
-                        <div className="tx-amount">
-                          ${tx.amount.toFixed(2)}
-                        </div>
-                        <div className="tx-details">
-                          <p>{tx.description || 'No description'}</p>
-                          <span className={`tx-status ${tx.status}`}>{tx.status}</span>
-                        </div>
-                        <div className="tx-date">
-                          {new Date(tx.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                    ))
-                  )}
+                  <div className="quick-links">
+                    <a href="/automation.html" target="_blank" className="quick-link">
+                      ⚙️ Manage Automations
+                    </a>
+                    <a href="/drip-campaigns.html" target="_blank" className="quick-link">
+                      💧 Drip Campaigns
+                    </a>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* Automations Tab */}
-            {activeTab === 'automations' && (
-              <div className="tab-automations">
-                <p className="section-title">Available Automations:</p>
-                <div className="automations-list">
-                  {automations.length === 0 ? (
-                    <p className="empty-text">No automations configured</p>
-                  ) : (
-                    automations.map((auto) => (
-                      <div key={auto.id} className="automation-item">
-                        <span className={`auto-status ${auto.isActive ? 'active' : ''}`}>
-                          {auto.isActive ? '🟢' : '⚪'}
-                        </span>
-                        <span className="auto-name">{auto.name}</span>
-                        <button 
-                          className="auto-enroll-btn"
-                          onClick={() => handleEnrollInAutomation(auto.id)}
-                        >
-                          Enroll
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-                <div className="automation-links">
-                  <a href="/automation.html" target="_blank" className="link-btn">
-                    ⚙️ Manage Automations
-                  </a>
-                  <a href="/drip-campaigns.html" target="_blank" className="link-btn">
-                    💧 Drip Campaigns
-                  </a>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -815,7 +832,18 @@ const ChatPane: React.FC<ChatPaneProps> = ({ contactId, contactName, chatId, con
         </div>
       </div>
 
-      <MessageComposer onSend={handleSend} isLoading={sending} disabled={sending} />
+      {/* Check if this is a group or channel - they typically don't support direct messaging from bots */}
+      {(chatId?.includes('@g.us') || chatId?.includes('@broadcast') || contactTypeResolved === 'GROUP' || contactTypeResolved === 'CHANNEL') ? (
+        <div className="group-chat-notice">
+          <div className="notice-icon">👥</div>
+          <div className="notice-content">
+            <strong>{contactTypeResolved === 'GROUP' ? 'Group Chat' : contactTypeResolved === 'CHANNEL' ? 'Channel' : 'Broadcast List'}</strong>
+            <p>Sending messages to groups/channels is limited. Messages are received but may require WhatsApp Business API for sending.</p>
+          </div>
+        </div>
+      ) : (
+        <MessageComposer onSend={handleSend} isLoading={sending} disabled={sending} />
+      )}
     </div>
   );
 };
