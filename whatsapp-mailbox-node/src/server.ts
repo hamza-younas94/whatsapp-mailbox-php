@@ -274,11 +274,18 @@ function setupIncomingMessageListener(): void {
 
       // Get or create contact with enriched data
       const contactTypeEnum = getContactType(from, sanitizedPhone);
+      
+      // For outgoing messages, don't overwrite existing contact name if we don't have new data
+      // This prevents the bug where sender's name overwrites recipient's name
+      const existingContact = await contactRepo.findByPhoneNumber(userId, sanitizedPhone);
+      const shouldUseFallbackName = !existingContact && !contactDisplayName;
+      
       const contact = await contactRepo.findOrCreate(userId, sanitizedPhone, {
-        name: contactDisplayName,
-        pushName: contactPushName,
-        businessName: contactBusinessName,
-        profilePhotoUrl,
+        // Only set name if we have real data OR if this is a new contact with no data
+        ...(contactDisplayName || shouldUseFallbackName ? { name: contactDisplayName || sanitizedPhone } : {}),
+        ...(contactPushName ? { pushName: contactPushName } : {}),
+        ...(contactBusinessName ? { businessName: contactBusinessName } : {}),
+        ...(profilePhotoUrl ? { profilePhotoUrl } : {}),
         isBusiness: isBusiness || false,
         chatId: from, // Store full WhatsApp ID (e.g., 123@c.us or 456@newsletter)
         contactType: contactTypeEnum, // Set contact type based on chatId
@@ -286,16 +293,18 @@ function setupIncomingMessageListener(): void {
         lastActiveAt: new Date(timestamp * 1000),
       });
 
-  // Update contact with latest info if we have new data
-      if (
+      // Update contact with latest info ONLY if we have genuinely new data
+      // Skip update for outgoing messages if we don't have recipient's actual info
+      const hasNewContactInfo = contactName || contactPushName || profilePhotoUrl;
+      if (hasNewContactInfo && (
         (contactName && contactName !== contact.name) ||
         (contactPushName && (contactPushName !== (contact as any).pushName)) ||
         (profilePhotoUrl && profilePhotoUrl !== (contact as any).profilePhotoUrl)
-      ) {
+      )) {
         await contactRepo.update(contact.id, {
-          name: contactName || contact.name,
-          pushName: contactPushName || (contact as any).pushName,
-          profilePhotoUrl: profilePhotoUrl || (contact as any).profilePhotoUrl,
+          ...(contactName ? { name: contactName } : {}),
+          ...(contactPushName ? { pushName: contactPushName } : {}),
+          ...(profilePhotoUrl ? { profilePhotoUrl } : {}),
           isBusiness: isBusiness !== undefined ? isBusiness : (contact as any).isBusiness,
           lastMessageAt: new Date(timestamp * 1000),
           lastActiveAt: new Date(timestamp * 1000),

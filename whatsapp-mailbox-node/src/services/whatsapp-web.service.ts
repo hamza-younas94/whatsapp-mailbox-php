@@ -270,8 +270,11 @@ export class WhatsAppWebService extends EventEmitter {
       const chatId = isOutgoing ? message.to : message.from;
 
       try {
-        // Access contact information from the message
-        if (message.getContact && typeof message.getContact === 'function') {
+        // For outgoing messages, we need the RECIPIENT's contact info, not sender's
+        // message.getContact() returns the SENDER's info which is wrong for outgoing
+        // For incoming messages, message.getContact() gives us the sender (correct)
+        if (!isOutgoing && message.getContact && typeof message.getContact === 'function') {
+          // For incoming messages, get sender's contact info
           const contact = await message.getContact();
           if (contact) {
             contactName = contact.name || contact.pushname;
@@ -288,6 +291,38 @@ export class WhatsAppWebService extends EventEmitter {
               } catch (photoError) {
                 logger.debug({ chatId }, 'Failed to fetch profile photo');
               }
+            }
+          }
+        } else if (isOutgoing) {
+          // For outgoing messages, try to get recipient's contact info from chat
+          const session = this.sessions.get(sessionId);
+          if (session?.client) {
+            try {
+              const chat = await session.client.getChatById(message.to);
+              if (chat) {
+                // For groups/channels, use chat name
+                if (chat.isGroup || (chat as any).isChannel) {
+                  contactName = chat.name;
+                } else {
+                  // For individual chats, try to get contact
+                  const recipientContact = await chat.getContact?.();
+                  if (recipientContact) {
+                    contactName = recipientContact.name || recipientContact.pushname;
+                    contactPushName = recipientContact.pushname;
+                    if (recipientContact.isBusiness) {
+                      isBusiness = true;
+                      contactBusinessName = (recipientContact as any).formattedName || contactName;
+                    }
+                    try {
+                      profilePhotoUrl = await recipientContact.getProfilePicUrl?.();
+                    } catch {
+                      // Ignore profile pic errors
+                    }
+                  }
+                }
+              }
+            } catch (chatError) {
+              logger.debug({ chatId, error: chatError }, 'Failed to get recipient contact for outgoing message');
             }
           }
         }
