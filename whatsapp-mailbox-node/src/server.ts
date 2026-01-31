@@ -314,8 +314,29 @@ function setupIncomingMessageListener(): void {
       // Get or create conversation
       const conversation = await conversationRepo.findOrCreate(userId, contact.id);
 
-      // Auto-reply with quick replies on incoming messages (only for incoming, not outgoing)
-      if (!isOutgoing && body && body.trim()) {
+      // Helper function for fuzzy matching (simple Levenshtein-based)
+      const fuzzyMatch = (text: string, pattern: string, threshold: number = 0.7): boolean => {
+        if (text === pattern) return true;
+        if (text.includes(pattern) || pattern.includes(text)) return true;
+        
+        // Simple similarity check
+        const maxLen = Math.max(text.length, pattern.length);
+        if (maxLen === 0) return true;
+        
+        let matches = 0;
+        const minLen = Math.min(text.length, pattern.length);
+        for (let i = 0; i < minLen; i++) {
+          if (text[i] === pattern[i]) matches++;
+        }
+        
+        return (matches / maxLen) >= threshold;
+      };
+
+      // Auto-reply with quick replies on incoming messages
+      // SKIP for groups (@g.us) and channels (@newsletter) - they don't support auto-replies
+      const isGroupOrChannel = from.includes('@g.us') || from.includes('@newsletter') || from.includes('@broadcast');
+      
+      if (!isOutgoing && !isGroupOrChannel && body && body.trim()) {
         try {
           const messageText = body.toLowerCase().trim();
           const normalizedMessage = messageText.replace(/^\/+/, '');
@@ -323,13 +344,25 @@ function setupIncomingMessageListener(): void {
             .split(/\s+/)
             .map((word: string) => word.replace(/^\/+/, ''));
           const allQuickReplies = await quickReplyRepo.findByUserId(userId);
-          const matchedReply = allQuickReplies.find((qr: any) => {
+          
+          // Try exact match first, then fuzzy match
+          let matchedReply = allQuickReplies.find((qr: any) => {
             if (!qr.shortcut) return false;
             const shortcutNormalized = qr.shortcut.toLowerCase().replace(/^\/+/, '');
-            // Match if exact match or shortcut appears as word (with or without leading slash)
+            // Exact match: full message or word match
             return normalizedMessage === shortcutNormalized || 
                    messageWords.includes(shortcutNormalized);
           });
+          
+          // If no exact match, try fuzzy matching
+          if (!matchedReply) {
+            matchedReply = allQuickReplies.find((qr: any) => {
+              if (!qr.shortcut) return false;
+              const shortcutNormalized = qr.shortcut.toLowerCase().replace(/^\/+/, '');
+              // Check if any word fuzzy-matches the shortcut
+              return messageWords.some((word: string) => fuzzyMatch(word, shortcutNormalized, 0.75));
+            });
+          }
           
           if (matchedReply) {
             const session = whatsappWebService.getSession(sessionId);
